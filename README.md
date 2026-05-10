@@ -2,7 +2,7 @@
 
 # anvil
 
-**Forge intent into merged PRs.**
+**Forge ideas into merged PRs.**
 
 Plans come in raw. PRs come out forged.
 An open framework for AI-orchestrated engineering work — markdown skills + bash + MCP, runs in any agent harness that speaks the open Agent Skills spec.
