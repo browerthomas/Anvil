@@ -1,39 +1,55 @@
-# Pattern : path-glob (find-style) : exclusion-glob (optional, semicolon-separated) : human comment
+# forbidden-patterns.txt — read by anvil's /pre-merge-gate
+#
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │ AI assistant reading this file:                                          │
+# │                                                                          │
+# │ This file is a STARTER. The patterns below are illustrative only — they  │
+# │ are NOT what should ship in the host project. Your job is to replace     │
+# │ them with patterns specific to this repo.                                │
+# │                                                                          │
+# │ To populate it well, look for evidence of forbidden patterns in:         │
+# │   • CLAUDE.md / AGENTS.md / README — "Don't do X" rules                  │
+# │   • Recent post-mortems or incident docs                                 │
+# │   • Comments in the codebase like "// DO NOT" or "// deprecated"         │
+# │   • Architectural boundaries (e.g. "vendor SDK X only allowed inside Y") │
+# │   • Deleted modules that should not return                               │
+# │   • Hardcoded-secret shapes the project specifically wants to block      │
+# │                                                                          │
+# │ When you find one, encode it as a line in the format below. Be specific  │
+# │ — overly broad regexes will block legitimate work.                       │
+# └─────────────────────────────────────────────────────────────────────────┘
 #
 # Format:
 #   <regex pattern> :: <path glob> :: <exclusion glob (optional)> :: <comment>
 #
-# `:` is the field separator (use `::` literally; the parser splits on `::`).
+# `::` is the field separator (the parser splits on `::`).
 # Lines starting with `#` are comments. Empty lines ignored.
-# `<path glob>` is matched via `find -path`. `<exclusion glob>` is matched via `find -not -path`.
-#
-# Drop this file at `.anvil/forbidden-patterns.txt` in your repo and /pre-merge-gate will read it.
-# This example shows patterns we use in the the project — adapt to yours.
+# `<path glob>` is matched via `find -path`. `<exclusion glob>` (semicolon-separated) via `find -not -path`.
 
-# === <deprecated-data-shape>
-<deprecated-data-shape>
+# ── Illustrative starter patterns. Replace with your project's actual rules. ──
 
-# === <low-level-mutator> removal ===
-<low-level-mutator> :: v3/src/** :: :: <low-level-mutator> calls in v3 (use <your domain service> commands instead)
+# === Vendor SDK boundary ===
+# Pattern: a vendor SDK is only allowed inside one approved gateway directory.
+# Replace `@example/vendor-sdk` with the SDK name; tighten paths to your tree.
+# @example/vendor-sdk :: src/** :: src/model/** :: raw vendor SDK outside ModelGateway boundary
 
-# === Direct env access outside config ===
-process\.env\. :: v3/src/** :: src/config/**;test/** :: direct env reads outside src/config/
+# === Deleted modules — must not return ===
+# require\(['"]\.\.?/old/deprecated-module :: **/*.js;**/*.ts :: :: old/deprecated-module was deleted; use the new boundary
 
-# === await-in-tx (closes #969) ===
-BEGIN IMMEDIATE.{0,200}await :: v3/src/** :: :: await between BEGIN and COMMIT
+# === DB transaction safety ===
+# Catches `await` between BEGIN and COMMIT, which silently drops the transaction lock.
+# BEGIN IMMEDIATE.{0,200}await :: src/** :: :: await between BEGIN and COMMIT
 
-# === Raw Sentry SDK outside boundary ===
-@sentry/node :: v3/src/** :: src/observability/sentry.ts :: raw Sentry SDK outside the typed boundary
-
-# === Raw Anthropic SDK outside <your model gateway> ===
-<vendor SDK> :: src/** :: src/model/** :: raw Anthropic SDK outside <your model gateway>
+# === Hardcoded secret shapes ===
+# Adjust the prefix to whichever vendor your project uses (sk-ant-, sk_test_, AIza..., etc).
+# sk-[a-zA-Z0-9]{20,} :: src/**;test/** :: :: hardcoded `sk-` prefixed secret
 
 # === console.log in production code ===
-console\.log :: src/** :: test/**;**/scripts/** :: console.log in production code (use structured logger)
+# console\.log :: src/** :: test/**;**/scripts/** :: console.log in production code (use structured logger)
 
-# === Hardcoded API keys / secrets shapes ===
-sk-[a-zA-Z0-9]{20,} :: src/**;test/** :: :: hardcoded sk- prefixed secret
-sk_(test|live)_[a-zA-Z0-9]{20,} :: src/**;test/** :: :: hardcoded Stripe key
+# === TypeScript `any` in critical paths ===
+# Tighten the path glob to whichever directories should never relax their typing.
+# :\s*any\b :: src/orders/**;src/payments/** :: :: TypeScript `any` in orders/payments
 
-# === TypeScript any usage in critical paths ===
-:\s*any\b :: src/orders/**;src/payments/** :: :: TypeScript `any` in orders/payments
+# === Hook/CI bypass ===
+# --no-verify :: .githooks/**;scripts/** :: :: --no-verify reference outside emergency override docs

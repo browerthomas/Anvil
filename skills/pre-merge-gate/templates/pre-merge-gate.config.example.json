@@ -1,33 +1,38 @@
 {
-  "_comment": "Drop this at .anvil/pre-merge-gate.config.json in your repo. /pre-merge-gate reads it. Defaults below match the the project; tune to yours.",
+  "_intro_AI_ASSISTANT": "This file is a STARTER. Tune every value below for the host project. See `_help` keys inline for guidance. Common edits: switch `tests.command` to whatever the project uses (`npm test`, `pnpm test`, `cargo test`, `pytest -q`...), point `fitness.testPath` at the repo's actual architecture-fitness test, narrow `typecheck.patterns` to the right tsconfig, fill `tests.knownFlakes` from .anvil/known-flakes.txt or post-mortems.",
+
+  "_comment": "Drop this at .anvil/pre-merge-gate.config.json in your repo. /pre-merge-gate reads it.",
 
   "rebaseAgainst": "origin/main",
+  "_help_rebaseAgainst": "Branch the gate rebases against. Usually `origin/main`. Override per-repo if your default branch is `master`, `develop`, etc.",
+
   "skipRebase": false,
 
   "typecheck": {
     "enabled": true,
     "patterns": ["**/tsconfig.json"],
-    "exclusions": ["**/node_modules/**"]
+    "exclusions": ["**/node_modules/**"],
+    "_help": "If only part of the repo has TS coverage, narrow `patterns` to that subtree (e.g. `[\"v3/tsconfig.json\"]`). Set `enabled: false` if the project has no TypeScript."
   },
 
   "tests": {
     "enabled": true,
     "command": "npx vitest run",
+    "_help_command": "Replace with whatever runs the project's tests. Examples: `npm test`, `pnpm vitest run`, `cargo test`, `pytest -q`, `bun test`.",
     "configPatterns": ["**/vitest.config.*"],
     "exclusions": ["**/node_modules/**"],
     "baseline": "auto",
     "_baseline_modes": "auto = read from main HEAD; <number> = absolute count; +N = baseline + N",
     "target": "$baseline+",
     "allowFlakeRetries": 1,
-    "knownFlakes": [
-      "test/integration/regenerate-credit-race.test.js"
-    ]
+    "knownFlakes": [],
+    "_help_knownFlakes": "Either list flake patterns inline or rely on .anvil/known-flakes.txt — the gate reads both."
   },
 
   "fitness": {
     "enabled": true,
-    "testPath": "v3/test/architecture/fitness.test.ts",
-    "_alternativeTestPath": "test/architecture/fitness.test.js"
+    "testPath": "test/architecture/fitness.test.ts",
+    "_help": "Path to the project's architecture-fitness test (the one that pins call-site counts, layer boundaries, etc). If the project doesn't have one, set `enabled: false` — but consider adding one. Set `_alternativeTestPath` if there are two (e.g. v2 + v3 trees)."
   },
 
   "forbiddenPatterns": {
@@ -39,8 +44,10 @@
     "enabled": true,
     "_comment": "Verify GH PR checks before merging. Set false to skip (e.g. local-only repo).",
     "requirePassOrSkipping": true,
-    "blockingChecks": ["test", "secrets"],
-    "ignorablePending": ["deploy-staging", "deploy-production", "smoke-test"]
+    "blockingChecks": ["test"],
+    "_help_blockingChecks": "Names of GH checks that must pass before merge. Examples: ['test', 'secrets', 'lint', 'codeql']. Pull names from a recent green PR via `gh pr checks <PR>`.",
+    "ignorablePending": ["deploy-staging", "deploy-production", "smoke-test"],
+    "_help_ignorablePending": "GH checks that may stay pending without blocking merge — typically downstream deploys."
   },
 
   "verbose": false

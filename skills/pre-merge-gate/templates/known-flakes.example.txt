@@ -1,29 +1,39 @@
 # anvil/pre-merge-gate + /grind — known flake patterns
 #
-# One regex per line. Matches against test names + file paths.
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │ AI assistant reading this file:                                          │
+# │                                                                          │
+# │ This file is a STARTER. The patterns below are CATEGORY EXAMPLES, not    │
+# │ rules to keep. Replace them with the host project's actual flakes.       │
+# │                                                                          │
+# │ How to find real flakes for this project:                                │
+# │   • `git log --all --grep="flake\|flaky\|retry"` for past mitigations    │
+# │   • CI history for tests that have failed + passed in the same PR        │
+# │   • Project docs / runbooks for "known flake" sections                   │
+# │   • Operator memory ("which test do we always have to retry?")           │
+# │                                                                          │
+# │ One regex per line. Matches against test names AND file paths.           │
+# │ Matching test failures get retried ONCE before being treated as real     │
+# │ failures. Use sparingly — masking a real bug as "flake" is worse than    │
+# │ a noisier signal.                                                        │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
 # Comments start with #. Empty lines ignored.
-#
-# When a test in this list fails, /pre-merge-gate retries it once before
-# declaring failure (set retry behavior in pre-merge-gate.config.json).
-# /grind treats matching test failures as infra-fail (retry once, then
-# treat as slice-fail).
-#
-# Drop this file at .anvil/known-flakes.txt in your repo and tune to
-# your project's flake-prone tests.
-#
-# This example shows the kind of patterns we use. Adapt to yours.
 
-# === Generic CI flakes ===
-^integration:.*\.network$           # network-dependent integration tests
+# ── Illustrative category examples. Replace, don't keep verbatim. ──
 
-# === Test-runner concurrency flakes ===
-.*regenerate-credit-race.*           # known race in test-runner serialization
-.*queue-contention.*                  # cross-worker DB races
+# === Test-runner concurrency / cross-worker races ===
+# .*\.race\.test\.(ts|js)$              # tests with cross-worker DB or queue races
 
-# === Known external-dependency timeouts ===
-.*stripe-webhook-replay.*             # Stripe sandbox occasional latency
-.*lulu-fulfillment-poll.*             # Lulu sandbox eventual-consistency window
+# === External sandbox eventual-consistency ===
+# .*third-party-sandbox.*               # vendor sandbox occasional latency or ordering quirks
 
-# === Known browser-test flakes ===
-.*screenshot-diff.*                   # subpixel rendering drift
-.*timing-sensitive-animation.*        # CSS animation race
+# === Browser/E2E flakes ===
+# .*screenshot-diff.*                   # subpixel rendering drift
+# .*timing-sensitive-animation.*        # CSS animation timing races
+# .*playwright.*timeout.*               # Playwright specs that bite under CPU pressure
+
+# === Network-dependent integration ===
+# ^integration:.*\.network$             # integration tests that hit the network
+
+# ── End of starter examples. Add your project's real flakes below. ──
