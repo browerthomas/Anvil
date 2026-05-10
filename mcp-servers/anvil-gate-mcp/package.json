@@ -1,0 +1,47 @@
+{
+  "name": "@anvil/gate-mcp",
+  "version": "0.1.0",
+  "description": "MCP server wrapping anvil's pre-merge gate. Exposes verify_pr() to any MCP-capable host (Claude Code, Cursor, Windsurf, ChatGPT desktop, etc).",
+  "license": "MIT",
+  "author": "Thomas Brower",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/browerthomas/Anvil.git",
+    "directory": "mcp-servers/anvil-gate-mcp"
+  },
+  "homepage": "https://github.com/browerthomas/Anvil#mcp-servers",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "anvil-gate-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "anvil",
+    "pre-merge",
+    "code-review",
+    "ci-gate"
+  ]
+}
