@@ -30,6 +30,9 @@ av_ok "wrote $ANVIL_DIR/forbidden-patterns.txt"
 cp "$ANVIL_ROOT/skills/pre-merge-gate/templates/pre-merge-gate.config.example.json" "$ANVIL_DIR/pre-merge-gate.config.json"
 av_ok "wrote $ANVIL_DIR/pre-merge-gate.config.json"
 
+cp "$ANVIL_ROOT/skills/pre-merge-gate/templates/known-flakes.example.txt" "$ANVIL_DIR/known-flakes.txt"
+av_ok "wrote $ANVIL_DIR/known-flakes.txt"
+
 cat > "$ANVIL_DIR/dispatch-defaults.txt" <<'EOF'
 # Project-specific hard constraints appended to every /dispatch-slice prompt.
 # One per line. Lines starting with # are ignored.

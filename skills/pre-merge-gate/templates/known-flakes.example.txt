@@ -1,0 +1,29 @@
+# anvil/pre-merge-gate + /grind — known flake patterns
+#
+# One regex per line. Matches against test names + file paths.
+# Comments start with #. Empty lines ignored.
+#
+# When a test in this list fails, /pre-merge-gate retries it once before
+# declaring failure (set retry behavior in pre-merge-gate.config.json).
+# /grind treats matching test failures as infra-fail (retry once, then
+# treat as slice-fail).
+#
+# Drop this file at .anvil/known-flakes.txt in your repo and tune to
+# your project's flake-prone tests.
+#
+# This example shows the kind of patterns we use. Adapt to yours.
+
+# === Generic CI flakes ===
+^integration:.*\.network$           # network-dependent integration tests
+
+# === Test-runner concurrency flakes ===
+.*regenerate-credit-race.*           # known race in test-runner serialization
+.*queue-contention.*                  # cross-worker DB races
+
+# === Known external-dependency timeouts ===
+.*stripe-webhook-replay.*             # Stripe sandbox occasional latency
+.*lulu-fulfillment-poll.*             # Lulu sandbox eventual-consistency window
+
+# === Known browser-test flakes ===
+.*screenshot-diff.*                   # subpixel rendering drift
+.*timing-sensitive-animation.*        # CSS animation race
