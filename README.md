@@ -147,11 +147,31 @@ A minimal plan: [`examples/hello-world-plan.md`](examples/hello-world-plan.md) �
 
 ## Installation modes
 
+### Full install (all 8 skills)
+
 ```bash
 ~/Desktop/anvil/bin/install.sh           # symlink (development; edits live)
 ~/Desktop/anvil/bin/install.sh --copy    # copy (stable; survives folder moves)
 ~/Desktop/anvil/bin/uninstall.sh         # remove all anvil skills (leaves others)
 ```
+
+### Group install (a subset)
+
+Anvil ships as three composable plugin groups. Install only what you need:
+
+```bash
+~/Desktop/anvil/bin/install.sh --group core           # 3 skills: sweep + self-review + recap
+~/Desktop/anvil/bin/install.sh --group pr             # 3 skills: dispatch + gate + auto-merge
+~/Desktop/anvil/bin/install.sh --group orchestrator   # 2 skills: spec + grind
+```
+
+| Group | Skills | When to install |
+|---|---|---|
+| `anvil-core` | `/sweep-worktrees` `/self-review` `/recap` | Everyday helpers — useful even without the rest |
+| `anvil-pr` | `/dispatch-slice` `/pre-merge-gate` `/auto-merge` | Per-PR cycle — recommended with `anvil-core` |
+| `anvil-orchestrator` | `/spec` `/grind` | End-to-end plan-to-merged-PR drive — composes `anvil-pr` |
+
+Higher groups recommend lower groups but don't require them. See [`groups/README.md`](groups/README.md) for the layered model.
 
 Anvil installs each skill at `~/.claude/skills/<name>/` so Claude Code discovers them via the standard skills directory.
 

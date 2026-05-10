@@ -2,16 +2,19 @@
 
 All notable changes to anvil are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [Unreleased] — v0.2 work in progress
 
-### Phase 1 (queued)
-- `/dispatch-slice` implementation
-- `/pre-merge-gate` implementation with project config + forbidden-patterns
-- `/auto-merge` implementation
+### Added
+- **Composable plugin groups** — anvil now ships as three groups (`anvil-core`, `anvil-pr`, `anvil-orchestrator`) with per-group plugin manifests under `groups/`. `install.sh --group <name>` installs just one. The top-level manifest stays as the meta-bundle that installs all 8 skills.
+- `groups/README.md` documenting the three-layer composition model.
 
-### Phase 2 (queued)
-- `/spec` interactive plan capture
-- `/grind` end-to-end orchestrator
+### v0.2 roadmap
+- Append-only event log for `.anvil/grind-state.json` + optional Langfuse adapter.
+- Structured ASK verbs (LangGraph HITL pattern) for operator decision points.
+- OpenSpec change-folder plan layout (`<slug>/{proposal.md, specs/, design.md, tasks.md}`).
+- MCP-ize `/pre-merge-gate` so Cursor + Windsurf + ChatGPT desktop can call the same gate.
+
+See [ROADMAP.md](ROADMAP.md) for full v0.2+ priorities.
 
 ## [0.1.0] — 2026-05-10
 

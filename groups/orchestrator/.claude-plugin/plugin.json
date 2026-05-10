@@ -1,0 +1,26 @@
+{
+  "name": "anvil-orchestrator",
+  "version": "0.1.0",
+  "description": "anvil end-to-end orchestrator — interactive plan capture (/spec) and full plan-to-merged-PR drive (/grind). Pauses only at operator decision points you defined. Composes anvil-pr + anvil-core under the hood.",
+  "tagline": "Lay the blueprint. Run the forge.",
+  "author": "Thomas Brower",
+  "license": "MIT",
+  "homepage": "https://github.com/browerthomas/Anvil",
+  "repository": "https://github.com/browerthomas/Anvil.git",
+  "skills": [
+    "../../skills/spec",
+    "../../skills/grind"
+  ],
+  "templates": [
+    "../../templates/plan-template.md"
+  ],
+  "examples": [
+    "../../examples/example-plan.md",
+    "../../examples/hello-world-plan.md"
+  ],
+  "requires": {
+    "tools": ["gh", "git", "node", "npm", "jq"],
+    "platforms": ["darwin", "linux"]
+  },
+  "recommends": ["anvil-pr", "anvil-core"]
+}
