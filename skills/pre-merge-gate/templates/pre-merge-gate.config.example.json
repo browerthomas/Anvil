@@ -1,0 +1,47 @@
+{
+  "_comment": "Drop this at .anvil/pre-merge-gate.config.json in your repo. /pre-merge-gate reads it. Defaults below match the the project; tune to yours.",
+
+  "rebaseAgainst": "origin/main",
+  "skipRebase": false,
+
+  "typecheck": {
+    "enabled": true,
+    "patterns": ["**/tsconfig.json"],
+    "exclusions": ["**/node_modules/**"]
+  },
+
+  "tests": {
+    "enabled": true,
+    "command": "npx vitest run",
+    "configPatterns": ["**/vitest.config.*"],
+    "exclusions": ["**/node_modules/**"],
+    "baseline": "auto",
+    "_baseline_modes": "auto = read from main HEAD; <number> = absolute count; +N = baseline + N",
+    "target": "$baseline+",
+    "allowFlakeRetries": 1,
+    "knownFlakes": [
+      "test/integration/regenerate-credit-race.test.js"
+    ]
+  },
+
+  "fitness": {
+    "enabled": true,
+    "testPath": "v3/test/architecture/fitness.test.ts",
+    "_alternativeTestPath": "test/architecture/fitness.test.js"
+  },
+
+  "forbiddenPatterns": {
+    "enabled": true,
+    "configPath": ".anvil/forbidden-patterns.txt"
+  },
+
+  "ci": {
+    "enabled": true,
+    "_comment": "Verify GH PR checks before merging. Set false to skip (e.g. local-only repo).",
+    "requirePassOrSkipping": true,
+    "blockingChecks": ["test", "secrets"],
+    "ignorablePending": ["deploy-staging", "deploy-production", "smoke-test"]
+  },
+
+  "verbose": false
+}

@@ -1,0 +1,39 @@
+# Pattern : path-glob (find-style) : exclusion-glob (optional, semicolon-separated) : human comment
+#
+# Format:
+#   <regex pattern> :: <path glob> :: <exclusion glob (optional)> :: <comment>
+#
+# `:` is the field separator (use `::` literally; the parser splits on `::`).
+# Lines starting with `#` are comments. Empty lines ignored.
+# `<path glob>` is matched via `find -path`. `<exclusion glob>` is matched via `find -not -path`.
+#
+# Drop this file at `.anvil/forbidden-patterns.txt` in your repo and /pre-merge-gate will read it.
+# This example shows patterns we use in the the project — adapt to yours.
+
+# === <deprecated-data-shape>
+<deprecated-data-shape>
+
+# === <low-level-mutator> removal ===
+<low-level-mutator> :: v3/src/** :: :: <low-level-mutator> calls in v3 (use <your domain service> commands instead)
+
+# === Direct env access outside config ===
+process\.env\. :: v3/src/** :: src/config/**;test/** :: direct env reads outside src/config/
+
+# === await-in-tx (closes #969) ===
+BEGIN IMMEDIATE.{0,200}await :: v3/src/** :: :: await between BEGIN and COMMIT
+
+# === Raw Sentry SDK outside boundary ===
+@sentry/node :: v3/src/** :: src/observability/sentry.ts :: raw Sentry SDK outside the typed boundary
+
+# === Raw Anthropic SDK outside <your model gateway> ===
+<vendor SDK> :: src/** :: src/model/** :: raw Anthropic SDK outside <your model gateway>
+
+# === console.log in production code ===
+console\.log :: src/** :: test/**;**/scripts/** :: console.log in production code (use structured logger)
+
+# === Hardcoded API keys / secrets shapes ===
+sk-[a-zA-Z0-9]{20,} :: src/**;test/** :: :: hardcoded sk- prefixed secret
+sk_(test|live)_[a-zA-Z0-9]{20,} :: src/**;test/** :: :: hardcoded Stripe key
+
+# === TypeScript any usage in critical paths ===
+:\s*any\b :: src/orders/**;src/payments/** :: :: TypeScript `any` in orders/payments

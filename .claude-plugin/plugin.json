@@ -1,0 +1,33 @@
+{
+  "name": "anvil",
+  "version": "0.1.0",
+  "description": "Forge intent into merged PRs. Plan → orchestrated execution → recap. An open framework for AI-orchestrated engineering work in Claude Code.",
+  "tagline": "Plans come in raw. PRs come out forged.",
+  "author": "anvil contributors",
+  "license": "MIT",
+  "homepage": "https://github.com/<owner>/anvil",
+  "repository": "https://github.com/<owner>/anvil.git",
+  "skills": [
+    "skills/sweep-worktrees",
+    "skills/self-review",
+    "skills/recap",
+    "skills/dispatch-slice",
+    "skills/pre-merge-gate",
+    "skills/auto-merge",
+    "skills/spec",
+    "skills/grind"
+  ],
+  "templates": [
+    "templates/plan-template.md"
+  ],
+  "examples": [
+    "examples/example-plan.md",
+    "examples/hello-world-plan.md"
+  ],
+  "requires": {
+    "tools": ["gh", "git", "node", "npm", "jq"],
+    "optional-tools": ["codex"],
+    "claude-code-version": ">=1.0.0",
+    "platforms": ["darwin", "linux"]
+  }
+}

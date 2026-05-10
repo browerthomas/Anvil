@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>anvil — forge intent into merged PRs</title>
+<meta name="description" content="An open framework for AI-orchestrated engineering work in Claude Code. Plan, grind, recap. No platform lock-in." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M5 18 L 27 18 L 25 22 L 22 22 L 22 26 L 10 26 L 10 22 L 7 22 Z' fill='%23ff7530'/%3E%3Crect x='13' y='14' width='6' height='4' fill='%23ff7530'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg-deep: #050507;
+    --bg: #0a0a0d;
+    --bg-2: #0f0f13;
+    --surface: #16161b;
+    --surface-2: #1c1c22;
+    --surface-3: #232328;
+    --border: #2a2a32;
+    --border-2: #3a3a44;
+    --text: #f0f0f3;
+    --text-2: #a8a8b3;
+    --text-3: #6b6b78;
+    --text-4: #4a4a54;
+    --ember: #ff7530;
+    --ember-2: #ffac4a;
+    --ember-3: #fff0c8;
+    --steel: #8c95a2;
+    --steel-light: #c0c8d4;
+    --steel-dark: #45494f;
+    --green: #5fbf7a;
+    --red: #ff5a4a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* Subtle noise texture */
+    background-image:
+      radial-gradient(ellipse at top, rgba(255, 117, 48, 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(255, 117, 48, 0.02) 0%, transparent 60%);
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.04 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    opacity: 0.5;
+    mix-blend-mode: overlay;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 2; }
+  a { color: inherit; }
+
+  /* Top nav */
+  nav {
+    padding: 22px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(10, 10, 13, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  nav.scrolled { border-bottom-color: var(--border); }
+  .brand {
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.02em;
+    text-transform: lowercase;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .brand-mark { width: 26px; height: 26px; }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+  .nav-links a {
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    color: var(--text);
+    background: var(--surface-2);
+    padding: 7px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .nav-cta:hover { background: var(--surface-3); }
+
+  /* Hero */
+  .hero {
+    padding: 64px 0 96px;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 56px;
+    align-items: center;
+    position: relative;
+  }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ember);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin: 0 0 18px;
+    font-weight: 700;
+    padding: 5px 12px;
+    background: rgba(255, 117, 48, 0.08);
+    border: 1px solid rgba(255, 117, 48, 0.18);
+    border-radius: 100px;
+  }
+  .eyebrow::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ember);
+    box-shadow: 0 0 8px var(--ember);
+  }
+  .hero h1 {
+    margin: 0 0 20px;
+    font-size: 64px;
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    font-weight: 700;
+  }
+  .hero h1 .ember {
+    background: linear-gradient(135deg, var(--ember) 0%, var(--ember-2) 60%, var(--ember-3) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+  }
+  .hero-sub {
+    color: var(--text-2);
+    font-size: 18px;
+    margin: 0 0 32px;
+    max-width: 560px;
+    line-height: 1.6;
+  }
+  .hero-sub strong { color: var(--text); font-weight: 600; }
+  .hero-sub code {
+    color: var(--ember-2);
+    background: var(--surface);
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    border: 1px solid var(--border);
+  }
+  .cta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    background: linear-gradient(135deg, var(--ember) 0%, var(--ember-2) 100%);
+    color: #1a0d04;
+    border-radius: 8px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 15px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 12px rgba(255, 117, 48, 0.25);
+    position: relative;
+    overflow: hidden;
+  }
+  .cta::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -100%;
+    width: 50%;
+    height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transform: rotate(25deg);
+    transition: left 0.5s;
+  }
+  .cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 117, 48, 0.4);
+  }
+  .cta:hover::after { left: 150%; }
+  .cta-secondary {
+    color: var(--text-2);
+    font-size: 14px;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.15s;
+  }
+  .cta-secondary:hover { color: var(--text); border-color: var(--border-2); }
+
+  .hero-art {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 30px 60px rgba(255, 117, 48, 0.15));
+  }
+
+  /* Toolchain strip */
+  .toolchain {
+    padding: 40px 0;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-2);
+  }
+  .toolchain-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--text-3);
+    margin: 0 0 18px;
+    font-weight: 600;
+  }
+  .toolchain-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+    flex-wrap: wrap;
+    color: var(--text-2);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .toolchain-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toolchain-row svg { opacity: 0.7; }
+
+  /* Section base */
+  section.bordered { border-top: 1px solid var(--border); }
+  .section-eyebrow {
+    color: var(--ember);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin: 0 0 10px;
+    font-weight: 700;
+  }
+  .section-title {
+    font-size: 36px;
+    margin: 0 0 14px;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .section-sub { color: var(--text-2); margin: 0 0 44px; max-width: 640px; font-size: 17px; line-height: 1.6; }
+
+  /* How it works — flow diagram */
+  .how { padding: 100px 0; }
+  .flow {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 0;
+    align-items: stretch;
+    margin-top: 16px;
+  }
+  .flow-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px 28px;
+    position: relative;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .flow-step:hover {
+    transform: translateY(-4px);
+    border-color: var(--border-2);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
+  }
+  .flow-step::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--ember), var(--ember-2));
+    border-radius: 16px 16px 0 0;
+  }
+  .flow-step:nth-child(3)::before { background: linear-gradient(90deg, var(--ember-2), var(--ember-3)); }
+  .flow-step:nth-child(5)::before { background: linear-gradient(90deg, var(--steel), var(--steel-light)); }
+
+  .flow-icon { width: 40px; height: 40px; margin-bottom: 18px; }
+  .flow-cmd {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px;
+    color: var(--ember);
+    margin: 0 0 4px;
+    font-weight: 700;
+  }
+  .flow-step:nth-child(3) .flow-cmd { color: var(--ember-2); }
+  .flow-step:nth-child(5) .flow-cmd { color: var(--steel-light); }
+  .flow-verb {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--text-3);
+    margin: 0 0 16px;
+    font-weight: 700;
+  }
+  .flow-step h3 { margin: 0 0 12px; font-size: 22px; font-weight: 700; }
+  .flow-step p { margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.6; }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-4);
+    padding: 0 18px;
+  }
+  .flow-arrow svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Skills section */
+  .skills { padding: 100px 0; }
+  .skill-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .skill-tab {
+    padding: 12px 18px;
+    color: var(--text-3);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .skill-tab:hover { color: var(--text-2); }
+  .skill-tab.active {
+    color: var(--ember);
+    border-bottom-color: var(--ember);
+  }
+  .skill-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  .skill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    transition: border-color 0.15s, transform 0.15s, background 0.15s;
+    position: relative;
+  }
+  .skill:hover {
+    border-color: var(--border-2);
+    background: var(--surface-2);
+    transform: translateY(-2px);
+  }
+  .skill-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .skill-cmd {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px;
+    color: var(--ember);
+    font-weight: 700;
+  }
+  .skill-status {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--surface-3);
+    color: var(--text-3);
+    font-weight: 700;
+  }
+  .skill-status.live { background: rgba(95, 191, 122, 0.15); color: var(--green); }
+  .skill-status.queued { background: rgba(255, 172, 74, 0.15); color: var(--ember-2); }
+  .skill-tag-line {
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  .skill-desc {
+    color: var(--text-2);
+    font-size: 13.5px;
+    margin: 0;
+    line-height: 1.55;
+  }
+
+  /* Quickstart */
+  .quickstart { padding: 100px 0; background: var(--bg-2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .terminal-wrap {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-top: 32px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  }
+  .terminal-bar {
+    background: var(--surface);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .terminal-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--text-4);
+  }
+  .terminal-dot:nth-child(1) { background: #ff5f57; }
+  .terminal-dot:nth-child(2) { background: #ffbd2e; }
+  .terminal-dot:nth-child(3) { background: #28c940; }
+  .terminal-title {
+    margin-left: auto;
+    margin-right: auto;
+    color: var(--text-3);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .terminal {
+    padding: 28px 32px;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.95;
+    overflow-x: auto;
+  }
+  .terminal .prompt { color: var(--ember); user-select: none; font-weight: 700; }
+  .terminal .prompt-claude { color: var(--ember-2); user-select: none; font-weight: 700; }
+  .terminal .cmt { color: var(--text-3); }
+  .terminal .cmd { color: var(--text); }
+  .terminal .out { color: var(--text-2); padding-left: 2ch; }
+  .terminal .ok { color: var(--green); }
+
+  /* Closing */
+  .closing {
+    padding: 100px 0 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .closing::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(255, 117, 48, 0.08) 0%, transparent 60%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .closing-line {
+    font-size: 32px;
+    color: var(--text);
+    margin: 0 0 12px;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    position: relative;
+    z-index: 1;
+  }
+  .closing-sub {
+    color: var(--text-2);
+    font-size: 16px;
+    margin: 0 0 36px;
+    position: relative;
+    z-index: 1;
+  }
+  .closing-cta {
+    position: relative;
+    z-index: 1;
+  }
+  footer {
+    padding: 32px 0 60px;
+    text-align: center;
+    color: var(--text-3);
+    font-size: 12.5px;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--text-2); text-decoration: none; }
+  footer a:hover { color: var(--text); }
+  footer .footer-row {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    align-items: center;
+    margin-top: 8px;
+  }
+  footer .sep { color: var(--text-4); }
+
+  @media (max-width: 880px) {
+    .hero { grid-template-columns: 1fr; gap: 24px; padding: 32px 0 56px; }
+    .hero h1 { font-size: 44px; }
+    .flow { grid-template-columns: 1fr; }
+    .flow-arrow { transform: rotate(90deg); padding: 12px 0; }
+    .skill-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="wrap" id="topnav">
+  <a class="brand" href="#">
+    <svg class="brand-mark" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <linearGradient id="brand-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ff7530"/>
+          <stop offset="100%" stop-color="#ffac4a"/>
+        </linearGradient>
+      </defs>
+      <path d="M5 18 L 27 18 L 25 22 L 22 22 L 22 26 L 10 26 L 10 22 L 7 22 Z" fill="url(#brand-grad)"/>
+      <rect x="13" y="14" width="6" height="4" fill="url(#brand-grad)"/>
+    </svg>
+    anvil
+  </a>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#skills">Skills</a>
+    <a href="#start">Quickstart</a>
+    <a class="nav-cta" href="https://github.com" target="_blank">GitHub</a>
+  </div>
+</nav>
+
+<section class="hero wrap">
+  <div>
+    <p class="eyebrow">Open framework for Claude Code</p>
+    <h1>Forge intent into <span class="ember">merged PRs.</span></h1>
+    <p class="hero-sub">Plans come in raw. PRs come out forged. Compose <code>/spec</code> → <code>/grind</code> → <code>/recap</code>. Markdown skills, no platform lock-in, no monthly fee. <strong>Lives in your repo, runs in your IDE.</strong></p>
+    <div class="cta-row">
+      <a class="cta" href="#start">
+        Stoke the forge
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>
+      </a>
+      <a class="cta-secondary" href="#how">Read the blueprint</a>
+    </div>
+  </div>
+
+  <!-- Hero illustration: minimalist iconographic hammer + anvil + glowing billet (Lucide-style stroke geometry, scaled up) -->
+  <svg class="hero-art" viewBox="0 0 600 520" xmlns="http://www.w3.org/2000/svg" aria-label="A hammer striking a glowing billet on an anvil">
+    <defs>
+      <!-- Forge fire glow (background) -->
+      <radialGradient id="forge-glow" cx="50%" cy="60%" r="60%">
+        <stop offset="0%" stop-color="#ffac4a" stop-opacity="0.6"/>
+        <stop offset="40%" stop-color="#ff7530" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#ff5520" stop-opacity="0"/>
+      </radialGradient>
+      <!-- Anvil metal -->
+      <linearGradient id="anvil-top" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#5a626d"/>
+        <stop offset="20%" stop-color="#3d434c"/>
+        <stop offset="100%" stop-color="#1f242b"/>
+      </linearGradient>
+      <linearGradient id="anvil-side" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#2c3038"/>
+        <stop offset="100%" stop-color="#13161b"/>
+      </linearGradient>
+      <linearGradient id="anvil-base" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#262a32"/>
+        <stop offset="100%" stop-color="#0e1014"/>
+      </linearGradient>
+      <!-- Glowing billet -->
+      <linearGradient id="billet" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#5a626d"/>
+        <stop offset="20%" stop-color="#ff5a30"/>
+        <stop offset="50%" stop-color="#ffac4a"/>
+        <stop offset="80%" stop-color="#ffe6a8"/>
+        <stop offset="100%" stop-color="#fff5cc"/>
+      </linearGradient>
+      <radialGradient id="billet-glow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fff5cc" stop-opacity="0.8"/>
+        <stop offset="40%" stop-color="#ffac4a" stop-opacity="0.4"/>
+        <stop offset="100%" stop-color="#ff7530" stop-opacity="0"/>
+      </radialGradient>
+      <!-- Spark/ember -->
+      <radialGradient id="spark" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fff5cc"/>
+        <stop offset="50%" stop-color="#ffac4a"/>
+        <stop offset="100%" stop-color="#ff7530" stop-opacity="0"/>
+      </radialGradient>
+      <!-- Forge brick -->
+      <linearGradient id="brick" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#3a2218"/>
+        <stop offset="100%" stop-color="#1c100a"/>
+      </linearGradient>
+      <!-- Filter for glow -->
+      <filter id="glow-filter" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="4" result="blur"/>
+        <feMerge>
+          <feMergeNode in="blur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+
+    <!-- Background: deep forge ambient glow -->
+    <ellipse cx="320" cy="380" rx="320" ry="120" fill="url(#forge-glow)"/>
+
+    <!-- Forge silhouette in background (brick masonry hint) -->
+    <g opacity="0.45">
+      <rect x="60" y="100" width="120" height="280" fill="url(#brick)"/>
+      <rect x="60" y="100" width="120" height="2" fill="#1a0d04"/>
+      <rect x="60" y="160" width="120" height="2" fill="#1a0d04"/>
+      <rect x="60" y="220" width="120" height="2" fill="#1a0d04"/>
+      <rect x="60" y="280" width="120" height="2" fill="#1a0d04"/>
+      <!-- Brick courses -->
+      <line x1="100" y1="100" x2="100" y2="160" stroke="#1a0d04" stroke-width="1"/>
+      <line x1="140" y1="100" x2="140" y2="160" stroke="#1a0d04" stroke-width="1"/>
+      <line x1="80" y1="160" x2="80" y2="220" stroke="#1a0d04" stroke-width="1"/>
+      <line x1="120" y1="160" x2="120" y2="220" stroke="#1a0d04" stroke-width="1"/>
+      <line x1="160" y1="160" x2="160" y2="220" stroke="#1a0d04" stroke-width="1"/>
+      <line x1="100" y1="220" x2="100" y2="280" stroke="#1a0d04" stroke-width="1"/>
+      <line x1="140" y1="220" x2="140" y2="280" stroke="#1a0d04" stroke-width="1"/>
+
+      <!-- Forge mouth opening with fire glow -->
+      <ellipse cx="120" cy="280" rx="44" ry="28" fill="#ff5520" opacity="0.7" filter="url(#glow-filter)"/>
+      <ellipse cx="120" cy="280" rx="32" ry="20" fill="#ffac4a" opacity="0.9"/>
+      <ellipse cx="120" cy="282" rx="22" ry="14" fill="#fff5cc" opacity="0.7"/>
+    </g>
+
+    <!-- Floor shadow under anvil -->
+    <ellipse cx="380" cy="490" rx="200" ry="14" fill="#000" opacity="0.6"/>
+
+    <!-- ANVIL (proper anatomy: horn + step + face + heel + waist + base) -->
+    <g transform="translate(220, 290)">
+      <!-- Base (wide bottom) -->
+      <path d="M 30 130 L 30 100 Q 30 90 40 90 L 240 90 Q 250 90 250 100 L 250 130 Z" fill="url(#anvil-base)"/>
+      <rect x="30" y="100" width="220" height="2" fill="#3a3f48" opacity="0.6"/>
+      <!-- Waist (narrower middle) -->
+      <path d="M 60 90 Q 50 85 50 70 L 50 50 Q 50 35 70 35 L 210 35 Q 230 35 230 50 L 230 70 Q 230 85 220 90 Z" fill="url(#anvil-side)"/>
+      <!-- Top face + horn area -->
+      <g>
+        <!-- Heel (square back/right) -->
+        <path d="M 200 35 L 248 35 L 248 12 L 200 12 Z" fill="url(#anvil-top)"/>
+        <!-- Step (just below face level, between heel and face) -->
+        <rect x="195" y="12" width="5" height="23" fill="#1f242b"/>
+        <!-- Face (main top working surface) -->
+        <rect x="50" y="0" width="150" height="35" fill="url(#anvil-top)"/>
+        <!-- Top edge highlight -->
+        <rect x="50" y="0" width="150" height="2.5" fill="#7a8190"/>
+        <!-- Front-face shadow line -->
+        <rect x="50" y="32" width="150" height="3" fill="#0e1014"/>
+        <!-- Hardy hole (square hole near heel) -->
+        <rect x="180" y="6" width="10" height="10" fill="#0a0c10" rx="1"/>
+        <rect x="180" y="6" width="10" height="2" fill="#1a1d23"/>
+        <!-- Pritchel hole (small round hole) -->
+        <circle cx="167" cy="11" r="3" fill="#0a0c10"/>
+        <!-- Horn (rounded taper on left) -->
+        <path d="M 50 4 Q 30 4 12 14 Q 0 22 0 32 L 50 32 Z" fill="url(#anvil-top)"/>
+        <path d="M 50 4 Q 30 4 12 14 L 12 16 Q 30 6 50 6 Z" fill="#5d6473"/>
+        <path d="M 0 32 Q 0 22 12 14 L 12 32 Z" fill="#0e1014"/>
+      </g>
+    </g>
+
+    <!-- BILLET (glowing iron piece on anvil face — focal point) -->
+    <g transform="translate(280, 278)">
+      <!-- Outer glow halo (large, soft) -->
+      <ellipse cx="90" cy="6" rx="130" ry="20" fill="url(#billet-glow)" opacity="0.7" filter="url(#glow-filter)"/>
+      <!-- Inner glow halo (tighter, brighter) -->
+      <rect x="-10" y="-8" width="180" height="28" fill="url(#billet-glow)" rx="6" filter="url(#glow-filter)"/>
+      <!-- Billet body (heated end on right) -->
+      <rect x="0" y="0" width="170" height="12" fill="url(#billet)" rx="2"/>
+      <!-- Top highlight -->
+      <rect x="2" y="0" width="166" height="2" fill="#fff5cc" opacity="0.7"/>
+      <!-- Bright impact spot at right end (where hammer struck) -->
+      <circle cx="160" cy="6" r="6" fill="#fff5cc" opacity="0.85" filter="url(#glow-filter)">
+        <animate attributeName="opacity" values="0.85;0.6;0.85" dur="1.4s" repeatCount="indefinite"/>
+        <animate attributeName="r" values="6;5;6" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+      <!-- Heat shimmer above -->
+      <ellipse cx="100" cy="-4" rx="60" ry="2.5" fill="#ffac4a" opacity="0.45">
+        <animate attributeName="opacity" values="0.45;0.2;0.45" dur="1.6s" repeatCount="indefinite"/>
+      </ellipse>
+    </g>
+
+    <!-- (Hammer removed — composition reads cleaner without it. Metaphor carried by:
+         brand mark in nav, "forge/strike/hammer" verbs in copy, glowing billet, sparks, ember glow.) -->
+
+    <!-- SPARKS — rising from impact point (right end of billet, x≈440-450) -->
+    <!-- Spread the source slightly so they look organic, not point-spawned -->
+    <g>
+      <!-- Bright primary ember (rises straight up) -->
+      <circle cx="440" cy="282" r="3" fill="url(#spark)" opacity="0.95">
+        <animate attributeName="cy" values="282;180;282" dur="1.4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;0;1" dur="1.4s" repeatCount="indefinite"/>
+        <animate attributeName="r" values="3;1.2;3" dur="1.4s" repeatCount="indefinite"/>
+      </circle>
+      <!-- Right-arc embers -->
+      <circle cx="442" cy="282" r="2.2" fill="url(#spark)" opacity="0.9">
+        <animate attributeName="cy" values="282;180;282" dur="1.7s" repeatCount="indefinite"/>
+        <animate attributeName="cx" values="442;520;442" dur="1.7s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;0;1" dur="1.7s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="445" cy="280" r="1.4" fill="#ffac4a" opacity="0.85">
+        <animate attributeName="cy" values="280;180;280" dur="1.9s" repeatCount="indefinite"/>
+        <animate attributeName="cx" values="445;560;445" dur="1.9s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;0;1" dur="1.9s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="448" cy="282" r="1.5" fill="#ff7530" opacity="0.85">
+        <animate attributeName="cy" values="282;160;282" dur="2.1s" repeatCount="indefinite"/>
+        <animate attributeName="cx" values="448;590;448" dur="2.1s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;0;1" dur="2.1s" repeatCount="indefinite"/>
+      </circle>
+      <!-- Left-arc embers (fewer, suggest hammer's swing path) -->
+      <circle cx="437" cy="282" r="1.8" fill="#fff5cc" opacity="0.95">
+        <animate attributeName="cy" values="282;200;282" dur="1.2s" repeatCount="indefinite"/>
+        <animate attributeName="cx" values="437;400;437" dur="1.2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;0;1" dur="1.2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="434" cy="284" r="1.2" fill="#ffac4a" opacity="0.9">
+        <animate attributeName="cy" values="284;240;284" dur="1.0s" repeatCount="indefinite"/>
+        <animate attributeName="cx" values="434;395;434" dur="1.0s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;0;1" dur="1.0s" repeatCount="indefinite"/>
+      </circle>
+      <!-- Tiny secondary embers -->
+      <circle cx="441" cy="284" r="0.8" fill="#fff5cc" opacity="0.9">
+        <animate attributeName="cy" values="284;230;284" dur="1.6s" repeatCount="indefinite"/>
+        <animate attributeName="cx" values="441;460;441" dur="1.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;0;1" dur="1.6s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- Scale / hammer-scale (small black flecks falling off the side of the anvil) -->
+    <g opacity="0.6">
+      <circle cx="435" cy="320" r="0.8" fill="#0e1014">
+        <animate attributeName="cy" values="320;360;320" dur="1.8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.6;0;0.6" dur="1.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="442" cy="318" r="0.7" fill="#0e1014">
+        <animate attributeName="cy" values="318;365;318" dur="2.1s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.6;0;0.6" dur="2.1s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- Heat shimmer rising lines (subtle) -->
+    <g opacity="0.25">
+      <path d="M300 270 Q 305 250 300 230 T 305 200" stroke="#ff7530" stroke-width="1" fill="none">
+        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="2.4s" repeatCount="indefinite"/>
+      </path>
+      <path d="M340 270 Q 345 252 340 234 T 345 210" stroke="#ff7530" stroke-width="1" fill="none">
+        <animate attributeName="opacity" values="0.05;0.25;0.05" dur="2.4s" repeatCount="indefinite"/>
+      </path>
+      <path d="M380 270 Q 385 250 380 230 T 385 200" stroke="#ff7530" stroke-width="1" fill="none">
+        <animate attributeName="opacity" values="0.25;0.05;0.25" dur="2.8s" repeatCount="indefinite"/>
+      </path>
+    </g>
+  </svg>
+</section>
+
+<!-- TOOLCHAIN STRIP -->
+<div class="toolchain">
+  <div class="wrap">
+    <p class="toolchain-label">Composes natively with</p>
+    <div class="toolchain-row">
+      <span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 4v8l7 3 7-3V4z"/></svg>
+        Claude Code
+      </span>
+      <span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2v12"/></svg>
+        GitHub CLI
+      </span>
+      <span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm3.5 12L8 8.5 4.5 12 3 10.5 6.5 7 3 3.5 4.5 2 8 5.5 11.5 2 13 3.5 9.5 7l3.5 3.5z"/></svg>
+        Codex CLI
+      </span>
+      <span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M8 5v6"/></svg>
+        git worktree
+      </span>
+      <span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><circle cx="3" cy="8" r="2"/><circle cx="8" cy="8" r="2"/><circle cx="13" cy="8" r="2"/></svg>
+        any test runner
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS — flow diagram -->
+<section id="how" class="how wrap bordered">
+  <p class="section-eyebrow">Three phases</p>
+  <h2 class="section-title">Lay it. Strike it. Stamp it.</h2>
+  <p class="section-sub">Each phase is a Claude Code skill. Each composes the layer below. Adopt incrementally — they work standalone, and they work together.</p>
+
+  <div class="flow">
+    <div class="flow-step">
+      <svg class="flow-icon" viewBox="0 0 40 40" fill="none" stroke="#ff7530" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="6" y="4" width="28" height="32" rx="2"/>
+        <path d="M12 12h16M12 18h16M12 24h10"/>
+        <circle cx="29" cy="28" r="2" fill="#ff7530"/>
+      </svg>
+      <p class="flow-cmd">/spec</p>
+      <p class="flow-verb">Lay the blueprint</p>
+      <h3>Plan</h3>
+      <p>Capture intent. Probe for ambiguity until the slice manifest is unambiguous. Lock the plan, mark operator decision points, ship it to the orchestrator.</p>
+    </div>
+    <div class="flow-arrow">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M6 16h20M20 10l6 6-6 6"/>
+      </svg>
+    </div>
+    <div class="flow-step">
+      <svg class="flow-icon" viewBox="0 0 40 40" fill="none" stroke="#ffac4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 28L20 8l12 20"/>
+        <path d="M8 28h24"/>
+        <circle cx="14" cy="22" r="1.5" fill="#ffac4a"/>
+        <circle cx="20" cy="20" r="1.5" fill="#ffac4a"/>
+        <circle cx="26" cy="22" r="1.5" fill="#ffac4a"/>
+      </svg>
+      <p class="flow-cmd">/grind</p>
+      <p class="flow-verb">Run the forge</p>
+      <h3>Forge</h3>
+      <p>Heat the plan. Strike per slice. Agents in parallel worktrees, adversarial review, pre-merge gate, auto-merge on green. Pauses only at decision points you defined.</p>
+    </div>
+    <div class="flow-arrow">
+      <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M6 16h20M20 10l6 6-6 6"/>
+      </svg>
+    </div>
+    <div class="flow-step">
+      <svg class="flow-icon" viewBox="0 0 40 40" fill="none" stroke="#c0c8d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="6" y="6" width="28" height="28" rx="3"/>
+        <path d="M12 14h16M12 20h16M12 26h12"/>
+        <circle cx="30" cy="14" r="2" fill="#5fbf7a" stroke="#5fbf7a"/>
+      </svg>
+      <p class="flow-cmd">/recap</p>
+      <p class="flow-verb">Stamp the work</p>
+      <h3>Recap</h3>
+      <p>A scannable artifact you can share, archive, or fold into the next plan. PRs shipped, tests added, lessons learned, loose ends.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills" class="skills wrap bordered">
+  <p class="section-eyebrow">The toolkit</p>
+  <h2 class="section-title">Eight skills. One toolbox.</h2>
+  <p class="section-sub">Each stands alone. Together they're a framework. Markdown files in <code style="font-family:'JetBrains Mono',monospace;background:var(--surface);padding:2px 7px;border-radius:4px;font-size:14px;color:var(--ember-2);border:1px solid var(--border);">~/.claude/skills/</code> — no compilation, no platform.</p>
+
+  <div class="skill-grid">
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/spec</span>
+        <span class="skill-status queued">spec'd</span>
+      </div>
+      <p class="skill-tag-line">Lay the blueprint</p>
+      <p class="skill-desc">Interactive plan capture. Probes for detail using the template, runs adversarial validation, outputs structured plan markdown.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/grind</span>
+        <span class="skill-status queued">spec'd</span>
+      </div>
+      <p class="skill-tag-line">Run the forge</p>
+      <p class="skill-desc">End-to-end orchestrator. Reads a plan, dispatches in dep order, gates merges, files follow-ups, recaps. The conductor.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/dispatch-slice</span>
+        <span class="skill-status queued">spec'd</span>
+      </div>
+      <p class="skill-tag-line">Strike a billet</p>
+      <p class="skill-desc">Codifies the agent prompt template — worktree, deps, commit format, return shape. Three-line invocation in place of 600-word briefs.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/pre-merge-gate</span>
+        <span class="skill-status queued">spec'd</span>
+      </div>
+      <p class="skill-tag-line">Inspect the seam</p>
+      <p class="skill-desc">Combinator: rebase + tsc + vitest + fitness ratchets + grep-for-forbidden-patterns. One verdict, six manual checks gone.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/auto-merge</span>
+        <span class="skill-status queued">spec'd</span>
+      </div>
+      <p class="skill-tag-line">Quench and ship</p>
+      <p class="skill-desc">When CI green: squash-merge + delete branch + wipe worktree + sync main. One call replaces five manual operations.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/self-review</span>
+        <span class="skill-status live">live</span>
+      </div>
+      <p class="skill-tag-line">Test the temper</p>
+      <p class="skill-desc">Adversarial diff review via Opus sub-agent. Codex-fallback when subscription is rate-limited. Structured P0/P1/P2/P3 findings.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/sweep-worktrees</span>
+        <span class="skill-status live">live</span>
+      </div>
+      <p class="skill-tag-line">Reset the workshop</p>
+      <p class="skill-desc">Bulk-clean stale worktrees + branches. Handles iCloud-evicted node_modules, stale git locks, force-deletes by PR-merge status.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/recap</span>
+        <span class="skill-status live">live</span>
+      </div>
+      <p class="skill-tag-line">Stamp the work</p>
+      <p class="skill-desc">Visual HTML session report — PRs, tests, lessons, loose ends. Pairs with session memory for durable + readable record.</p>
+    </div>
+  </div>
+</section>
+
+<!-- QUICKSTART -->
+<section id="start" class="quickstart">
+  <div class="wrap">
+    <p class="section-eyebrow">Get started</p>
+    <h2 class="section-title">Heat it. Strike it.</h2>
+    <p class="section-sub">Five minutes from clone to first strike. Symlink-mode means edits to skills are live immediately.</p>
+
+    <div class="terminal-wrap">
+      <div class="terminal-bar">
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <div class="terminal-title">~/Desktop/anvil</div>
+      </div>
+      <div class="terminal">
+<span class="cmt"># 1. Heat the forge — verify your environment</span><br/>
+<span class="prompt">$</span> <span class="cmd">~/Desktop/anvil/bin/preflight.sh</span><br/>
+<span class="out ok">  ✓ git, gh, node, jq found</span><br/>
+<span class="out ok">  ✓ ~/.claude/skills/ writable</span><br/>
+<span class="out ok">  ✓ find -delete works</span><br/>
+<span class="out ok">  preflight clean — ready to install</span><br/><br/>
+
+<span class="cmt"># 2. Stoke it — install the skills</span><br/>
+<span class="prompt">$</span> <span class="cmd">~/Desktop/anvil/bin/install.sh</span><br/>
+<span class="out ok">  + sweep-worktrees</span><br/>
+<span class="out ok">  + self-review</span><br/>
+<span class="out ok">  + recap</span><br/>
+<span class="out ok">  + dispatch-slice</span><br/>
+<span class="out ok">  + pre-merge-gate</span><br/>
+<span class="out ok">  + auto-merge</span><br/>
+<span class="out ok">  + spec</span><br/>
+<span class="out ok">  + grind</span><br/>
+<span class="out ok">  installed 8 skills</span><br/><br/>
+
+<span class="cmt"># 3. Strike — capture a plan, then run it</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/spec "what you want built"</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/grind docs/plans/&lt;slug&gt;.md</span><br/><br/>
+
+<span class="cmt"># 4. Stamp — recap when the dust settles</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/recap</span><br/>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSING -->
+<section class="closing wrap">
+  <p class="closing-line">Built on Claude Code. Anvil is open source.</p>
+  <p class="closing-sub">Your plan, your hammer, your ship.</p>
+  <a class="cta closing-cta" href="https://github.com" target="_blank">
+    Clone on GitHub
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>
+  </a>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>v0.1 — phase 0 (manual composition). Phase 1 (inner-loop trio) shipping next sprint.</p>
+    <div class="footer-row">
+      <a href="https://github.com" target="_blank">GitHub</a>
+      <span class="sep">·</span>
+      <a href="docs/architecture.md">Architecture</a>
+      <span class="sep">·</span>
+      <a href="examples/example-plan.md">Example plan</a>
+      <span class="sep">·</span>
+      <a href="LICENSE">MIT license</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Sticky nav border-on-scroll
+  const nav = document.getElementById('topnav');
+  let scrolled = false;
+  window.addEventListener('scroll', () => {
+    const isScrolled = window.scrollY > 20;
+    if (isScrolled !== scrolled) {
+      scrolled = isScrolled;
+      nav.classList.toggle('scrolled', scrolled);
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+build/
+*.tsbuildinfo
+
+# Environment + secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*~
+
+# iCloud Drive conflict copies (operator's Mac syncs Desktop to iCloud)
+* 2.md
+* 2.ts
+* 2.tsx
+* 2.js
+* 2.json
+* 2.sql
+* 2.yml
+*\ [0-9].md
+*\ [0-9].ts
+
+# anvil per-repo state (orchestration runtime, log artifacts)
+.anvil/grind-state.json
+.anvil/*.log
+.codex-log/
+
+# claude code session artifacts (operator-local)
+.claude/cache/
+~/.claude/showme/
+
+# Test outputs
+coverage/
+.vitest/
+
+# Local notes / scratch
+NOTES.local.md
+TODO.local.md
+scratch/

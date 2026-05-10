@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# anvil uninstall — removes anvil skills from ~/.claude/skills/
+
+set -eu
+
+ANVIL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SKILLS_DIR="${HOME}/.claude/skills"
+
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+RESET='\033[0m'
+
+echo
+printf "${GREEN}anvil uninstall${RESET}\n"
+echo "  removing skills installed from: $ANVIL_ROOT/skills/"
+echo "  target: $SKILLS_DIR/"
+echo
+
+REMOVED=0
+KEPT=0
+
+for skill_dir in "$ANVIL_ROOT"/skills/*/; do
+  skill_name=$(basename "$skill_dir")
+  target="$SKILLS_DIR/$skill_name"
+
+  if [ -L "$target" ]; then
+    if [ "$(readlink "$target")" = "${skill_dir%/}" ] || [ "$(readlink "$target")" = "$skill_dir" ]; then
+      rm "$target"
+      printf "  ${GREEN}-${RESET} %s (symlink removed)\n" "$skill_name"
+      REMOVED=$((REMOVED + 1))
+    else
+      printf "  ${YELLOW}~${RESET} %s symlinked elsewhere, keeping\n" "$skill_name"
+      KEPT=$((KEPT + 1))
+    fi
+  elif [ -d "$target" ]; then
+    # Copy-mode install. Confirm anvil-origin via SKILL.md content match.
+    if [ -f "$target/SKILL.md" ] && [ -f "$skill_dir/SKILL.md" ] && cmp -s "$target/SKILL.md" "$skill_dir/SKILL.md"; then
+      rm -rf "$target"
+      printf "  ${GREEN}-${RESET} %s (copy removed)\n" "$skill_name"
+      REMOVED=$((REMOVED + 1))
+    else
+      printf "  ${YELLOW}~${RESET} %s exists but does not match anvil, keeping\n" "$skill_name"
+      KEPT=$((KEPT + 1))
+    fi
+  fi
+done
+
+echo
+printf "${GREEN}removed${RESET} %d, kept %d non-anvil skills\n" "$REMOVED" "$KEPT"
