@@ -42,7 +42,7 @@ Anvil codifies that loop so it stops being something you re-derive every session
 
 ## Status
 
-**v0.3** — production-ready. All eight skills shipped, plus plan validator, multi-critic review, failure-mode triage, append-only event log, and a Claude Code plugin manifest. See [`CHANGELOG.md`](CHANGELOG.md) for what landed in each release and [`ROADMAP.md`](ROADMAP.md) for what's open.
+Thirteen skills across primitives, inner-loop, orchestration, and glue. Plan validator, multi-critic review, failure-mode triage, append-only event log, MCP-portable gate. See [`CHANGELOG.md`](CHANGELOG.md) for what landed in each release and [`ROADMAP.md`](ROADMAP.md) for what's open.
 
 Open follow-ups:
 - v0.2.1 — Langfuse OTel adapter implementation, `@anvil/gate-mcp` npm publish.

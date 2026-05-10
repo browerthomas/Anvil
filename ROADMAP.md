@@ -117,7 +117,26 @@ Add `/spec --validate <plan-path>` that runs:
 
 Spec-Kit's `/speckit.analyze` is the model.
 
-## v0.4+ — speculative
+## v0.4 — glue + correction layer — SHIPPED 2026-05-10
+
+Five new skills closing the manual sequences that surrounded the v0.3 core skills. All five surfaced from the first dogfood (`http-client-standardisation` plan). 13 skills total now.
+
+### 9. /findings-rollup ✅
+After `/self-review --multi-critic` or `/codex-review` returns findings, automatically: file P2/P3 as a single rollup issue with checkboxes, dispatch a fix-up agent against the same PR/branch with the P0/P1 list as its acceptance contract, comment on the PR linking both. Closes the 5-step manual dance every operator runs after every multi-critic review.
+
+### 10. /issue-to-spec ✅
+Pre-lock plan validation. Takes a GitHub issue body, greps the codebase for each factual claim, outputs a corrected mini-spec marking claims as verified / contradicted / moved / unverifiable. Catches the "issue body wrong" class of plan bug (the `core/lulu.js — custom retry pattern` class).
+
+### 11. /refine-plan ✅
+Mid-grind plan correction. Updates plan files in-place via Edit, writes a `plan-revised` event to `.anvil/grind-events.jsonl`, optionally comments on in-flight PRs whose contract moved.
+
+### 12. /config-bootstrap ✅
+Companion to `bin/init-anvil-config.sh`. Populates the `.anvil/` starter templates from the project's existing context docs (CLAUDE.md, AGENTS.md, post-mortems, audits) by extracting "DO NOT" / "always" / "flaky" patterns.
+
+### 13. /post-merge-debrief ✅
+Single-PR cleanup + next-slice dispatch in one call. For when an operator merges outside `/grind`. Composes existing scripts.
+
+## v0.5+ — speculative
 
 - **Cross-slice file-conflict detection** (Augment Code's Coordinator + Verifier pattern).
 - **Persona-driven multi-role pipeline** (BMAD pattern: Analyst → PM → Architect → Dev → QA personas, each a separate agent role).
