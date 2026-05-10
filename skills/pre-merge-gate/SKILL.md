@@ -89,10 +89,9 @@ Each line:
 
 ```
 # Pattern : path-glob : exclusion-glob (optional) : comment
-<deprecated-data-shape>
-<low-level-mutator>\\b :: v3/src/** :: : <low-level-mutator> calls in v3 (use <your domain service> instead)
-process\\.env\\. :: v3/src/** :: src/config/** : direct env reads outside config
-BEGIN IMMEDIATE.{0,200}await :: v3/src/** :: : await between BEGIN and COMMIT (closes #969)
+<deprecated-mutator>\\b :: src/** :: : <deprecated-mutator> calls (use the typed command instead)
+process\\.env\\. :: src/** :: src/config/** : direct env reads outside config module
+BEGIN IMMEDIATE.{0,200}await :: src/** :: : await between BEGIN and COMMIT silently drops the tx lock
 ```
 
 Run each as a `grep -E` over the path-glob; fail if any match.
@@ -136,8 +135,8 @@ Or:
 
 ```
 Verdict: 🔴 BLOCKED
-- ❌ Type check: 2 errors in v3/src/orders/<your domain service>.ts:284
-- ❌ Forbidden: 1 match for "<deprecated-data-shape>
+- ❌ Type check: 2 errors in src/<your-module>/<your-file>.ts:NNN
+- ❌ Forbidden: 1 match for <deprecated-mutator>
 - ⚠️ CI: 1 check still pending (test)
 
 Fix the errors above, re-run /pre-merge-gate, then /auto-merge when green.
@@ -145,7 +144,7 @@ Fix the errors above, re-run /pre-merge-gate, then /auto-merge when green.
 
 ## When this saves time
 
-Tonight: 12 PRs × ~6 manual checks each = 72 manual operations. With this skill: 12 invocations.
+A multi-PR sprint runs ~6 manual checks per PR (rebase, tsc, tests, fitness, forbidden-pattern grep, CI verify). Twelve PRs = 72 manual operations. With this skill: 12 invocations.
 
 ## Configuration
 
@@ -159,7 +158,7 @@ Per-project tuning lives in `<repo>/.anvil/pre-merge-gate.config.json`. See `tem
     "allowFlakeRetries": 1
   },
   "forbiddenPatterns": ".anvil/forbidden-patterns.txt",
-  "fitnessTestPath": "v3/test/architecture/fitness.test.ts",
+  "fitnessTestPath": "test/architecture/fitness.test.ts",
   "rebaseAgainst": "origin/main"
 }
 ```

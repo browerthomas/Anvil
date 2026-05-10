@@ -30,7 +30,7 @@ Built from `templates/plan-folder-template/`.
 
 - Operator says "execute the plan", "grind", "drive the lift", "run /spec output", "ship the plan".
 - After `/spec` produces a plan and operator approves it.
-- For pre-existing plan docs (e.g. tonight's `<your-plan>.md`).
+- For pre-existing plan docs at `docs/plans/<your-plan>.md`.
 
 ## When NOT to use
 
@@ -235,7 +235,7 @@ Per-project flake list at `.anvil/known-flakes.txt` (see `skills/pre-merge-gate/
 
 ## Real-world test
 
-Tonight's session was effectively a manual `/grind` against `docs/v3/<your-plan>.md` + the codex-retro follow-ups + the audit P2/P3 rollups. 28 PRs merged across two sessions. Codifying this loop is the entire framework's purpose.
+The patterns this skill codifies came from a multi-PR sprint that was driven manually — slice-by-slice dispatch, codex review per PR, pre-merge gate, auto-merge, follow-up issue filing, recap. Codifying that loop is the entire framework's purpose: you should never re-derive it by hand again.
 
 ## Composition
 

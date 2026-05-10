@@ -158,4 +158,4 @@ Do NOT validate. Do NOT summarize the diff. Do NOT explain what the code does. J
 
 ## Cadence
 
-Tonight's session merged 4 PRs without codex review (codex hit limit). Self-review would have caught at least the #1071 backoff×fixture interaction earlier (that bug surfaced 2 PRs later). Use as default fallback.
+Use as default fallback whenever codex is rate-limited or unavailable. The cross-model effect is real signal — but a same-model adversarial pass on a structured prompt still catches the obvious slips that an unreviewed PR would otherwise carry forward.

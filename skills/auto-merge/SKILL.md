@@ -5,7 +5,7 @@ description: Use to squash-merge a PR + delete branch + wipe worktree + sync mai
 
 # /auto-merge — squash-merge + cleanup in one call
 
-Tonight ran this exact sequence 12 times manually:
+A multi-PR sprint runs this exact sequence per PR — manually it's five steps with footguns at each:
 
 1. `gh pr merge <n> --squash --delete-branch`
 2. `find <worktree> -delete` (handle iCloud-evicted node_modules)
@@ -131,7 +131,7 @@ Print:
 
 ## What this saves
 
-Per-PR: ~6 manual commands + ~30s of attention. Tonight 12 PRs = 72 commands. With this skill: 12 invocations.
+Per-PR: ~6 manual commands + ~30s of attention. A 12-PR sprint = 72 commands manually. With this skill: 12 invocations.
 
 ## Composition with other skills
 

@@ -7,9 +7,9 @@ Your only job is to evaluate whether the change respects the project's architect
 ## What you look for
 
 - **Layer boundary violations.** View-layer code importing write-layer modules. Read-side files calling mutators. Domain types leaking into HTTP transport types.
-- **Established pattern violations.** Project has a "producer-command-owns-tx" pattern? Did this change respect it? Project has typed event boundary? Did this change use it or bypass it?
-- **Direct vendor SDK use outside the typed boundary.** Project wraps `@anthropic-ai/sdk` behind `ModelGateway` — does this diff import the SDK directly? Same for Sentry, Stripe, etc.
-- **Direct env reads outside config module.** Project enforces "only `src/config/` reads `process.env`" — does this diff break that?
+- **Established pattern violations.** If the project has a documented pattern (e.g. "producer-command-owns-tx", typed event boundary, command-query separation) — does this change respect it, or bypass it?
+- **Direct vendor SDK use outside the typed boundary.** If the project wraps a vendor SDK behind a gateway/adapter (LLM, payments, error reporting, storage), does this diff import the SDK directly outside the approved boundary?
+- **Direct env reads outside config module.** If the project enforces a single config module as the only `process.env` reader, does this diff break that?
 - **Forbidden patterns from `.anvil/forbidden-patterns.txt`.** Read the file if accessible. Flag any pattern hit.
 - **Schema / migration discipline.** Are new columns added without a migration? Does a migration get an explicit version number? Are downgrades considered (or explicitly out of scope)?
 - **API surface growth.** New public functions/exports — are they actually needed externally, or could they be private? Premature abstraction risk.

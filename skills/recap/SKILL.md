@@ -5,7 +5,7 @@ description: Use after a multi-PR sprint to generate a visual session-recap HTML
 
 # /recap — visual session-recap HTML
 
-Tonight's grind shipped 14 PRs. A markdown summary is fine, but a visual page is faster to scan + nicer to drop into a daily journal / Slack post / project log. This skill codifies the format.
+After a multi-PR sprint, a markdown summary is fine — but a visual page is faster to scan and nicer to drop into a daily journal / Slack post / project log. This skill codifies the format.
 
 ## When to invoke
 
@@ -40,7 +40,7 @@ Output path:
 ~/.claude/showme/<YYYYMMDD-HHMMSS>-recap-<slug>.html
 ```
 
-Slug: 2-3 words capturing the sprint theme ("operability-grind", "v3-followups", "p0-pushdown").
+Slug: 2-3 words capturing the sprint theme (e.g. "platform-hardening", "p0-pushdown", "auth-cleanup", "performance-grind").
 
 ### Layout shape
 
@@ -95,6 +95,6 @@ Then in chat: file path + 2-sentence headline ("14 PRs merged across two session
 
 Run at the end of every multi-PR sprint. Pair with `/session-closeout` — the memory file is the durable record, the HTML is the readable one.
 
-## Source tonight's recap as the canonical example
+## Style reference
 
-`~/.claude/showme/20260510-recap-operability-grind.html` is the proof-of-concept. Reference it when generating new recaps to keep the style consistent.
+If a previous recap exists at `~/.claude/showme/<YYYYMMDD-HHMMSS>-recap-<slug>.html`, reference it to keep the style consistent across runs. Otherwise, use the layout shape above as the canonical structure.

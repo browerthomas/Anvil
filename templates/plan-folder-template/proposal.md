@@ -21,8 +21,8 @@ One paragraph. What does success look like? End-state in plain English.
 What changed that makes this work worth doing now? Could be:
 - Audit finding (link)
 - Customer pain (link to issue)
-- Strategic dependency (e.g. blocks v3 cutover)
-- Tech debt forcing function (e.g. dependency EOL)
+- Strategic dependency (blocks a downstream cutover, unblocks a feature, etc)
+- Tech debt forcing function (dependency EOL, deprecated API, etc)
 
 ---
 

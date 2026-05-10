@@ -9,7 +9,7 @@ The grind loop dispatches many agents. Each needs ~600 words of consistent brief
 
 ## When to invoke
 
-- Operator says "dispatch a slice", "spin up an agent for X", "handle issue #N", "dispatch #1064", or similar.
+- Operator says "dispatch a slice", "spin up an agent for X", "handle issue #N", or similar.
 - `/grind` invokes this internally for each slice in a plan.
 - Manually for one-off agent work that benefits from the consistent shape.
 
@@ -149,7 +149,7 @@ This makes the return shape consistent so the orchestrator can parse it.
 
 ## When this skill SAVES time
 
-Tonight's session: ~15 agent dispatches. Each ~600 word prompt manually written + adapted. With this skill: 3-line invocation + skill emits the full prompt. Saves token cost, reduces brief variance, eliminates "did I forget the return shape?" bugs.
+A typical multi-slice sprint dispatches 8-15 agents. Each needs ~600 words of consistent briefing — manually written and adapted, that's significant token spend and a steady source of "did I forget the return shape?" bugs. With this skill: 3-line invocation + skill emits the full prompt.
 
 ## When NOT to use
 

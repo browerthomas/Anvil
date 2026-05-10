@@ -42,7 +42,7 @@ These are the leaf skills. Each does one thing well. anvil's design rule: never 
 These compose primitives into per-PR cycles. They're the "do the same thing 12 times per session" automations.
 
 ### `/dispatch-slice`
-Codifies the agent prompt template. Inputs: slice id + scope + constraints. Output: agent dispatched in worktree with full briefing. Replaces the ~600-word per-agent prompt I rewrote 15 times in the OPERABILITY sprint.
+Codifies the agent prompt template. Inputs: slice id + scope + constraints. Output: agent dispatched in worktree with full briefing. Replaces the ~600-word per-agent prompt that gets rewritten dozens of times in a typical multi-slice sprint.
 
 Composes: Agent tool, git worktree, npm install, Bash for prompt assembly.
 
@@ -85,7 +85,7 @@ Composes: gh pr list, git log, file write to `~/.claude/showme/`, `open` for bro
 
 ## Plan format
 
-A anvil plan is markdown with a parseable YAML slice manifest. See `templates/plan-template.md` for the canonical shape and `examples/operability-plan-example.md` for a real plan that ran successfully.
+An anvil plan is markdown with a parseable YAML slice manifest. See `templates/plan-template.md` for the canonical shape, `examples/example-plan.md` for a worked multi-slice example, and `examples/hello-world-plan.md` for the minimal single-slice plan.
 
 Required sections:
 - Goal

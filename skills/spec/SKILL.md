@@ -80,12 +80,12 @@ Slug: 2-3 words capturing the work theme.
 Print the path + a summary (slice count, total acceptance criteria, ASK points).
 
 ```
-Plan written: docs/plans/2026-05-12-anvil-phase2.md
-- 7 slices, 23 acceptance criteria
-- 2 operator decision points (deploy gate, schema migration)
-- 4 hard constraints
+Plan written: docs/plans/<YYYY-MM-DD>-<slug>.md
+- N slices, M acceptance criteria
+- K operator decision points
+- L hard constraints
 
-Run /grind docs/plans/2026-05-12-anvil-phase2.md to execute, or
+Run /grind docs/plans/<YYYY-MM-DD>-<slug>.md to execute, or
 /spec --refine <plan-path> "<question>" to iterate.
 ```
 
@@ -158,8 +158,8 @@ When all checked: plan is "locked" and `/grind` can execute.
 ## Example plans
 
 See `examples/`:
-- `operability-plan-example.md` — 11-slice operability lift, real-world test
-- `frontend-extraction-plan-example.md` — slow-burn refactor across many sessions
+- `example-plan.md` — multi-slice flat-layout example (logger-boundary refactor)
+- `hello-world-plan.md` — single-slice plan to verify your install
 
 ## Composition
 
