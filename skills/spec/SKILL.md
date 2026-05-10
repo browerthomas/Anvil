@@ -43,16 +43,23 @@ For each blank section, ask 1-3 specific questions via AskUserQuestion. Examples
 - **Acceptance criteria** — for each slice: "What does 'done' look like? What test pins it?"
 - **Operator decision points** — "Where would you want to be asked before the orchestrator continues?"
 
-### Step 3: Cross-model challenge (optional)
+### Step 3: Adversarial challenge
 
-If `/codex-confer` is available, fire it on the assembled plan with adversarial framing:
+The plan needs a second pair of eyes BEFORE lock — under-specified slices become broken PRs. Two paths, in priority order:
+
+**Preferred:** `/codex-confer` for cross-model pushback. Fire it with adversarial framing:
 
 ```
 Argue against this plan. Find what's missing, ambiguous, or under-specified.
 What would the orchestrator be unable to act on?
+Read the four plan files (proposal.md, design.md, tasks.md, specs/*.md) before answering.
 ```
 
-Surface the findings; let operator address or dismiss.
+**Fallback** (codex rate-limited, network outage, or the codex-shared helper errors): run `/self-review` against the plan files instead. Read every plan file, then self-adversarially push back through the four critic lenses (correctness / security / test-coverage / architecture). Treat the plan files as a "diff" — what's the architectural-fit critic seeing? what's missing in the test-coverage critic's view? Write findings as P0/P1/P2 against the plan; iterate before locking.
+
+**Treat exit code != 0 from `/codex-confer` as "unavailable"** and switch to the fallback automatically. Do NOT let codex unavailability silently skip the adversarial pass — an un-challenged plan is worse than a plan with no validation pass at all, because the operator assumes it was reviewed.
+
+In either path, surface findings, iterate, and document the dismissed ones. The plan file's `## Operator decision records` (or commit message if not yet locked) should note which path was taken.
 
 ### Step 4: Validation gate
 
