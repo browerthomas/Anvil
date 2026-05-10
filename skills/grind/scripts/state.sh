@@ -95,16 +95,36 @@ shift || true
 case "$cmd" in
   init)
     plan_path="${1:-}"
-    if [ -z "$plan_path" ] || [ ! -f "$plan_path" ]; then
+    if [ -z "$plan_path" ]; then
       av_fail "usage: state.sh init <plan-path>"
+      exit 1
+    fi
+
+    # Plan can be a flat file OR a folder (OpenSpec-style layout).
+    # Folder must contain tasks.md with the slice manifest.
+    if [ -d "$plan_path" ]; then
+      # Folder layout
+      tasks_file="$plan_path/tasks.md"
+      if [ ! -f "$tasks_file" ]; then
+        av_fail "folder plan must contain tasks.md (got: $plan_path)"
+        exit 1
+      fi
+      yaml_source="$tasks_file"
+      av_info "loaded folder plan: $plan_path"
+    elif [ -f "$plan_path" ]; then
+      # Flat file layout
+      yaml_source="$plan_path"
+      av_info "loaded flat plan: $plan_path"
+    else
+      av_fail "plan not found (neither file nor folder): $plan_path"
       exit 1
     fi
     mkdir -p "$ANVIL_DIR"
 
     # Extract YAML manifest from plan
-    yaml=$(awk '/^```yaml/{flag=1; next} /^```/{if(flag){print; exit}; next} flag {print}' "$plan_path")
+    yaml=$(awk '/^```yaml/{flag=1; next} /^```/{if(flag){print; exit}; next} flag {print}' "$yaml_source")
     if ! echo "$yaml" | grep -q "slices:"; then
-      av_fail "plan does not contain a slices: YAML block"
+      av_fail "plan does not contain a slices: YAML block (looked in $yaml_source)"
       exit 1
     fi
 

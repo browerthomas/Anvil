@@ -130,7 +130,10 @@ These aren't required — anvil's primitives stand alone — but `/grind` will c
 
 ## Plan format
 
-`templates/plan-template.md` is the canonical plan shape. `/spec` produces it; `/grind` consumes it.
+Two layouts, both supported by `/spec` and `/grind`:
+
+- **Flat:** [`templates/plan-template.md`](templates/plan-template.md) — single markdown file with the YAML manifest inline. Right for small plans (<5 slices, no architecture decisions).
+- **Folder (OpenSpec-style):** [`templates/plan-folder-template/`](templates/plan-folder-template/) — `proposal.md` + `design.md` + `tasks.md` + `specs/`. Right for substantive plans with architecture decisions; the adversarial reviewer gets the `specs/` files as context.
 
 Required sections:
 
