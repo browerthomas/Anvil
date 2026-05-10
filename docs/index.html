@@ -341,31 +341,6 @@
 
   /* Skills section */
   .skills { padding: 100px 0; }
-  .skill-tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-    border-bottom: 1px solid var(--border);
-  }
-  .skill-tab {
-    padding: 12px 18px;
-    color: var(--text-3);
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    border: none;
-    background: none;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    transition: color 0.15s, border-color 0.15s;
-  }
-  .skill-tab:hover { color: var(--text-2); }
-  .skill-tab.active {
-    color: var(--ember);
-    border-bottom-color: var(--ember);
-  }
   .skill-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -385,9 +360,6 @@
     transform: translateY(-2px);
   }
   .skill-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
     margin-bottom: 6px;
   }
   .skill-cmd {
@@ -396,18 +368,6 @@
     color: var(--ember);
     font-weight: 700;
   }
-  .skill-status {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: var(--surface-3);
-    color: var(--text-3);
-    font-weight: 700;
-  }
-  .skill-status.live { background: rgba(95, 191, 122, 0.15); color: var(--green); }
-  .skill-status.queued { background: rgba(255, 172, 74, 0.15); color: var(--ember-2); }
   .skill-tag-line {
     color: var(--text);
     font-size: 16px;
@@ -875,7 +835,6 @@
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/spec</span>
-        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Lay the blueprint</p>
       <p class="skill-desc">Interactive plan capture. Probes until the slice manifest is unambiguous, supports flat or OpenSpec-style folder layout, then runs the validator (Spec-Kit-style) before <code>/grind</code> can execute.</p>
@@ -883,7 +842,6 @@
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/grind</span>
-        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Run the forge</p>
       <p class="skill-desc">End-to-end orchestrator. Topo-sorts slices, dispatches in parallel where safe, reviews per PR, gates each merge. Pauses only at structured ASK verbs you defined; defers + continues siblings on failure (Symphony triage). Replayable from the append-only event log.</p>
@@ -891,7 +849,6 @@
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/dispatch-slice</span>
-        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Strike a billet</p>
       <p class="skill-desc">Codifies the agent prompt template — worktree, deps, hard constraints, commit format, return shape. Three-line invocation in place of 600-word briefs.</p>
@@ -899,7 +856,6 @@
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/pre-merge-gate</span>
-        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Inspect the seam</p>
       <p class="skill-desc">Combinator: rebase + tsc + tests + fitness ratchets + grep-for-forbidden-patterns + GH check status. One verdict. Also ships as an MCP server (<code>@anvil/gate-mcp</code>) so Cursor / Windsurf / ChatGPT desktop can call the same gate.</p>
@@ -907,7 +863,6 @@
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/auto-merge</span>
-        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Quench and ship</p>
       <p class="skill-desc">When CI green: squash-merge + delete branch + wipe worktree + clear stale locks + sync main. One call replaces five manual operations and the iCloud / stale-lock / branch-busy footguns.</p>
@@ -915,7 +870,6 @@
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/self-review</span>
-        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Test the temper</p>
       <p class="skill-desc">Adversarial diff review via Opus sub-agent. <code>--multi-critic</code> mode runs four parallel critics (correctness / security / test-coverage / architecture) plus a synthesizer — ~2x catch rate for high-stakes diffs.</p>
@@ -923,7 +877,6 @@
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/sweep-worktrees</span>
-        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Reset the workshop</p>
       <p class="skill-desc">Bulk-clean stale worktrees + branches. Handles iCloud-evicted node_modules, stale git locks, force-deletes by PR-merge status.</p>
@@ -931,7 +884,6 @@
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/recap</span>
-        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Stamp the work</p>
       <p class="skill-desc">Visual HTML session report — PRs, tests, lessons, loose ends, plus a Decisions strip surfaced from operator ASK records. Pairs with session memory for a durable + readable pair.</p>
