@@ -483,12 +483,91 @@
   }
   footer .sep { color: var(--text-4); }
 
+  /* ── v0.4 page-restructure additions ─────────────────────────────────── */
+
+  /* Entry-tier cards */
+  .entry-tiers { padding: 80px 0 40px; border-top: 1px solid var(--border); }
+  .entry-tiers-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 18px; }
+  .tier-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px 26px; position: relative; transition: transform 0.15s, border-color 0.15s, box-shadow 0.2s; }
+  .tier-card:hover { transform: translateY(-3px); border-color: var(--border-2); box-shadow: 0 18px 40px rgba(255, 117, 48, 0.12); }
+  .tier-card.recommended { border-color: rgba(255, 117, 48, 0.4); }
+  .tier-card.recommended::before { content: ''; position: absolute; top: -1px; left: -1px; right: -1px; height: 3px; background: linear-gradient(90deg, var(--ember), var(--ember-2)); border-radius: 14px 14px 0 0; }
+  .tier-time { display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; background: rgba(255, 117, 48, 0.10); color: var(--ember-2); border: 1px solid rgba(255, 117, 48, 0.25); border-radius: 100px; font-size: 11.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; margin-bottom: 16px; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .tier-time::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--ember); box-shadow: 0 0 8px var(--ember); }
+  .tier-card h3 { font-size: 22px; margin: 0 0 10px; letter-spacing: -0.01em; line-height: 1.2; }
+  .tier-pitch { color: var(--text-2); font-size: 14.5px; margin: 0 0 16px; line-height: 1.6; }
+  .tier-cmds { font-family: 'JetBrains Mono', ui-monospace, monospace; background: var(--bg-deep); border: 1px solid var(--border); padding: 11px 13px; border-radius: 7px; font-size: 12.5px; color: var(--ember-2); margin: 0 0 14px; line-height: 1.7; }
+  .tier-link { color: var(--ember); font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: gap 0.15s; }
+  .tier-link:hover { gap: 10px; }
+  .tier-link svg { transition: transform 0.15s; }
+
+  /* Friction strip — before/after */
+  .friction { background: var(--bg-2); padding: 70px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+  .friction-intro { text-align: center; max-width: 640px; margin: 0 auto 36px; }
+  .friction-intro p { color: var(--text-2); font-size: 16px; margin: 0; }
+  .friction-grid { display: grid; grid-template-columns: 1fr 50px 1fr; gap: 20px; max-width: 900px; margin: 0 auto; align-items: stretch; }
+  .friction-col { padding: 24px 26px; border-radius: 12px; }
+  .friction-col-before { background: var(--bg-deep); border: 1px solid var(--border); }
+  .friction-col-after { background: linear-gradient(180deg, rgba(255, 117, 48, 0.06), rgba(255, 117, 48, 0.02)); border: 1px solid rgba(255, 117, 48, 0.30); }
+  .friction-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; margin: 0 0 18px; font-weight: 700; }
+  .friction-col-before h4 { color: var(--text-3); }
+  .friction-col-after h4 { color: var(--ember); }
+  .friction-row { padding: 10px 0; font-size: 14px; line-height: 1.55; }
+  .friction-row + .friction-row { border-top: 1px solid var(--border); }
+  .friction-col-after .friction-row + .friction-row { border-top-color: rgba(255, 117, 48, 0.15); }
+  .friction-col-before .friction-row { color: var(--text-3); }
+  .friction-col-after .friction-row { color: var(--text); }
+  .friction-row code { background: var(--surface); padding: 2px 6px; border-radius: 3px; color: var(--ember-2); font-size: 12.5px; font-family: 'JetBrains Mono', monospace; border: 1px solid var(--border); }
+  .friction-col-after .friction-row strong { color: var(--ember-2); font-weight: 700; }
+  .friction-arrow { display: flex; align-items: center; justify-content: center; color: var(--ember); }
+  .friction-arrow svg { width: 32px; height: 32px; }
+
+  /* Artifacts gallery */
+  .artifacts { padding: 100px 0; }
+  .artifacts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 18px; }
+  .artifact { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: transform 0.15s, border-color 0.15s; text-decoration: none; color: inherit; display: block; }
+  .artifact:hover { transform: translateY(-2px); border-color: var(--border-2); }
+  .artifact-preview { background: var(--bg-deep); padding: 18px 20px; height: 180px; overflow: hidden; position: relative; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; line-height: 1.55; color: var(--text-3); }
+  .artifact-preview::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 60px; background: linear-gradient(180deg, transparent, var(--bg-deep)); pointer-events: none; }
+  .artifact-meta { padding: 14px 20px 16px; }
+  .artifact-name { font-family: 'JetBrains Mono', monospace; color: var(--ember-2); font-size: 12.5px; font-weight: 700; margin: 0 0 4px; }
+  .artifact-desc { color: var(--text-2); font-size: 13.5px; margin: 0; line-height: 1.55; }
+  .artifact-preview .ap-line { display: block; }
+  .artifact-preview .ap-key { color: var(--ember-2); }
+  .artifact-preview .ap-good { color: var(--green); }
+  .artifact-preview .ap-num { color: var(--ember); font-weight: 700; }
+  .artifact-preview .ap-h { color: var(--text); font-weight: 700; }
+  .artifact-preview .ap-em { color: var(--text-2); }
+
+  /* Skills disclosure */
+  details.skills-disclosure { margin-top: 12px; }
+  details.skills-disclosure > summary { cursor: pointer; padding: 16px 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: var(--text-2); font-weight: 600; font-size: 14.5px; list-style: none; display: flex; align-items: center; justify-content: space-between; transition: color 0.15s, border-color 0.15s; user-select: none; }
+  details.skills-disclosure > summary::-webkit-details-marker { display: none; }
+  details.skills-disclosure > summary::after { content: '↓'; color: var(--ember); transition: transform 0.2s; }
+  details.skills-disclosure[open] > summary::after { transform: rotate(180deg); }
+  details.skills-disclosure > summary:hover { color: var(--text); border-color: var(--border-2); }
+  details.skills-disclosure[open] > summary { background: var(--surface-2); border-bottom-color: var(--border); border-radius: 10px 10px 0 0; }
+  details.skills-disclosure[open] .skill-grid { margin-top: 18px; }
+
+  /* Tabbed quickstart */
+  .qs-tabs { display: flex; gap: 0; margin: 28px 0 0; border-bottom: 1px solid var(--border); }
+  .qs-tab { padding: 11px 18px; background: transparent; border: none; color: var(--text-3); font-size: 13.5px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.15s, border-color 0.15s; font-family: inherit; letter-spacing: 0.02em; }
+  .qs-tab:hover { color: var(--text-2); }
+  .qs-tab.active { color: var(--ember); border-bottom-color: var(--ember); }
+  .qs-tab .qs-tab-time { font-size: 11px; opacity: 0.7; margin-left: 6px; font-family: 'JetBrains Mono', monospace; }
+  .qs-panel { display: none; }
+  .qs-panel.active { display: block; }
+
   @media (max-width: 880px) {
     .hero { grid-template-columns: 1fr; gap: 24px; padding: 32px 0 56px; }
     .hero h1 { font-size: 44px; }
     .flow { grid-template-columns: 1fr; }
     .flow-arrow { transform: rotate(90deg); padding: 12px 0; }
     .skill-grid { grid-template-columns: 1fr; }
+    .entry-tiers-grid { grid-template-columns: 1fr; }
+    .friction-grid { grid-template-columns: 1fr; }
+    .friction-arrow { transform: rotate(90deg); padding: 4px 0; }
+    .artifacts-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -509,9 +588,10 @@
     anvil
   </a>
   <div class="nav-links">
+    <a href="#start">Get started</a>
     <a href="#how">How it works</a>
+    <a href="#produces">Output</a>
     <a href="#skills">Skills</a>
-    <a href="#start">Quickstart</a>
     <a class="nav-cta" href="https://github.com/browerthomas/Anvil" target="_blank">GitHub</a>
   </div>
 </nav>
@@ -519,13 +599,13 @@
 <section class="hero wrap">
   <div>
     <h1>Forge ideas into <span class="ember">merged PRs.</span></h1>
-    <p class="hero-sub">Plans come in raw. PRs come out forged. Compose <code>/spec</code> → <code>/grind</code> → <code>/recap</code>. <strong>MIT, fully local, no platform lock-in.</strong></p>
+    <p class="hero-sub">For developers running multi-PR sprints in Claude Code. Anvil compresses the workflow — agent dispatch, adversarial review, pre-merge gate, auto-merge, recap — into composable skills. <strong>Adopt one skill in 5 minutes; the full orchestrator in 30.</strong></p>
     <div class="cta-row">
       <a class="cta" href="#start">
-        Stoke the forge
+        Pick your entry point
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>
       </a>
-      <a class="cta-secondary" href="#how">Read the blueprint</a>
+      <a class="cta-secondary" href="https://github.com/browerthomas/Anvil" target="_blank">GitHub →</a>
     </div>
   </div>
 
@@ -740,6 +820,87 @@
   </svg>
 </section>
 
+<!-- ENTRY-POINT TIERS -->
+<section id="start" class="entry-tiers wrap">
+  <p class="section-eyebrow">Pick your entry point</p>
+  <h2 class="section-title">Adopt one skill, or all thirteen.</h2>
+  <p class="section-sub">Anvil isn't all-or-nothing. Each skill stands alone. Try the cheapest first; keep going if it earns the next investment.</p>
+
+  <div class="entry-tiers-grid">
+    <div class="tier-card">
+      <span class="tier-time">5 min</span>
+      <h3>Try one skill</h3>
+      <p class="tier-pitch">Pile of stale worktrees from a multi-PR sprint? One command cleans branches, worktrees, iCloud-evicted <code style="color:var(--ember-2);font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--bg-deep);padding:1px 5px;border-radius:3px;">node_modules</code>, and stale git locks. Or run <code style="color:var(--ember-2);font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--bg-deep);padding:1px 5px;border-radius:3px;">/self-review</code> on your next diff for adversarial pushback.</p>
+      <pre class="tier-cmds">/sweep-worktrees
+/self-review
+/recap</pre>
+      <a class="tier-link" href="#qs-tier-1">
+        Install + try
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>
+      </a>
+    </div>
+
+    <div class="tier-card recommended">
+      <span class="tier-time">15 min</span>
+      <h3>Add the inner loop</h3>
+      <p class="tier-pitch">One PR, three skills, six manual checks gone. <code style="color:var(--ember-2);font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--bg-deep);padding:1px 5px;border-radius:3px;">/dispatch-slice</code> emits the full agent brief. <code style="color:var(--ember-2);font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--bg-deep);padding:1px 5px;border-radius:3px;">/pre-merge-gate</code> runs rebase+tsc+tests+fitness+forbidden-grep. <code style="color:var(--ember-2);font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--bg-deep);padding:1px 5px;border-radius:3px;">/auto-merge</code> squash-merges + sweeps the worktree.</p>
+      <pre class="tier-cmds">/dispatch-slice ...
+/pre-merge-gate &lt;PR&gt;
+/auto-merge &lt;PR&gt;</pre>
+      <a class="tier-link" href="#qs-tier-2">
+        Add to next PR
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>
+      </a>
+    </div>
+
+    <div class="tier-card">
+      <span class="tier-time">30 min</span>
+      <h3>Drive a plan end-to-end</h3>
+      <p class="tier-pitch">Capture work as a structured plan. Watch agents drive each slice through the inner loop. Adversarial multi-critic review per PR. Pauses only at decision points you defined. Recap when the dust settles.</p>
+      <pre class="tier-cmds">/spec "what you want built"
+/grind docs/plans/&lt;slug&gt;.md
+/recap</pre>
+      <a class="tier-link" href="#qs-tier-3">
+        Full quickstart
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FRICTION STRIP — before/after -->
+<section class="friction">
+  <div class="wrap">
+    <div class="friction-intro">
+      <p class="section-eyebrow" style="text-align:center;">The friction it removes</p>
+      <h2 class="section-title" style="font-size:30px;">Same workflow. Less hand-cranking.</h2>
+    </div>
+    <div class="friction-grid">
+      <div class="friction-col friction-col-before">
+        <h4>Manually</h4>
+        <div class="friction-row">600-word agent brief, hand-typed × 15 dispatches</div>
+        <div class="friction-row">6 manual checks (rebase, tsc, tests, fitness, grep, CI) × 12 PRs = 72 ops</div>
+        <div class="friction-row">5-step merge dance per PR (footguns at every step)</div>
+        <div class="friction-row">After each multi-critic: hand-write rollup issue, hand-brief fix-up agent</div>
+        <div class="friction-row">Accumulating worktrees + stale branches + iCloud quirks</div>
+        <div class="friction-row">End-of-sprint summary: improvise from <code>git log</code></div>
+      </div>
+      <div class="friction-arrow" aria-hidden="true">
+        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 16h20M20 10l6 6-6 6"/></svg>
+      </div>
+      <div class="friction-col friction-col-after">
+        <h4>With anvil</h4>
+        <div class="friction-row"><strong>3-line invocation</strong> per slice — <code>/dispatch-slice</code> emits the full brief</div>
+        <div class="friction-row"><strong>1 invocation per PR</strong> — <code>/pre-merge-gate</code> returns one verdict</div>
+        <div class="friction-row"><strong>1 call</strong> — <code>/auto-merge</code>, footguns handled</div>
+        <div class="friction-row"><strong>1 call</strong> — <code>/findings-rollup</code> files the issue + dispatches the fix-up agent</div>
+        <div class="friction-row"><strong>1 call</strong> — <code>/sweep-worktrees</code></div>
+        <div class="friction-row"><strong>1 call</strong> — <code>/recap</code> drops a visual HTML page</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- TOOLCHAIN STRIP -->
 <div class="toolchain">
   <div class="wrap">
@@ -824,12 +985,111 @@
   </div>
 </section>
 
+<!-- WHAT IT PRODUCES -->
+<section id="produces" class="artifacts wrap bordered">
+  <p class="section-eyebrow">What it produces</p>
+  <h2 class="section-title">Real artifacts. Not promises.</h2>
+  <p class="section-sub">Every grind drops files you can read, share, archive, or feed into the next plan. Markdown + JSON + HTML — diff-friendly, plain-text, no opaque state.</p>
+
+  <div class="artifacts-grid">
+    <a class="artifact" href="https://github.com/browerthomas/Anvil/blob/main/skills/recap/SKILL.md" target="_blank">
+      <div class="artifact-preview">
+        <span class="ap-line ap-h">recap-2026-05-10.html</span>
+        <span class="ap-line">───────────────────────────</span>
+        <span class="ap-line"><span class="ap-key">PRs merged:</span> <span class="ap-num">14</span></span>
+        <span class="ap-line"><span class="ap-key">Tests:</span> 2463 → <span class="ap-num">2545</span> <span class="ap-good">(+82)</span></span>
+        <span class="ap-line"><span class="ap-key">Issues closed:</span> <span class="ap-num">3 P0</span> · <span class="ap-num">12 P1</span> · <span class="ap-num">9 P2</span></span>
+        <span class="ap-line"><span class="ap-key">LoC delta:</span> +2,460 / -73</span>
+        <span class="ap-line">───────────────────────────</span>
+        <span class="ap-line"><span class="ap-em">Decisions strip:</span></span>
+        <span class="ap-line">  S1 ASK · approve (factory shape locked)</span>
+        <span class="ap-line">  S4 ASK · approve (intentional-bare allowlist)</span>
+        <span class="ap-line">───────────────────────────</span>
+        <span class="ap-line">PR #1080 · feat(http-client): S1...</span>
+        <span class="ap-line">PR #1082 · feat(lulu): S2...</span>
+      </div>
+      <div class="artifact-meta">
+        <p class="artifact-name">/recap → ~/.claude/showme/&lt;ts&gt;-recap-&lt;slug&gt;.html</p>
+        <p class="artifact-desc">Visual session report — PRs shipped, tests added, decisions made, lessons learned. Drop-in for daily journal, Slack post, project log.</p>
+      </div>
+    </a>
+
+    <a class="artifact" href="https://github.com/browerthomas/Anvil/tree/main/templates/plan-folder-template" target="_blank">
+      <div class="artifact-preview">
+        <span class="ap-line ap-h">docs/plans/&lt;slug&gt;/</span>
+        <span class="ap-line">├── <span class="ap-key">proposal.md</span>     <span class="ap-em">// the why — goal, scope</span></span>
+        <span class="ap-line">├── <span class="ap-key">design.md</span>       <span class="ap-em">// the how — decisions</span></span>
+        <span class="ap-line">├── <span class="ap-key">tasks.md</span>        <span class="ap-em">// slice manifest YAML</span></span>
+        <span class="ap-line">└── specs/</span>
+        <span class="ap-line">    ├── <span class="ap-key">scenario-1.md</span>  <span class="ap-em">// acceptance scenarios</span></span>
+        <span class="ap-line">    ├── <span class="ap-key">scenario-2.md</span></span>
+        <span class="ap-line">    └── <span class="ap-key">scenario-3.md</span></span>
+        <span class="ap-line"></span>
+        <span class="ap-line"><span class="ap-em">Validates via /spec --validate.</span></span>
+        <span class="ap-line"><span class="ap-em">Adversarial reviewer compares</span></span>
+        <span class="ap-line"><span class="ap-em">execution against the specs/</span></span>
+        <span class="ap-line"><span class="ap-em">files — not vibes.</span></span>
+      </div>
+      <div class="artifact-meta">
+        <p class="artifact-name">/spec → docs/plans/&lt;slug&gt;/</p>
+        <p class="artifact-desc">OpenSpec-style folder layout with proposal, design, tasks, and per-slice acceptance scenarios. Lives in your repo, diff-friendly, signed off in the PR that introduces it.</p>
+      </div>
+    </a>
+
+    <a class="artifact" href="https://github.com/browerthomas/Anvil/blob/main/skills/self-review/templates/synthesizer.md" target="_blank">
+      <div class="artifact-preview">
+        <span class="ap-line ap-h">multi-critic synthesis</span>
+        <span class="ap-line">───────────────────────────</span>
+        <span class="ap-line">Critics: correctness, security,</span>
+        <span class="ap-line">         test-coverage, architecture</span>
+        <span class="ap-line"></span>
+        <span class="ap-line"><span class="ap-num">P0 (3):</span> <span class="ap-key">test-coverage</span></span>
+        <span class="ap-line">  - durationMs unpinned</span>
+        <span class="ap-line">  - 5 verbs untested</span>
+        <span class="ap-line">  - backoff timing unpinned</span>
+        <span class="ap-line"></span>
+        <span class="ap-line"><span class="ap-num">P1 (12):</span> redaction dead</span>
+        <span class="ap-line">         <span class="ap-em">[4 critics overlap]</span></span>
+        <span class="ap-line"></span>
+        <span class="ap-line">Verdict: <span class="ap-good">BLOCK</span> — fix-up</span>
+      </div>
+      <div class="artifact-meta">
+        <p class="artifact-name">/self-review --multi-critic → .codex-log/&lt;ts&gt;-multi-critic.md</p>
+        <p class="artifact-desc">Four parallel Opus critics + synthesizer. Cross-critic overlaps surface the riskiest parts of the diff. ~2x catch rate over single-pass review.</p>
+      </div>
+    </a>
+
+    <a class="artifact" href="https://github.com/browerthomas/Anvil/blob/main/docs/observability.md" target="_blank">
+      <div class="artifact-preview">
+        <span class="ap-line ap-h">.anvil/grind-events.jsonl</span>
+        <span class="ap-line">───────────────────────────</span>
+        <span class="ap-line">{<span class="ap-key">"ev"</span>:"plan-init", "slice":""}</span>
+        <span class="ap-line">{<span class="ap-key">"ev"</span>:"slice-pending", "slice":"S1"}</span>
+        <span class="ap-line">{<span class="ap-key">"ev"</span>:"slice-in-flight", "slice":"S1"}</span>
+        <span class="ap-line">{<span class="ap-key">"ev"</span>:"slice-pr-opened",</span>
+        <span class="ap-line">  "slice":"S1", "data":{"pr":1080}}</span>
+        <span class="ap-line">{<span class="ap-key">"ev"</span>:"decision", "slice":"S1",</span>
+        <span class="ap-line">  "data":{"verb":"approve"}}</span>
+        <span class="ap-line">{<span class="ap-key">"ev"</span>:"findings-rolled-up",</span>
+        <span class="ap-line">  "slice":"S1", "data":{"verdict":"BLOCK"}}</span>
+        <span class="ap-line">{<span class="ap-key">"ev"</span>:"slice-merged", "slice":"S1"}</span>
+      </div>
+      <div class="artifact-meta">
+        <p class="artifact-name">/grind → .anvil/grind-events.jsonl</p>
+        <p class="artifact-desc">Append-only event log. State derives by folding events; replay-from-checkpoint, time-travel debugging, OTel-emittable to any observability backend.</p>
+      </div>
+    </a>
+  </div>
+</section>
+
 <!-- SKILLS -->
 <section id="skills" class="skills wrap bordered">
   <p class="section-eyebrow">The toolkit</p>
   <h2 class="section-title">Thirteen skills. One toolbox.</h2>
-  <p class="section-sub">Each stands alone. Together they're a framework. Written to the open Agent Skills spec — works in Claude Code today, Codex CLI adopted the spec, others are following. The pre-merge gate also ships as an MCP server for hosts on the MCP rail (Cursor, Windsurf, ChatGPT desktop). No compilation, no platform.</p>
+  <p class="section-sub">You won't invoke all 13. The orchestrator (<code style="font-family:'JetBrains Mono',monospace;background:var(--surface);padding:2px 7px;border-radius:4px;font-size:14px;color:var(--ember-2);border:1px solid var(--border);">/grind</code>) composes most of them; you call the others directly when you need one piece. Written to the open Agent Skills spec — Claude Code today, Codex CLI adopted the spec, others following.</p>
 
+  <details class="skills-disclosure">
+    <summary>Show all 13 skills</summary>
   <div class="skill-grid">
     <div class="skill">
       <div class="skill-head">
@@ -923,52 +1183,93 @@
       <p class="skill-desc">Single-PR cleanup + next-slice dispatch outside <code>/grind</code>. Verify-merge → sweep-worktree → mark-merged-in-event-log → pull-main → auto-dispatch-next-slice.</p>
     </div>
   </div>
+  </details>
 </section>
 
-<!-- QUICKSTART -->
-<section id="start" class="quickstart">
+<!-- QUICKSTART — tabbed by tier -->
+<section class="quickstart">
   <div class="wrap">
-    <p class="section-eyebrow">Get started</p>
-    <h2 class="section-title">Heat it. Strike it.</h2>
-    <p class="section-sub">Five minutes from clone to first strike. Symlink-mode means edits to skills are live immediately. Per-repo config lives in <code style="font-family:'JetBrains Mono',monospace;background:var(--surface);padding:2px 7px;border-radius:4px;font-size:14px;color:var(--ember-2);border:1px solid var(--border);">.anvil/</code> and stays committable.</p>
+    <p class="section-eyebrow">Quickstart</p>
+    <h2 class="section-title">From clone to first strike.</h2>
+    <p class="section-sub">Pick the tier you chose above. Each is a complete onboarding path; you can level up later by re-running the next tier's bootstrap.</p>
 
-    <div class="terminal-wrap">
-      <div class="terminal-bar">
-        <div class="terminal-dot"></div>
-        <div class="terminal-dot"></div>
-        <div class="terminal-dot"></div>
-        <div class="terminal-title">bash</div>
-      </div>
-      <div class="terminal">
-<span class="cmt"># 1. Clone the framework</span><br/>
+    <div class="qs-tabs" role="tablist">
+      <button class="qs-tab active" data-tab="tier-1" role="tab" aria-selected="true">Try one skill <span class="qs-tab-time">5 min</span></button>
+      <button class="qs-tab" data-tab="tier-2" role="tab" aria-selected="false">Inner loop <span class="qs-tab-time">15 min</span></button>
+      <button class="qs-tab" data-tab="tier-3" role="tab" aria-selected="false">Full orchestration <span class="qs-tab-time">30 min</span></button>
+    </div>
+
+    <div class="qs-panel active" id="qs-tier-1" role="tabpanel">
+      <div class="terminal-wrap">
+        <div class="terminal-bar">
+          <div class="terminal-dot"></div><div class="terminal-dot"></div><div class="terminal-dot"></div>
+          <div class="terminal-title">tier 1 — single skill</div>
+        </div>
+        <div class="terminal">
+<span class="cmt"># Clone + install. Symlink-mode means edits to skills are live immediately.</span><br/>
 <span class="prompt">$</span> <span class="cmd">git clone https://github.com/browerthomas/Anvil.git ~/anvil</span><br/>
-<span class="prompt">$</span> <span class="cmd">cd ~/anvil</span><br/><br/>
+<span class="prompt">$</span> <span class="cmd">~/anvil/bin/preflight.sh</span> <span class="cmt"># verifies gh + git + node + jq</span><br/>
+<span class="prompt">$</span> <span class="cmd">~/anvil/bin/install.sh</span><br/>
+<span class="out ok">  installed 13 skills → ~/.claude/skills/</span><br/><br/>
 
-<span class="cmt"># 2. Heat the forge — verify your environment</span><br/>
-<span class="prompt">$</span> <span class="cmd">bin/preflight.sh</span><br/>
-<span class="out ok">  ✓ git, gh, node, jq found</span><br/>
-<span class="out ok">  ✓ ~/.claude/skills/ writable</span><br/>
-<span class="out ok">  ✓ find -delete works</span><br/>
-<span class="out ok">  preflight clean — ready to install</span><br/><br/>
+<span class="cmt"># That's it. In Claude Code, run any one skill standalone:</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/sweep-worktrees</span> <span class="cmt"># bulk-clean stale branches + worktrees</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/self-review</span> <span class="cmt"># adversarial review of uncommitted diff</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/recap</span> <span class="cmt"># visual HTML summary of last sprint</span><br/>
+        </div>
+      </div>
+    </div>
 
-<span class="cmt"># 3. Stoke it — install the skills (symlinked into ~/.claude/skills/)</span><br/>
-<span class="prompt">$</span> <span class="cmd">bin/install.sh</span><br/>
-<span class="out ok">  + sweep-worktrees, self-review, recap</span><br/>
-<span class="out ok">  + dispatch-slice, pre-merge-gate, auto-merge</span><br/>
-<span class="out ok">  + spec, grind</span><br/>
-<span class="out ok">  installed 8 skills</span><br/><br/>
-
-<span class="cmt"># 4. Bootstrap a project's .anvil/ config (run from inside the target repo)</span><br/>
+    <div class="qs-panel" id="qs-tier-2" role="tabpanel">
+      <div class="terminal-wrap">
+        <div class="terminal-bar">
+          <div class="terminal-dot"></div><div class="terminal-dot"></div><div class="terminal-dot"></div>
+          <div class="terminal-title">tier 2 — per-PR inner loop</div>
+        </div>
+        <div class="terminal">
+<span class="cmt"># Tier 1 install steps (clone + preflight + install.sh) plus:</span><br/>
 <span class="prompt">$</span> <span class="cmd">cd /path/to/your/project</span><br/>
 <span class="prompt">$</span> <span class="cmd">~/anvil/bin/init-anvil-config.sh</span><br/>
 <span class="out ok">  ✓ wrote .anvil/forbidden-patterns.txt</span><br/>
 <span class="out ok">  ✓ wrote .anvil/pre-merge-gate.config.json</span><br/>
 <span class="out ok">  ✓ wrote .anvil/dispatch-defaults.txt + known-flakes.txt</span><br/><br/>
 
-<span class="cmt"># 5. Strike — capture a plan, then run it</span><br/>
-<span class="prompt-claude">claude&gt;</span> <span class="cmd">/spec "what you want built"</span><br/>
-<span class="prompt-claude">claude&gt;</span> <span class="cmd">/grind docs/plans/&lt;slug&gt;.md</span><br/>
-<span class="prompt-claude">claude&gt;</span> <span class="cmd">/recap</span><br/>
+<span class="cmt"># Optional: have the AI populate the .anvil/ configs from your project's docs.</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/config-bootstrap</span> <span class="cmt"># derives rules from CLAUDE.md / AGENTS.md / post-mortems</span><br/><br/>
+
+<span class="cmt"># Now drive ONE PR through the inner loop:</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/dispatch-slice issue-1234 --scope "..."</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/pre-merge-gate &lt;PR&gt;</span> <span class="cmt"># rebase + tsc + tests + fitness + grep</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/auto-merge &lt;PR&gt;</span> <span class="cmt"># squash + cleanup + sync</span><br/>
+        </div>
+      </div>
+    </div>
+
+    <div class="qs-panel" id="qs-tier-3" role="tabpanel">
+      <div class="terminal-wrap">
+        <div class="terminal-bar">
+          <div class="terminal-dot"></div><div class="terminal-dot"></div><div class="terminal-dot"></div>
+          <div class="terminal-title">tier 3 — end-to-end orchestration</div>
+        </div>
+        <div class="terminal">
+<span class="cmt"># Tier 1 + 2 install + bootstrap, plus:</span><br/><br/>
+
+<span class="cmt"># 1. Capture intent as a structured plan (interactive probe).</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/spec "extract logging into a typed boundary"</span><br/>
+<span class="out">  → docs/plans/2026-05-12-logger-boundary/{proposal,design,tasks,specs/}</span><br/>
+<span class="out ok">  validated: 7 slices · 23 acceptance criteria · 2 ASK points</span><br/><br/>
+
+<span class="cmt"># 2. Drive end-to-end. Pauses ONLY at decision points you defined.</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/grind docs/plans/2026-05-12-logger-boundary/</span><br/>
+<span class="out">  S1 dispatch → review → gate → merge ✓</span><br/>
+<span class="out">  S2 dispatch → review (BLOCK, fix-up agent) → gate → merge ✓</span><br/>
+<span class="out">  S3 ASK: "wire log-level env now or post-merge?" [approve|edit|reject|respond]</span><br/>
+<span class="out ok">  ... 7/7 slices merged, 2 P2 follow-ups filed, 0 deferred</span><br/><br/>
+
+<span class="cmt"># 3. Stamp the work.</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/recap</span> <span class="cmt"># visual HTML report</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/sweep-worktrees</span> <span class="cmt"># bulk-clean per-slice worktrees</span><br/>
+        </div>
       </div>
     </div>
   </div>
@@ -1012,6 +1313,40 @@
       scrolled = isScrolled;
       nav.classList.toggle('scrolled', scrolled);
     }
+  });
+
+  // Quickstart tab switching
+  document.querySelectorAll('.qs-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      document.querySelectorAll('.qs-tab').forEach(t => {
+        const active = t.dataset.tab === target;
+        t.classList.toggle('active', active);
+        t.setAttribute('aria-selected', active);
+      });
+      document.querySelectorAll('.qs-panel').forEach(p => {
+        p.classList.toggle('active', p.id === 'qs-' + target);
+      });
+    });
+  });
+
+  // Tier-card → quickstart-tab deep links (#qs-tier-N) auto-activate the matching tab
+  if (location.hash && location.hash.startsWith('#qs-tier-')) {
+    const tab = location.hash.replace('#qs-', '');
+    const tabBtn = document.querySelector('.qs-tab[data-tab="' + tab + '"]');
+    if (tabBtn) tabBtn.click();
+  }
+  document.querySelectorAll('a[href^="#qs-tier-"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const tab = link.getAttribute('href').replace('#qs-', '');
+      const tabBtn = document.querySelector('.qs-tab[data-tab="' + tab + '"]');
+      if (tabBtn) {
+        tabBtn.click();
+        // scroll to quickstart section
+        document.querySelector('.quickstart').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        e.preventDefault();
+      }
+    });
   });
 </script>
 </body>
