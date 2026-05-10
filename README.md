@@ -42,36 +42,42 @@ Anvil codifies that loop so it stops being something you re-derive every session
 
 ## Status
 
-- **Phase 0** — Live now. Three production-ready skills (`/sweep-worktrees`, `/self-review`, `/recap`). Manual composition by operator. Already useful.
-- **Phase 1** — Inner-loop trio (`/dispatch-slice`, `/pre-merge-gate`, `/auto-merge`). Specified, designed, wired into the architecture; per-skill fleshed-out implementations land next.
-- **Phase 2** — `/spec` interactive planning + `/grind` end-to-end orchestrator. Specified.
+**v0.3** — production-ready. All eight skills shipped, plus plan validator, multi-critic review, failure-mode triage, append-only event log, and a Claude Code plugin manifest. See [`CHANGELOG.md`](CHANGELOG.md) for what landed in each release and [`ROADMAP.md`](ROADMAP.md) for what's open.
 
-See [`docs/architecture.md`](docs/architecture.md) for the three-layer composition model.
+Open follow-ups:
+- v0.2.1 — Langfuse OTel adapter implementation, `@anvil/gate-mcp` npm publish.
+- v0.4+ — speculative; sourced from real-world adoption signal.
 
 ## Quickstart
 
 ```bash
-# 1. Heat the forge — verify your environment
-~/Desktop/anvil/bin/preflight.sh
+# 1. Clone the framework
+git clone https://github.com/browerthomas/Anvil.git ~/anvil
+cd ~/anvil
 
-# 2. Stoke it — install the skills
-~/Desktop/anvil/bin/install.sh
+# 2. Heat the forge — verify your environment
+bin/preflight.sh
 
-# 3. In Claude Code:
-/sweep-worktrees       # cleanup pile-up after a multi-PR sprint
-/self-review           # adversarial diff review (codex fallback)
-/recap                 # visual session report
+# 3. Stoke it — install the skills (symlinks into ~/.claude/skills/)
+bin/install.sh
+
+# 4. Bootstrap a project's .anvil/ config (run from inside the target repo)
+cd /path/to/your/project
+~/anvil/bin/init-anvil-config.sh
 ```
 
-Once Phase 1 ships:
+Then in Claude Code:
 
 ```
-claude> /spec "what you want built"
-claude> /grind docs/plans/<slug>.md
-claude> /recap
+/sweep-worktrees             # bulk-cleanup of stale worktrees + branches
+/self-review                 # adversarial diff review (codex fallback)
+/recap                       # visual HTML session report
+
+/spec "what you want built"  # interactive plan capture
+/grind docs/plans/<slug>.md  # end-to-end orchestrator
 ```
 
-See [`docs/getting-started.md`](docs/getting-started.md) for a longer walkthrough.
+See [`docs/getting-started.md`](docs/getting-started.md) for a longer walkthrough and [`docs/architecture.md`](docs/architecture.md) for the three-layer composition model.
 
 ## How it works
 
@@ -91,15 +97,15 @@ Each layer composes the layer below. Each layer is invocable standalone. Full ar
 
 ## Skills
 
-### Live (Phase 0)
+### Primitives (standalone — useful even without the rest)
 
 | Skill | Tagline | One-liner |
 |---|---|---|
 | [`/sweep-worktrees`](skills/sweep-worktrees/SKILL.md) | Reset the workshop | Bulk-clean stale worktrees + branches; handles iCloud node_modules + git locks |
-| [`/self-review`](skills/self-review/SKILL.md) | Test the temper | Opus-driven adversarial diff review — codex-fallback when subscription is rate-limited |
+| [`/self-review`](skills/self-review/SKILL.md) | Test the temper | Opus-driven adversarial diff review with optional 4-critic multi-pass mode — codex fallback |
 | [`/recap`](skills/recap/SKILL.md) | Stamp the work | Visual HTML session report — PRs shipped, tests added, lessons, loose ends |
 
-### Specified (Phase 1)
+### Inner-loop trio (per-PR cycle)
 
 | Skill | Tagline | One-liner |
 |---|---|---|
@@ -107,12 +113,12 @@ Each layer composes the layer below. Each layer is invocable standalone. Full ar
 | [`/pre-merge-gate`](skills/pre-merge-gate/SKILL.md) | Inspect the seam | Combinator: rebase + tsc + tests + fitness + grep — one verdict |
 | [`/auto-merge`](skills/auto-merge/SKILL.md) | Quench and ship | Squash-merge + branch delete + worktree wipe + main sync, in one call |
 
-### Specified (Phase 2)
+### Orchestration (end-to-end)
 
 | Skill | Tagline | One-liner |
 |---|---|---|
-| [`/spec`](skills/spec/SKILL.md) | Lay the blueprint | Interactive plan capture — probes for detail, outputs structured markdown |
-| [`/grind`](skills/grind/SKILL.md) | Run the forge | End-to-end orchestrator — reads a plan, drives the inner loop until done |
+| [`/spec`](skills/spec/SKILL.md) | Lay the blueprint | Interactive plan capture — probes for detail, outputs structured markdown (flat or folder layout) |
+| [`/grind`](skills/grind/SKILL.md) | Run the forge | End-to-end orchestrator — topo-sorts slices, dispatches agents, reviews, gates, merges, recaps |
 
 ### Compositional dependencies
 
