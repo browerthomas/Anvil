@@ -1,6 +1,6 @@
 {
   "name": "anvil",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Forge ideas into merged PRs. Plan → orchestrated execution → recap. An open framework for AI-orchestrated engineering work — markdown skills + bash + MCP, runs in any agent harness that speaks the open Agent Skills spec.",
   "tagline": "Plans come in raw. PRs come out forged.",
   "author": "anvil contributors",
@@ -15,7 +15,12 @@
     "skills/pre-merge-gate",
     "skills/auto-merge",
     "skills/spec",
-    "skills/grind"
+    "skills/grind",
+    "skills/findings-rollup",
+    "skills/issue-to-spec",
+    "skills/refine-plan",
+    "skills/config-bootstrap",
+    "skills/post-merge-debrief"
   ],
   "templates": [
     "templates/plan-template.md"

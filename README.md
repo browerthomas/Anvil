@@ -120,6 +120,16 @@ Each layer composes the layer below. Each layer is invocable standalone. Full ar
 | [`/spec`](skills/spec/SKILL.md) | Lay the blueprint | Interactive plan capture — probes for detail, outputs structured markdown (flat or folder layout) |
 | [`/grind`](skills/grind/SKILL.md) | Run the forge | End-to-end orchestrator — topo-sorts slices, dispatches agents, reviews, gates, merges, recaps |
 
+### Glue + correction (composes the others)
+
+| Skill | Tagline | One-liner |
+|---|---|---|
+| [`/findings-rollup`](skills/findings-rollup/SKILL.md) | Punch out the slag | After multi-critic review: file P2/P3 rollup issue + dispatch fix-up agent for P0/P1 in one call |
+| [`/issue-to-spec`](skills/issue-to-spec/SKILL.md) | Inspect the iron | Verify a GitHub issue body's factual claims against the codebase before locking a plan |
+| [`/refine-plan`](skills/refine-plan/SKILL.md) | Re-temper | Mid-grind plan correction — update plan files in-place + log to event log + comment on in-flight PRs |
+| [`/config-bootstrap`](skills/config-bootstrap/SKILL.md) | Charge the forge | Populate `.anvil/` configs from the project's existing context docs (CLAUDE.md, AGENTS.md, post-mortems) |
+| [`/post-merge-debrief`](skills/post-merge-debrief/SKILL.md) | Mark the work | Single-PR cleanup + next-slice dispatch outside of `/grind` — for one-off merges |
+
 ### Compositional dependencies
 
 Skills anvil composes with (install separately):

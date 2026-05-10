@@ -4,7 +4,45 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 
 ## [Unreleased]
 
-(Nothing yet. v0.4+ ideas in [ROADMAP.md](ROADMAP.md): cross-slice file-conflict detection, persona-driven multi-role pipeline, post-merge production-signal integration in `/recap`, monorepo-spanning plans, community skill marketplace.)
+(Nothing yet.)
+
+## [0.4.0] — 2026-05-10
+
+Glue + correction layer. Five new skills closing the manual sequences that surrounded the v0.3 core skills.
+
+### Added — `/findings-rollup`
+- After `/self-review --multi-critic` or `/codex-review` returns findings, automatically: file P2/P3 as a single rollup issue with checkboxes, dispatch a fix-up agent against the same PR/branch with the P0/P1 list as its acceptance contract, comment on the PR linking both.
+- `scripts/parse-review.sh` extracts the four severity sections from a review markdown.
+- `scripts/dispatch-fixup.sh` assembles the fix-up agent prompt with project's `.anvil/dispatch-defaults.txt` appended.
+- `templates/rollup-issue.md` is the canonical issue body template.
+- Closes the 5-step manual dance every operator runs after every multi-critic review.
+
+### Added — `/issue-to-spec`
+- Pre-lock plan validation: take a GitHub issue body, grep the codebase for each factual claim ("X retries on Y", "Z exists at file:line"), output a corrected mini-spec marking which claims were verified, contradicted, or moved.
+- Catches the "issue body wrong" class of plan bug at lock-time. Real example: `core/lulu.js — custom retry pattern` in an issue body where the actual code only has 401-token-refresh, no 5xx retry.
+- `scripts/verify-issue.sh` extracts factual claims from an issue body as TSV.
+
+### Added — `/refine-plan`
+- Mid-grind plan correction. Updates plan files in-place via `Edit`, writes a `plan-revised` event to `.anvil/grind-events.jsonl`, optionally comments on any in-flight PRs whose acceptance contract just moved.
+- Closes the manual sequence "Edit plan files → git commit → status update".
+
+### Added — `/config-bootstrap`
+- Companion to `bin/init-anvil-config.sh`. Where init writes starter templates with placeholders, `/config-bootstrap` populates them from the project's existing context docs (CLAUDE.md, AGENTS.md, README, post-mortems, audits).
+- Extracts forbidden patterns ("DO NOT" / "must not" / "never use" / "deleted in"), dispatch defaults ("always" / "every PR must" / "default to"), and known flakes ("flaky" / "retry once" / "known race").
+- `scripts/derive-rules.sh` does the doc-scanning pass.
+- One-time-per-project skill but high leverage when adopting anvil on a new repo.
+
+### Added — `/post-merge-debrief`
+- Single-PR cleanup + next-slice dispatch in one call: verify-merge + sweep-this-worktree + mark-merged-in-event-log + pull-main + auto-dispatch-next-slice-if-deps-met.
+- For when an operator merges outside `/grind` (one-off PR, manual `gh pr merge`, GitHub-UI merge).
+- Composes existing scripts; no new helpers.
+
+### Notes
+- All five skills surfaced from real friction during the first dogfood (`http-client-standardisation` plan against the TOS pilot project, 2026-05-10). Each closes a manual sequence the operator was running step-by-step.
+- Plugin manifest bumped to 0.4.0; skills array now lists 13 skills.
+
+[Unreleased]: https://github.com/browerthomas/Anvil/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/browerthomas/Anvil/releases/tag/v0.4.0
 
 ## [0.3.0] — 2026-05-10
 
