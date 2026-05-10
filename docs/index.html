@@ -1117,11 +1117,11 @@
 <!-- SKILLS -->
 <section id="skills" class="skills wrap bordered">
   <p class="section-eyebrow">The toolkit</p>
-  <h2 class="section-title">Thirteen skills. One toolbox.</h2>
-  <p class="section-sub">You won't invoke all thirteen. The orchestrator (<code style="font-family:'JetBrains Mono',monospace;background:var(--surface);padding:2px 7px;border-radius:4px;font-size:14px;color:var(--ember-2);border:1px solid var(--border);">/grind</code>) composes most of them; you call the others directly when you need one piece.</p>
+  <h2 class="section-title">Sixteen skills. One toolbox.</h2>
+  <p class="section-sub">You won't invoke all 16. The orchestrator (<code style="font-family:'JetBrains Mono',monospace;background:var(--surface);padding:2px 7px;border-radius:4px;font-size:14px;color:var(--ember-2);border:1px solid var(--border);">/grind</code>) composes most of them; you call the others directly when you need one piece.</p>
 
   <details class="skills-disclosure">
-    <summary>Show all 13 skills</summary>
+    <summary>Show all 16 skills</summary>
   <div class="skill-grid">
     <div class="skill">
       <div class="skill-head">
@@ -1201,6 +1201,13 @@
       </div>
       <p class="skill-desc">Visual HTML session report — PRs, tests, lessons, loose ends, plus a Decisions strip surfaced from operator ASK records. Dropped into <code>~/.claude/showme/</code>.</p>
     </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/learn</span>
+      </div>
+      <p class="skill-tag-line">Forge a memory</p>
+      <p class="skill-desc">Append-only per-project learnings log at <code>.anvil/learnings.jsonl</code>. Subcommands <code>add</code>, <code>search</code>, <code>prune</code>, <code>summary</code>, <code>export</code>. Skills auto-emit on discovery so chronic flakes stop being rediscovered every sprint.</p>
+    </div>
   </div>
   </details>
 </section>
@@ -1229,7 +1236,7 @@
 <span class="prompt">$</span> <span class="cmd">git clone https://github.com/browerthomas/Anvil.git ~/anvil</span><br/>
 <span class="prompt">$</span> <span class="cmd">~/anvil/bin/preflight.sh</span> <span class="cmt"># verifies gh + git + node + jq</span><br/>
 <span class="prompt">$</span> <span class="cmd">~/anvil/bin/install.sh</span><br/>
-<span class="out ok">  installed 13 skills → ~/.claude/skills/</span><br/><br/>
+<span class="out ok">  installed 14 skills → ~/.claude/skills/</span><br/><br/>
 
 <span class="cmt"># That's it. In Claude Code, run any one skill standalone:</span><br/>
 <span class="prompt-claude">claude&gt;</span> <span class="cmd">/sweep-worktrees</span> <span class="cmt"># bulk-clean stale branches + worktrees</span><br/>

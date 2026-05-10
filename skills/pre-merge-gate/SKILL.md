@@ -113,6 +113,29 @@ Print one of:
 - **🟡 Yellow flags** — non-blocking warnings (lint warnings, test retries). Caller can proceed but should review the flags.
 - **🔴 Blocked** — list of failed gates with specifics. Caller must fix before `/auto-merge`.
 
+### Step 9: Auto-emit a learning when a known flake retry-passes
+
+If the test suite (Step 4) failed on the first run and passed on retry, AND the failure pattern matched a line in `.anvil/known-flakes.txt`, append a `flake` learning to `.anvil/learnings.jsonl` via `/learn add`. This way the next operator who hits the same symptom gets a hit in `/learn search`.
+
+```bash
+# Only fires when retry-passing matched a known-flakes pattern.
+flake_signature="<test-name-or-regex-that-matched>"
+flake_key="flake-retry-passed-$(echo "$flake_signature" | tr -c '[:alnum:]' '-' | tr -s '-' | sed 's/^-\|-$//g')"
+
+bash "$ANVIL_ROOT/skills/learn/scripts/learn-add.sh" \
+  "$flake_key" "flake" \
+  "Known flake \"$flake_signature\" retry-passed on PR #$PR_NUMBER. See .anvil/known-flakes.txt." \
+  --confidence medium \
+  --source /pre-merge-gate \
+  --file .anvil/known-flakes.txt \
+  --tag retry-passed \
+  2>/dev/null || true
+```
+
+The call uses the **soft-fail default** — if `/learn add` errors (disk full, JSONL corrupt), pre-merge-gate doesn't abort.
+
+If a flake does NOT retry-pass — i.e. fails twice — that's a real test failure, not a flake. Don't emit a learning; emit the verdict as Blocked.
+
 ## Output format
 
 ```

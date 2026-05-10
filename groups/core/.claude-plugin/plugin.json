@@ -1,8 +1,8 @@
 {
   "name": "anvil-core",
-  "version": "0.3.0",
-  "description": "anvil core utilities — bulk worktree cleanup, adversarial diff review, visual session recap. The standalone primitives every Claude Code operator wants.",
-  "tagline": "Reset the workshop. Test the temper. Stamp the work.",
+  "version": "0.5.0",
+  "description": "anvil core utilities — bulk worktree cleanup, adversarial diff review, visual session recap, per-project learnings log. The standalone primitives every Claude Code operator wants.",
+  "tagline": "Reset the workshop. Test the temper. Stamp the work. Forge a memory.",
   "author": "Thomas Brower",
   "license": "MIT",
   "homepage": "https://github.com/browerthomas/Anvil",
@@ -10,7 +10,8 @@
   "skills": [
     "../../skills/sweep-worktrees",
     "../../skills/self-review",
-    "../../skills/recap"
+    "../../skills/recap",
+    "../../skills/learn"
   ],
   "requires": {
     "tools": ["gh", "git", "node", "jq"],

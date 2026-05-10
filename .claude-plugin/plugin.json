@@ -21,7 +21,9 @@
     "skills/refine-plan",
     "skills/config-bootstrap",
     "skills/post-merge-debrief",
-    "skills/dual-review"
+    "skills/dual-review",
+    "skills/learn",
+    "skills/persona"
   ],
   "templates": [
     "templates/plan-template.md"

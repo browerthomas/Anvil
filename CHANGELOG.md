@@ -37,6 +37,37 @@ Cross-model agreement signal. One new skill that wraps the two existing adversar
 [Unreleased]: https://github.com/browerthomas/Anvil/compare/v0.5.0...HEAD
 [0.5.0]: https://github.com/browerthomas/Anvil/releases/tag/v0.5.0
 
+## [0.5.0] — 2026-05-11
+
+Per-project memory. One new skill closing the "chronic flake gets rediscovered every 2-3 sprints" gap surfaced by the gstack research pass (2026-05-11).
+
+### Added — `/learn`
+- Append-only `.anvil/learnings.jsonl` per-project log. One JSON object per line: `{key, type, insight, confidence, source_skill, files, tags, slice_id, prior_count, timestamp}`.
+- Subcommands: `/learn add` (append), `/learn search` (substring + filter + rank by confidence × recurrence), `/learn prune` (archive entries older than cutoff, with `--keep-confidence` to preserve high-confidence invariants), `/learn summary` (last 20 grouped by type), `/learn export` (paste-ready MEMORY.md-compatible markdown chunk).
+- Closed `type` vocabulary: `flake | gotcha | invariant | decision | cost | perf | migration-shape`. Future skills filter by type.
+- Dedup-by-key: re-adding the same key appends a new line with `prior_count` incremented; `/learn search` surfaces re-confirmation count. Default 60s idempotency window for auto-emit callers.
+- Soft-fail by default — auto-emit hooks must not block the parent skill. Pass `--strict` to opt out (use in tests).
+- Helper scripts: `scripts/learn-add.sh`, `scripts/learn-search.sh`, `scripts/learn-prune.sh`, `scripts/learn-summary.sh`, `scripts/learn-export.sh`.
+- Inspired by gstack's `learnings.jsonl` pattern documented in `research/gstack-comparison-2026-05-11.md`. Closes issue #5.
+
+### Added — auto-emit hooks in existing skills
+- `/pre-merge-gate` — when a flake retry-passes a pattern in `.anvil/known-flakes.txt`, emits a `flake` learning with the test signature.
+- `/findings-rollup` — when a multi-critic review consolidates ≥3 P1s, emits a `gotcha` learning capturing the cross-cutting theme.
+- `/auto-merge` — when a merge involved a non-trivial rebase (>0 commits), emits a `migration-shape` learning. Confidence is `low` per occurrence; the dedup-by-key + `prior_count` mechanism converts repeated occurrences into a high-signal entry over time.
+- `/dispatch-slice` — when worktree creation or deps install fails, emits a `gotcha` learning with the failure mode + slice ID so the next dispatcher sees prior history.
+
+### Drive-by changes
+- `bin/init-anvil-config.sh` now bootstraps an empty `learnings.jsonl` and adds the file (plus `grind-events.jsonl`, `grind-snapshot.json`, `learnings.archive.jsonl`) to the per-project `.gitignore`. The `.anvil/README.md` table updated to list the two new files.
+- `bin/install.sh` group hint for `--group core` mentions `/learn search`.
+- Plugin manifest bumped to `0.5.0`; top-level skills array now lists 14 skills. `learn` joins `anvil-core` (it's a standalone primitive). All three group manifests bumped to `0.5.0` for consistency.
+- README.md status line now says "Fourteen skills"; the Primitives table gains a `/learn` row; the Configuration table lists `.anvil/learnings.jsonl` + `.anvil/grind-events.jsonl`; the layer ASCII swaps `/codex-review` (compositional dep, not anvil-shipped) for `/learn`.
+
+### Privacy
+- `.anvil/learnings.jsonl` is **default-gitignored** because it can hold project-specific gotchas, test names, and file paths. Operators who want to commit it can `git add -f .anvil/learnings.jsonl`.
+
+[Unreleased]: https://github.com/browerthomas/Anvil/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/browerthomas/Anvil/releases/tag/v0.5.0
+
 ## [0.4.0] — 2026-05-10
 
 Glue + correction layer. Five new skills closing the manual sequences that surrounded the v0.3 core skills.
