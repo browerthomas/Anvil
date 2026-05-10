@@ -1,6 +1,6 @@
 {
   "name": "anvil",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Forge intent into merged PRs. Plan → orchestrated execution → recap. An open framework for AI-orchestrated engineering work in Claude Code.",
   "tagline": "Plans come in raw. PRs come out forged.",
   "author": "anvil contributors",

@@ -4,7 +4,58 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 
 ## [Unreleased]
 
-(Nothing yet. v0.3 priorities in [ROADMAP.md](ROADMAP.md): multi-critic review, failure triage, plan validator.)
+(Nothing yet. v0.4+ ideas in [ROADMAP.md](ROADMAP.md): cross-slice file-conflict detection, persona-driven multi-role pipeline, post-merge production-signal integration in `/recap`, monorepo-spanning plans, community skill marketplace.)
+
+## [0.3.0] — 2026-05-10
+
+Resilience + review-quality + plan validation. All three v0.3 roadmap items.
+
+### Added — multi-critic adversarial review
+- `/self-review --multi-critic` spawns 4 parallel Opus sub-agents, one per lens:
+  - `correctness` (logic bugs, race conditions, edge cases)
+  - `security` (auth/authz, injection, CSRF, secrets, sanitization)
+  - `test-coverage` (negative cases, weak assertions, bypassed contracts)
+  - `architecture` (layer boundaries, vendor SDK boundaries, fitness rules)
+- Plus a 5th synthesizer agent that deduplicates findings, re-ranks by severity, identifies cross-critic risk areas, and returns a verdict (`BLOCK | PROCEED-WITH-CAUTION | CLEAN`).
+- Per-critic prompts live in `skills/self-review/templates/critics/`; synthesizer prompt at `skills/self-review/templates/synthesizer.md`.
+- Each critic stays in its lane (skip findings outside its lens) — prevents redundant double-up coverage.
+- Trade-off: 5x agent cost, ~2x catch rate. Recommended for high-stakes diffs (auth, payments, state machines, schema migrations, >500 LoC).
+
+### Added — failure-mode triage (Symphony pattern)
+- `/grind` now distinguishes three failure classes:
+  - **Slice-fail** → defer this slice + file issue, continue siblings.
+  - **Plan-fail** → halt with structured incident report; drain in-flight.
+  - **Infra-fail** → skip-this-tick, circuit-breaker backoff (30s → 1m → 5m → 15m), model fallback chain (Opus → Sonnet → file issue).
+- Default posture: **defer and continue.** Never halt the whole orchestration when a single slice trips.
+- `.anvil/known-flakes.txt` config for retry-once on flake patterns.
+- `.github/ISSUE_TEMPLATE/grind-deferral.md` auto-filed when /grind defers a slice; gives operator one-click triage.
+- Resilience matrix in `skills/grind/SKILL.md` documents handler per failure type.
+- `bin/init-anvil-config.sh` now bootstraps `.anvil/known-flakes.txt` alongside the other config files.
+
+### Added — plan validator
+- `skills/spec/scripts/validate.sh` — Spec-Kit `/speckit.analyze` analog. Lints flat or folder plans for completeness + structural integrity:
+  1. Goal section present + non-empty
+  2. In-scope and Out-of-scope lists populated
+  3. Hard constraints non-empty
+  4. Slice manifest YAML parses
+  5. Slice graph dependency edges resolve (also catches cycles)
+  6. Every slice has acceptance criteria
+  7. Every operator-decision has `ask` + `verbs` + `default`
+- Returns: 0 valid, 1 errors, 2 warnings only. `--strict` treats warnings as errors.
+- Operators can add to CI: `validate.sh docs/plans/<plan> --strict || exit 1`.
+
+### Drive-by fixes
+- `shared/lib.sh` color prefix had stale `SY_` refs in three skill scripts (verify.sh, merge.sh, new validate.sh). Globbed-replaced to `AV_`.
+- awk YAML extraction was leaking the closing ``` fence into the parsed payload. Fixed in all skill scripts.
+- `examples/example-plan.md` L5 operator-decision was missing verbs (predates v0.2 ASK-verb landing); validator caught it; updated to current shape.
+
+### Notes
+- Anvil is now production-ready for driving real multi-PR work. The combination of plan validator + multi-critic review + failure-mode triage closes the gap to LangGraph + LangSmith for orchestration quality, while staying MIT, fully local, and composable.
+- Repo: https://github.com/browerthomas/Anvil. Public, MIT.
+- Next: drive a real plan end-to-end (TOS architecture-standardisation work or v3 cutover residual). v0.4 priorities sourced from real-world friction.
+
+[Unreleased]: https://github.com/browerthomas/Anvil/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/browerthomas/Anvil/releases/tag/v0.3.0
 
 ## [0.2.0] — 2026-05-10
 

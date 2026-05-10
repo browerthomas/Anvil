@@ -84,9 +84,11 @@ Today the gate is a Claude Code skill. The 5,000+ MCP server ecosystem (March 20
 
 **Why now:** anvil's gate becomes the reference "lint+test+ratchet+forbidden-pattern" implementation for the whole agent lane, not a Claude-Code-only artifact. Brand surface widens; anvil becomes infrastructure for everyone, not just our users.
 
-## v0.3 — adversarial review + failure resilience
+## v0.3 — adversarial review + failure resilience — SHIPPED 2026-05-10
 
-### 6. Multi-agent parallel critics
+All three v0.3 items landed:
+
+### 6. Multi-agent parallel critics ✅
 
 Today `/codex-review` and `/self-review` are single-reviewer. Qodo Merge runs separate critics for security, bug, quality, tests in parallel. Greptile reports 82% bug catch with full-codebase indexing vs CodeRabbit's 44% with diff-only.
 
@@ -96,7 +98,7 @@ Today `/codex-review` and `/self-review` are single-reviewer. Qodo Merge runs se
 - Synthesize findings into one structured P0/P1/P2/P3 report.
 - Optional: feed the reviewer the call-graph downstream of the diff (not just the diff text) — Greptile's catch-rate gap is mostly context.
 
-### 7. Failure-mode triage (Symphony pattern)
+### 7. Failure-mode triage (Symphony pattern) ✅
 
 Today anvil halts on any agent failure. Distinguish:
 - **Slice-fail** → defer that slice, continue dep-independent siblings, file an issue.
@@ -105,7 +107,7 @@ Today anvil halts on any agent failure. Distinguish:
 
 Plus: circuit-breaker fallback chain. Opus rate-limited? Try Sonnet with tighter constraints. Both rate-limited? File the slice as a follow-up issue + continue.
 
-### 8. Plan validation pass
+### 8. Plan validation pass ✅
 
 Add `/spec --validate <plan-path>` that runs:
 - Schema check on slice manifest (every slice has acceptance, deps resolve, no cycles).
@@ -136,9 +138,13 @@ Spec-Kit's `/speckit.analyze` is the model.
 
 - v0.1 — shipped 2026-05-10 (initial scaffold + 8 skills + plugin manifest + landing page).
 - v0.2 — shipped 2026-05-10 (composability + event log + ASK verbs + folder plans + MCP gate).
-- v0.2.1 — Langfuse adapter implementation, MCP gate publish to npm. Open.
-- v0.3 (4-8 weeks): multi-critic review + failure triage + plan validator. See section above.
-- v0.4+ (open-ended): speculative items above, prioritized by adoption signal.
+- v0.3 — shipped 2026-05-10 (multi-critic review + failure triage + plan validator).
+- v0.2.1 — open: Langfuse adapter implementation, `@anvil/gate-mcp` publish to npm.
+- v0.4+ (open-ended): speculative items above, prioritized by real-world adoption signal.
+
+## Anvil is production-ready
+
+After v0.3, the framework is complete enough to drive real multi-PR work end-to-end. The next priorities are sourced from real-world friction, not speculation. Drive a real plan, see what hurts, fix that.
 
 ## Sources
 
