@@ -40,6 +40,12 @@ PARENT_DIR=$(dirname "$REPO_ROOT")
 BRANCH="fix-${ID}"
 WORKTREE_PATH="${PARENT_DIR}/${REPO_NAME}-${ID}"
 BASE_BRANCH="origin/main"
+
+# PR-exists idempotency check (anvil#7)
+EXISTING_PR=$(av_existing_pr_for_branch "$BRANCH")
+# If non-empty, the agent prompt instructs `gh pr edit <N>` instead of
+# `gh pr create` so a previously-failed dispatch attempt doesn't error
+# the second time around.
 ```
 
 ### Step 2: Create worktree + install deps
