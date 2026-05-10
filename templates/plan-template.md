@@ -73,7 +73,9 @@ slices:
       - "Test count: 906+ passing"
     operator-decision:
       ask: null              # if non-null: orchestrator pauses + asks operator before this slice
+      verbs: []              # subset of [approve, edit, reject, respond] — operator's valid answers
       default: null          # fallback if operator unreachable (skip-with-warning | retry | abort)
+      timeout-hours: null    # if set: apply default after N hours of no operator response
     operator-paced: false    # if true: orchestrator skips dispatch, marks slice as needing-human
 
   - id: <next>
@@ -93,7 +95,7 @@ The plan is "locked" when all of these are true:
 - [ ] Every slice has acceptance criteria (≥1 testable item)
 - [ ] Slice graph has no cycles
 - [ ] Every dependency edge resolves to an existing slice id
-- [ ] Every operator-decision point has both `ask` AND `default`
+- [ ] Every operator-decision point has `ask`, `verbs` (≥1), AND `default`
 - [ ] Out-of-scope items have a follow-up plan or "won't do" justification
 
 When all are checked: change Status to `locked` and run `/grind <this-plan>.md`.
@@ -105,6 +107,21 @@ When all are checked: change Status to `locked` and run `/grind <this-plan>.md`.
 Free-form. Anything the operator wants to remember about why this plan exists, who asked for it, what came before, what comes after.
 
 ---
+
+## Operator decision records
+
+Structured artifacts from `operator-decision.ask` invocations during execution. The orchestrator appends one entry per decision point reached. Shape:
+
+```
+### <slice-id> — <ask question> @ <iso-timestamp>
+- Verb: approve | edit | reject | respond
+- Response: <operator's free-text answer, or "(default applied)" if timeout fired>
+- Outcome: slice continued | slice deferred | plan halted
+```
+
+`/recap` surfaces this list as a "Decisions" section in the visual report.
+
+- (none yet)
 
 ## Followups
 

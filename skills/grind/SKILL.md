@@ -114,7 +114,7 @@ When all slices have either merged OR been deferred (with reason):
   - Tests added
   - Final test count
 
-## Operator decision point markup
+## Operator decision point markup (LangGraph HITL pattern)
 
 In the plan YAML:
 
@@ -123,10 +123,30 @@ slices:
   - id: A2
     operator-decision:
       ask: "Is the Sentry DSN configured in the deploy secret store yet?"
+      verbs: [approve, edit, reject]
       default: skip-with-warning
+      timeout-hours: 4
 ```
 
-When `/grind` reaches A2, it pauses + asks. Operator can:
+The four verbs:
+
+| Verb | Meaning | Outcome |
+|---|---|---|
+| `approve` | Yes, proceed as planned | Slice continues with current scope |
+| `edit` | Adjust the slice scope before proceeding | Operator's edit appended to slice scope; slice continues |
+| `reject` | Don't run this slice | Slice marked deferred; orchestrator continues with siblings |
+| `respond` | Free-text answer (no scope change implied) | Slice continues; response logged in decision record |
+
+When `/grind` reaches A2, it presents an `AskUserQuestion` with the listed verbs as options. Operator picks one + optionally adds free-text annotation.
+
+If operator unreachable for `timeout-hours` (default 4): apply the `default`:
+- `skip-with-warning` → mark deferred, continue siblings
+- `retry` → re-ask in N more hours
+- `abort` → halt orchestration
+
+Every decision is appended to the plan's `## Operator decision records` section as a structured record. `/recap` surfaces these inline in its visual report.
+
+Legacy operator behavior (verbs unset / freeform answer):
 - Answer the ask → continues
 - Say "skip" → marks slice deferred, continues
 - Say "stop" → halts orchestration, leaves merged slices in main

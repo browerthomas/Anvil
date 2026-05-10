@@ -38,17 +38,40 @@ for slice in slices:
       continue
     wait_for_deps()
 
-  # === Operator decision point ===
+  # === Operator decision point (LangGraph HITL pattern) ===
   if slice.operator-decision.ask:
-    answer = ask_user(slice.operator-decision.ask)
-    if not answer or answer == slice.operator-decision.default:
-      apply_default(slice)
+    verbs = slice.operator-decision.verbs or [approve, edit, reject]
+    options = build_ask_options(verbs)  # AskUserQuestion options + optional free-text
+    timeout_hours = slice.operator-decision.timeout-hours or 4
+
+    answer, verb, free_text = ask_user_with_timeout(
+      slice.operator-decision.ask,
+      options,
+      timeout_hours
+    )
+
+    # Append structured decision record to the plan markdown's
+    # ## Operator decision records section
+    append_decision_record(plan_path, slice.id, ask, verb, free_text, outcome="pending")
+
+    if answer == "TIMEOUT":
+      apply_default(slice.operator-decision.default)
+      record.verb = "(default applied)"
+      record.outcome = default_to_outcome(default)
       if default == "skip-with-warning":
-        defer(slice, "operator deferred")
+        defer(slice, "operator timeout — default applied")
         continue
       if default == "abort":
         halt_orchestration("operator aborted at " + slice.id)
         return
+
+    # Normal verb-driven flow:
+    case verb:
+      "approve" → continue with original scope
+      "edit"    → slice.scope = original_scope + "\n\nOperator edit:\n" + free_text
+      "reject"  → defer(slice, "operator rejected: " + free_text); continue
+      "respond" → log free_text; continue with original scope
+    record.outcome = "slice continued" if verb in [approve, edit, respond] else "slice deferred"
 
   # === Dispatch ===
   worktree = ensure_worktree(slice.id)
