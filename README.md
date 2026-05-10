@@ -73,7 +73,7 @@ If you adopt anvil and want to be added here, open a PR.
 
 ## Skills
 
-Thirteen skills. You won't call all of them — `/grind` composes most. Plain-English descriptions below; skill names stay stable for backwards compatibility.
+Fourteen skills. You won't call all of them — `/grind` composes most. Plain-English descriptions below; skill names stay stable for backwards compatibility.
 
 | Skill | What it does |
 |---|---|
@@ -84,6 +84,7 @@ Thirteen skills. You won't call all of them — `/grind` composes most. Plain-En
 | [`/auto-merge`](skills/auto-merge/SKILL.md) | Squash + delete branch + wipe worktree + sync main. One call. |
 | [`/post-merge-debrief`](skills/post-merge-debrief/SKILL.md) | After a one-off merge outside `/grind`: cleanup + mark merged in event log + pull main + dispatch next slice. |
 | [`/self-review`](skills/self-review/SKILL.md) | Adversarial diff review via an Opus sub-agent. `--multi-critic` mode runs four parallel critics + a synthesizer. Codex fallback. |
+| [`/dual-review`](skills/dual-review/SKILL.md) | Run `/self-review` + `/codex-review` in parallel and synthesize one findings table tagged `Source: Both / Claude-only / Codex-only`. Use on high-stakes diffs (money, auth, schema, >500 LoC). |
 | [`/findings-rollup`](skills/findings-rollup/SKILL.md) | Translate a multi-critic review into action: file P2/P3 as a rollup issue + dispatch a fix-up agent for the P0/P1 list. |
 | [`/refine-plan`](skills/refine-plan/SKILL.md) | Mid-grind plan correction. Edit plan files in-place, log a `plan-revised` event, comment on in-flight PRs whose contract moved. |
 | [`/config-bootstrap`](skills/config-bootstrap/SKILL.md) | Derive `.anvil/` configs (forbidden patterns, dispatch defaults, known flakes) from your project's existing context docs (CLAUDE.md, AGENTS.md, post-mortems). |

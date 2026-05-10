@@ -10,6 +10,33 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 - `docs/index.html` polish: decorative `skill-tag-line` strings removed from the skills disclosure; new **Battle-tested** strip with theirownstory PR numbers and counts; entry-tiers section relabelled "Install + entry points" for clarity; hero subtitle tightened to the elevator pitch + Who-it's-for framing; CTA copy "Install" instead of "Pick your entry point"; "Written to the open Agent Skills spec" sub-blurb dropped from the skills section.
 - `CONTRIBUTING.md`: GitHub Pages hosting workflow moved here from README.
 
+## [0.5.0] — 2026-05-11
+
+Cross-model agreement signal. One new skill that wraps the two existing adversarial reviewers.
+
+### Added — `/dual-review`
+- Runs `/self-review` (Claude) and `/codex-review` (Codex) in **parallel** as background sub-agents, then synthesizes both findings lists into a single table with a `Source` column: `Both` / `Claude only` / `Codex only`.
+- Cross-model agreement (`Both`) is the strongest signal in adversarial review — two different model families flagging the same line is almost certainly real. Disagreements (one-only) are blind-spot complements.
+- `--multi-critic` mode escalates the Claude leg to 4 parallel critics + synthesizer (so 6 agents total: 4 Claude critics + 1 Codex review + 1 dual-review synthesizer). Use on the highest-stakes diffs.
+- `--no-codex` degrades to Claude-only when the operator has reason to skip codex.
+- Same arg shape as `/self-review` and `/codex-review`: PR number, branch, SHA, or no-arg (uncommitted).
+- Codex fallback: if codex is rate-limited or fails mid-run, the synthesis step is dropped, the Claude leg's output stands alone, and a banner makes the degraded signal visible (`⚠ Codex unavailable; this run is Claude-only — strictly weaker signal`).
+- Saves the merged transcript under `.codex-log/<timestamp>-dual-review.md` (same paper-trail directory as the underlying skills).
+- Composes with `/findings-rollup` for P2/P3 + fix-up dispatch.
+- `scripts/capture-diff.sh` handles diff extraction, 4000-line size cap, and codex-availability probe.
+- `templates/synthesizer.md` is the canonical prompt for the synthesis sub-agent.
+
+### Why
+- Source: gstack research (`research/gstack-comparison-2026-05-11.md`). gstack's `/autoplan` runs both reviewers by default and synthesizes — anvil treated them as alternatives. `/dual-review` closes that gap without breaking the existing skills (both remain invocable standalone).
+- Closes [#4](https://github.com/browerthomas/Anvil/issues/4).
+
+### Notes
+- `/self-review` and `/codex-review` are unchanged. `/dual-review` is a new top-level skill that wraps them.
+- Plugin manifest bumped to 0.5.0; skills array now lists 14 skills.
+
+[Unreleased]: https://github.com/browerthomas/Anvil/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/browerthomas/Anvil/releases/tag/v0.5.0
+
 ## [0.4.0] — 2026-05-10
 
 Glue + correction layer. Five new skills closing the manual sequences that surrounded the v0.3 core skills.
@@ -45,7 +72,6 @@ Glue + correction layer. Five new skills closing the manual sequences that surro
 - All five skills surfaced from real friction during the first dogfood (`http-client-standardisation` plan against the TOS pilot project, 2026-05-10). Each closes a manual sequence the operator was running step-by-step.
 - Plugin manifest bumped to 0.4.0; skills array now lists 13 skills.
 
-[Unreleased]: https://github.com/browerthomas/Anvil/compare/v0.4.0...HEAD
 [0.4.0]: https://github.com/browerthomas/Anvil/releases/tag/v0.4.0
 
 ## [0.3.0] — 2026-05-10
