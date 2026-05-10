@@ -41,27 +41,55 @@ body=$(gh issue view "$ISSUE" ${REPO:+--repo "$REPO"} --json body --jq '.body' 2
 [ -z "$body" ] && { av_fail "could not fetch issue $ISSUE"; exit 1; }
 
 # Extract claims via regex.
-# 1. file:line — `<path>:<line>`
-echo "$body" | grep -oE "[a-zA-Z0-9_./-]+\.(js|ts|tsx|jsx|md|json|yaml|html|css|sh)(:[0-9]+|#L[0-9]+)" | sort -u | while read -r ref; do
+# 1. file:line — `<path>:<line>` or `<path>#L<line>`
+echo "$body" | grep -oE "[a-zA-Z0-9_./-]+\.(js|ts|tsx|jsx|mjs|cjs|md|json|yaml|yml|html|css|sh|py|rs|go|rb)(:[0-9]+|#L[0-9]+)" | sort -u | while read -r ref; do
   printf "file_line\t%s\t%s\n" "$ref" "$(echo "$body" | grep -F "$ref" | head -1)"
 done
 
-# 2. backtick-quoted symbols — `` `<symbol>` ``
+# 2. backtick-quoted symbols — `` `<symbol>` `` or `` `<symbol>()` ``
 echo "$body" | grep -oE "\`[a-zA-Z_][a-zA-Z0-9_]*(\(\))?\`" | sort -u | while read -r sym; do
   clean=$(echo "$sym" | tr -d '`()')
-  # Skip very common false-positive symbols (let, const, function, etc)
   case "$clean" in
     let|const|var|function|return|true|false|null|undefined|async|await|class|new|this|throw|try|catch|if|else|for|while|do|case|switch|break|continue|export|import|from|default|in|of|typeof|instanceof|delete|void|yield) continue;;
   esac
   printf "symbol\t%s\t%s\n" "$clean" "$(echo "$body" | grep -F "$sym" | head -1)"
 done
 
-# 3. behavioral claims — lines with hint phrases.
-echo "$body" | grep -E "(retries on |retry on |wraps |is wrapped|wraps fetch|custom retry|retry pattern|no retry|auto-retry)" | head -10 | while IFS= read -r line; do
+# 2b. parenthesised symbol lists — issue bodies often write `(openCheckout, markPaid, markDigitalDelivered)`
+#     where each symbol is bare (no backticks) but the list shape is recoverable.
+echo "$body" | grep -oE "\([a-zA-Z_][a-zA-Z0-9_]*(,\s*[a-zA-Z_][a-zA-Z0-9_]*){1,}\)" | sort -u | while read -r list; do
+  # Strip outer parens, split on comma, emit one row per identifier.
+  inner=$(echo "$list" | tr -d '()')
+  echo "$inner" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | while read -r sym; do
+    [ -z "$sym" ] && continue
+    case "$sym" in
+      let|const|var|function|return|true|false|null|undefined|async|await|class|new|this) continue;;
+    esac
+    printf "symbol\t%s\t%s\n" "$sym" "$(echo "$body" | grep -F "$list" | head -1)"
+  done
+done
+
+# 3. file-size claims — "is N LoC" / "has N lines"
+echo "$body" | grep -oE "(is|has|with|at)\s+[0-9]+\s*(LoC|lines?\b)" | head -10 | while IFS= read -r claim; do
+  printf "file_size\t%s\t%s\n" "$claim" "$(echo "$body" | grep -F "$claim" | head -1)"
+done
+
+# 4. line-number claims — "(line N)" / "at line N"
+echo "$body" | grep -oE "(at\s+)?\(?line\s+[0-9]+\)?" | sort -u | while read -r claim; do
+  printf "line_number\t%s\t%s\n" "$claim" "$(echo "$body" | grep -F "$claim" | head -1)"
+done
+
+# 5. count claims — "N+ test sites" / "N callers" / "N references"
+echo "$body" | grep -oE "[0-9]+\+?\s+(test sites?|tests?|callers?|references?|usages?|callsites?|callers?)" | head -10 | while IFS= read -r claim; do
+  printf "count\t%s\t%s\n" "$claim" "$(echo "$body" | grep -F "$claim" | head -1)"
+done
+
+# 6. behavioral claims — lines with hint phrases.
+echo "$body" | grep -iE "(retries on |retry on |wraps |is wrapped|wraps fetch|custom retry|retry pattern|no retry|auto-retry|fall back to|falls back to)" | head -10 | while IFS= read -r line; do
   printf "behavioral\t%s\t%s\n" "$line" "$line"
 done
 
-# 4. module references — lines matching "<file.js> — <description>" or "<dir>/<file>:"
-echo "$body" | grep -E "^[-*•]?\s*[a-zA-Z0-9_/-]+\.(js|ts)\s+(—|--|-|:)" | while IFS= read -r line; do
+# 7. module references — lines matching "<file.js> — <description>" or "<dir>/<file>:"
+echo "$body" | grep -E "^[-*•]?\s*[a-zA-Z0-9_/-]+\.(js|ts|tsx|jsx|mjs|cjs|py|rs|go|rb)\s+(—|--|-|:)" | while IFS= read -r line; do
   printf "module\t%s\t%s\n" "$line" "$line"
 done
