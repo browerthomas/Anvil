@@ -5,7 +5,14 @@ description: Use to capture work intent as a structured plan with explicit slice
 
 # /spec — interactive plan capture
 
-The operator describes intent. This skill probes for the detail an orchestrator needs to act, generates a structured plan markdown file, and presents it for approval.
+The operator describes intent. This skill probes for the detail an orchestrator needs to act, generates a structured plan, and presents it for approval.
+
+Two output layouts:
+
+- **Flat** (default for plans <5 slices, no architecture decisions): a single markdown file at `docs/plans/<YYYY-MM-DD>-<slug>.md` built from `templates/plan-template.md`.
+- **Folder** (OpenSpec-style, default for plans with ≥2 architecture decisions or ≥5 slices): a directory at `docs/plans/<YYYY-MM-DD>-<slug>/` with `proposal.md` + `design.md` + `tasks.md` + `specs/<scenario>.md` files, built from `templates/plan-folder-template/`.
+
+`/grind` reads both layouts transparently — point it at a file or a directory, it figures out the rest. The folder layout is recommended when the adversarial reviewer should compare execution against explicit acceptance scenarios (the `specs/` files).
 
 ## When to invoke
 

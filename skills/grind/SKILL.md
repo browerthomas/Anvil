@@ -5,7 +5,26 @@ description: Use to execute a plan end-to-end. Reads slice manifest, dispatches 
 
 # /grind — orchestrate a plan to merged PRs
 
-The end-to-end orchestrator. Reads a plan in anvil format (see `templates/plan-template.md`), drives each slice from agent dispatch to merged PR, recaps at the end. Operator only intervenes at explicit decision points.
+The end-to-end orchestrator. Reads a plan in anvil format (flat single-file OR folder layout — see below), drives each slice from agent dispatch to merged PR, recaps at the end. Operator only intervenes at explicit decision points.
+
+## Plan layouts
+
+`/grind` reads two layouts transparently:
+
+**Flat:** `docs/plans/<slug>.md` — single file with the YAML slice manifest inline. Right for small plans (`templates/plan-template.md`).
+
+**Folder (OpenSpec-style):** Right for substantive plans with architecture decisions.
+```
+docs/plans/<slug>/
+├── proposal.md        # the why (goal, scope, success criteria)
+├── design.md          # the how (architecture decisions, risks)
+├── tasks.md           # the slice manifest (this is what /grind reads)
+└── specs/
+    └── <scenario>.md  # acceptance scenarios per slice (referenced from tasks.md)
+```
+The adversarial reviewer (`/codex-review` or `/self-review`) gets `specs/` files as additional context — execution is compared against the explicit scenarios, not vibes.
+
+Built from `templates/plan-folder-template/`.
 
 ## When to invoke
 
