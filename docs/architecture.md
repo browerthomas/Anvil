@@ -108,7 +108,7 @@ Optional:
 | Sibling PR merge causes rebase conflict | auto-rebase if trivial; defer slice + continue siblings if reasoning needed |
 | Operator decision point reached | pause + AskUserQuestion; apply `default` after timeout |
 | Operator unreachable for >N hours | apply slice's `default` (skip-with-warning) |
-| Worktree wipe hangs (iCloud quirk) | `find -delete` parallel, fall back to skip with operator notification |
+| Worktree wipe hangs (cloud-sync-evicted files: iCloud / Dropbox / OneDrive / Google Drive) | `find -delete` parallel, fall back to skip with operator notification |
 | Stale `.git/*.lock` | clear automatically, retry once |
 
 ## Extension points

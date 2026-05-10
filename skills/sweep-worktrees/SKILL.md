@@ -112,11 +112,11 @@ Report the before/after counts to the operator.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `find -delete` hangs on a single worktree | iCloud-evicted `node_modules` symlink storm | Skip that worktree; report path; try again later |
+| `find -delete` hangs on a single worktree | cloud-sync-evicted `node_modules` symlink storm (iCloud / Dropbox / OneDrive / Google Drive) | Skip that worktree; report path; try again later |
 | `git branch -D X` says "used by worktree Y" but Y doesn't exist | `.git/worktrees/Y/` admin dir wasn't cleared | Re-run step 4 |
 | `.git/packed-refs.lock` exists | stale concurrent `git` process | `rm -f` the lock |
-| `rm -rf` permission denied | sandbox or iCloud quirk | Use `find -delete` instead |
-| `git worktree remove --force` hangs >2 min | iCloud `node_modules` content fetch | Kill the command; use `find -delete` directly |
+| `rm -rf` permission denied or hangs | sandboxed shell, or cloud-sync-evicted files | Use `find -delete` instead — skips the OS re-download path |
+| `git worktree remove --force` hangs >2 min | cloud-sync `node_modules` content re-fetch | Kill the command; use `find -delete` directly |
 
 ## Cadence
 

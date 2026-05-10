@@ -143,7 +143,7 @@ Initial Phase 0 release. Inner-loop helpers + visual reporting + cleanup, manual
 ### Added
 
 - **Skills (live):**
-  - `/sweep-worktrees` — bulk-cleanup of stale worktrees + branches; iCloud-friendly via `find -delete`; clears stale git locks.
+  - `/sweep-worktrees` — bulk-cleanup of stale worktrees + branches; cloud-sync-friendly via `find -delete` (handles iCloud / Dropbox / OneDrive / Google Drive evicted files); clears stale git locks.
   - `/self-review` — adversarial diff review using an Opus sub-agent. Codex-fallback for rate-limited or offline scenarios.
   - `/recap` — visual HTML session report drop into `~/.claude/showme/`.
 

@@ -89,7 +89,7 @@ if [ -n "$WORKTREE" ] && [ -d "$WORKTREE" ]; then
   if av_safe_wipe_dir "$WORKTREE"; then
     av_ok "worktree wiped"
   else
-    av_warn "worktree partially cleaned (iCloud quirk?); continuing"
+    av_warn "worktree partially cleaned (likely cloud-sync evicted: iCloud / Dropbox / OneDrive); continuing"
   fi
 
   # Clear git's bookkeeping for this worktree

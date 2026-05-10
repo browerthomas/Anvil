@@ -61,9 +61,14 @@ av_install_deps_in_worktree() {
   wait
 }
 
-# --- File deletion (iCloud-friendly) ---
+# --- File deletion (cloud-sync-friendly) ---
+# `rm -rf` hangs on cloud-sync-evicted files (iCloud Drive, Dropbox,
+# OneDrive, Google Drive Backup-and-Sync) because the OS tries to
+# re-download the stub before unlinking. `find -delete` skips the
+# download path and unlinks the entries directly. Same trick covers
+# some sandboxed shells where the higher-permission `rm` path is denied.
 av_safe_wipe_dir() {
-  # Wipe a directory using find -delete (faster than rm -rf on iCloud-evicted node_modules).
+  # Wipe a directory using find -delete (faster + cloud-sync-safe).
   # Falls back to rm -rf if find -delete fails.
   local target="$1"
   if [ ! -d "$target" ]; then
@@ -71,7 +76,7 @@ av_safe_wipe_dir() {
   fi
   find "$target" -delete 2>/dev/null || rm -rf "$target" 2>/dev/null
   if [ -d "$target" ]; then
-    av_warn "could not fully wipe $target (may have iCloud-evicted files)"
+    av_warn "could not fully wipe $target (may have cloud-sync-evicted files — iCloud / Dropbox / OneDrive / Google Drive)"
     return 1
   fi
 }

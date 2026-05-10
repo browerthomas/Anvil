@@ -13,7 +13,7 @@ A multi-PR sprint runs this exact sequence per PR — manually it's five steps w
 4. `git branch -D <branch>` (force-delete; squash-merge leaves branch as "unmerged")
 5. `git pull origin main` (sync local main)
 
-Each step has a footgun (stale lock files, "branch used by worktree" errors, hung iCloud `rm`). This skill does it correctly in one call.
+Each step has a footgun (stale lock files, "branch used by worktree" errors, `rm` hung on cloud-sync-evicted files — iCloud / Dropbox / OneDrive / Google Drive). This skill does it correctly in one call.
 
 ## When to invoke
 
@@ -126,7 +126,7 @@ Print:
 | "PR has merge conflicts" | branch out-of-date | Run `/pre-merge-gate <n>` to rebase + retest |
 | "branch used by worktree" | step 4 didn't fire correctly | Re-run step 4 manually |
 | ".git/packed-refs.lock exists" | stale concurrent git process | Step 6 should clear; retry once |
-| `rm`/`find` permission denied | sandbox or iCloud quirk | Operator runs the wipe manually outside the sandbox |
+| `rm`/`find` permission denied | sandboxed shell, or filesystem-level eviction (cloud-sync, encrypted volumes, NFS drop) | Operator runs the wipe manually outside the sandbox |
 | "checks pending" | CI not finished | Wait + re-invoke |
 
 ## What this saves
