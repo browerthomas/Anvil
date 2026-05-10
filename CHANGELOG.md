@@ -4,7 +4,11 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 
 ## [Unreleased]
 
-(Nothing yet.)
+### Changed — docs polish per #3 (Bill's feedback, 2026-05-11)
+
+- README restructure: elevator pitch + "Who it's for" framing up top; Quickstart and Install moved to top; battle-tested dogfood section surfaced (http-client 4/4, arch-standardisation 5/15 in flight); skill glossary rebuilt as plain-English `Skill → What it does` rows (no decorative taglines, names preserved for backwards compatibility); GitHub Pages hosting moved out of README.
+- `docs/index.html` polish: decorative `skill-tag-line` strings removed from the skills disclosure; new **Battle-tested** strip with theirownstory PR numbers and counts; entry-tiers section relabelled "Install + entry points" for clarity; hero subtitle tightened to the elevator pitch + Who-it's-for framing; CTA copy "Install" instead of "Pick your entry point"; "Written to the open Agent Skills spec" sub-blurb dropped from the skills section.
+- `CONTRIBUTING.md`: GitHub Pages hosting workflow moved here from README.
 
 ## [0.4.0] — 2026-05-10
 

@@ -522,6 +522,18 @@
   .friction-arrow { display: flex; align-items: center; justify-content: center; color: var(--ember); }
   .friction-arrow svg { width: 32px; height: 32px; }
 
+  /* Battle-tested strip */
+  .battle-tested { padding: 80px 0 60px; }
+  .bt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .bt-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 26px 28px; position: relative; transition: transform 0.15s, border-color 0.15s; }
+  .bt-card:hover { transform: translateY(-3px); border-color: var(--border-2); }
+  .bt-card::before { content: ''; position: absolute; top: -1px; left: -1px; right: -1px; height: 3px; background: linear-gradient(90deg, var(--ember), var(--ember-2)); border-radius: 14px 14px 0 0; }
+  .bt-name { font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--ember-2); font-size: 14px; font-weight: 700; margin: 0 0 10px; }
+  .bt-stat { color: var(--text); font-size: 18px; font-weight: 600; margin: 0 0 12px; letter-spacing: -0.005em; }
+  .bt-num { color: var(--ember); font-weight: 700; }
+  .bt-detail { color: var(--text-2); font-size: 13.5px; margin: 0; line-height: 1.6; }
+  .bt-detail code { background: var(--bg-deep); padding: 1px 6px; border-radius: 4px; color: var(--ember-2); font-size: 12.5px; font-family: 'JetBrains Mono', monospace; border: 1px solid var(--border); }
+
   /* Artifacts gallery */
   .artifacts { padding: 100px 0; }
   .artifacts-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 18px; }
@@ -568,6 +580,7 @@
     .friction-grid { grid-template-columns: 1fr; }
     .friction-arrow { transform: rotate(90deg); padding: 4px 0; }
     .artifacts-grid { grid-template-columns: 1fr; }
+    .bt-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -599,10 +612,10 @@
 <section class="hero wrap">
   <div>
     <h1>Forge ideas into <span class="ember">shipped code.</span></h1>
-    <p class="hero-sub">For developers running multi-PR sprints in Claude Code. Anvil compresses the workflow — agent dispatch, adversarial review, pre-merge gate, auto-merge, recap — into composable skills. <strong>Adopt one skill in 5 minutes; the full orchestrator in 30.</strong></p>
+    <p class="hero-sub">A Claude Code skill suite that takes a multi-slice plan and drives it from spec → PRs → merged. Built for solo developers who want the agent to handle the GitHub review + merge dance, not just write the code. <strong>Adopt one skill in 5 minutes; the full orchestrator in 30.</strong></p>
     <div class="cta-row">
       <a class="cta" href="#start">
-        Pick your entry point
+        Install
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>
       </a>
       <a class="cta-secondary" href="https://github.com/browerthomas/Anvil" target="_blank">GitHub →</a>
@@ -822,7 +835,7 @@
 
 <!-- ENTRY-POINT TIERS -->
 <section id="start" class="entry-tiers wrap">
-  <p class="section-eyebrow">Pick your entry point</p>
+  <p class="section-eyebrow">Install + entry points</p>
   <h2 class="section-title">Adopt one skill, or all thirteen.</h2>
   <p class="section-sub">Anvil isn't all-or-nothing. Each skill stands alone. Try the cheapest first; keep going if it earns the next investment.</p>
 
@@ -830,7 +843,7 @@
     <div class="tier-card">
       <span class="tier-time">5 min</span>
       <h3>Try one skill</h3>
-      <p class="tier-pitch">Pile of stale worktrees from a multi-PR sprint? One command cleans branches, worktrees, iCloud-evicted <code style="color:var(--ember-2);font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--bg-deep);padding:1px 5px;border-radius:3px;">node_modules</code>, and stale git locks. Or run <code style="color:var(--ember-2);font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--bg-deep);padding:1px 5px;border-radius:3px;">/self-review</code> on your next diff for adversarial pushback.</p>
+      <p class="tier-pitch">Pile of stale worktrees from a multi-PR sprint? One command cleans branches, worktrees, cloud-sync-evicted <code style="color:var(--ember-2);font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--bg-deep);padding:1px 5px;border-radius:3px;">node_modules</code>, and stale git locks. Or run <code style="color:var(--ember-2);font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--bg-deep);padding:1px 5px;border-radius:3px;">/self-review</code> on your next diff for adversarial pushback.</p>
       <pre class="tier-cmds">/sweep-worktrees
 /self-review
 /recap</pre>
@@ -897,6 +910,25 @@
         <div class="friction-row"><strong>1 call</strong> — <code>/sweep-worktrees</code></div>
         <div class="friction-row"><strong>1 call</strong> — <code>/recap</code> drops a visual HTML page</div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- BATTLE-TESTED STRIP -->
+<section class="battle-tested wrap">
+  <p class="section-eyebrow">Battle-tested</p>
+  <h2 class="section-title">Dogfooded on real multi-slice sprints.</h2>
+  <p class="section-sub">Anvil is run against its operator's main project. Two recent grinds:</p>
+  <div class="bt-grid">
+    <div class="bt-card">
+      <p class="bt-name">http-client-standardisation</p>
+      <p class="bt-stat"><span class="bt-num">4</span> slices · <span class="bt-num">4</span> PRs merged in one session</p>
+      <p class="bt-detail">theirownstory#1080, #1082, #1084, #1086. Full <code>/grind</code> orchestration. Surfaced the v0.4 glue skills (<code>/findings-rollup</code>, <code>/refine-plan</code>, <code>/config-bootstrap</code>, <code>/issue-to-spec</code>, <code>/post-merge-debrief</code>).</p>
+    </div>
+    <div class="bt-card">
+      <p class="bt-name">architecture-standardisation</p>
+      <p class="bt-stat"><span class="bt-num">15</span>-slice plan · <span class="bt-num">5</span> slice PRs merged so far</p>
+      <p class="bt-detail">theirownstory#1097, #1098, #1103, #1104, #1115. Mid-grind plan refine via <code>/refine-plan</code> (#1122). Live; sequential lanes still rolling.</p>
     </div>
   </div>
 </section>
@@ -1086,7 +1118,7 @@
 <section id="skills" class="skills wrap bordered">
   <p class="section-eyebrow">The toolkit</p>
   <h2 class="section-title">Thirteen skills. One toolbox.</h2>
-  <p class="section-sub">You won't invoke all 13. The orchestrator (<code style="font-family:'JetBrains Mono',monospace;background:var(--surface);padding:2px 7px;border-radius:4px;font-size:14px;color:var(--ember-2);border:1px solid var(--border);">/grind</code>) composes most of them; you call the others directly when you need one piece. Written to the open Agent Skills spec — Claude Code today, Codex CLI adopted the spec, others following.</p>
+  <p class="section-sub">You won't invoke all thirteen. The orchestrator (<code style="font-family:'JetBrains Mono',monospace;background:var(--surface);padding:2px 7px;border-radius:4px;font-size:14px;color:var(--ember-2);border:1px solid var(--border);">/grind</code>) composes most of them; you call the others directly when you need one piece.</p>
 
   <details class="skills-disclosure">
     <summary>Show all 13 skills</summary>
@@ -1095,92 +1127,79 @@
       <div class="skill-head">
         <span class="skill-cmd">/spec</span>
       </div>
-      <p class="skill-tag-line">Lay the blueprint</p>
-      <p class="skill-desc">Interactive plan capture. Probes until the slice manifest is unambiguous, supports flat or OpenSpec-style folder layout, then runs the validator (Spec-Kit-style) before <code>/grind</code> can execute.</p>
+      <p class="skill-desc">Capture work as a structured plan (interactive probe). Supports flat or OpenSpec-style folder layout, validates before <code>/grind</code> can execute.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/grind</span>
       </div>
-      <p class="skill-tag-line">Run the forge</p>
-      <p class="skill-desc">End-to-end orchestrator. Topo-sorts slices, dispatches in parallel where safe, reviews per PR, gates each merge. Pauses only at structured ASK verbs you defined; defers + continues siblings on failure (Symphony triage). Replayable from the append-only event log.</p>
+      <p class="skill-desc">Drive a plan end-to-end. Topo-sorts slices, dispatches in parallel where safe, reviews per PR, gates each merge. Pauses only at structured ASK verbs you defined; defers + continues siblings on failure. Replayable from the append-only event log.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/dispatch-slice</span>
       </div>
-      <p class="skill-tag-line">Strike a billet</p>
-      <p class="skill-desc">Codifies the agent prompt template — worktree, deps, hard constraints, commit format, return shape. Three-line invocation in place of 600-word briefs.</p>
+      <p class="skill-desc">Fire an agent against one slice with the full prompt template (worktree, deps, constraints, commit format, return shape). Three-line invocation in place of 600-word briefs.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/pre-merge-gate</span>
       </div>
-      <p class="skill-tag-line">Inspect the seam</p>
-      <p class="skill-desc">Combinator: rebase + tsc + tests + fitness ratchets + grep-for-forbidden-patterns + GH check status. One verdict. Also ships as an MCP server (<code>@anvil/gate-mcp</code>) so Cursor / Windsurf / ChatGPT desktop can call the same gate.</p>
+      <p class="skill-desc">Verify a PR is mergeable: rebase + tsc + tests + fitness ratchets + grep for forbidden patterns + GH check status. One verdict. Also ships as an MCP server (<code>@anvil/gate-mcp</code>) so Cursor / Windsurf / ChatGPT desktop can call the same gate.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/auto-merge</span>
       </div>
-      <p class="skill-tag-line">Quench and ship</p>
-      <p class="skill-desc">When CI green: squash-merge + delete branch + wipe worktree + clear stale locks + sync main. One call replaces five manual operations and the cloud-sync / stale-lock / branch-busy footguns.</p>
-    </div>
-    <div class="skill">
-      <div class="skill-head">
-        <span class="skill-cmd">/self-review</span>
-      </div>
-      <p class="skill-tag-line">Test the temper</p>
-      <p class="skill-desc">Adversarial diff review via Opus sub-agent. <code>--multi-critic</code> mode runs four parallel critics (correctness / security / test-coverage / architecture) plus a synthesizer — ~2x catch rate for high-stakes diffs.</p>
-    </div>
-    <div class="skill">
-      <div class="skill-head">
-        <span class="skill-cmd">/sweep-worktrees</span>
-      </div>
-      <p class="skill-tag-line">Reset the workshop</p>
-      <p class="skill-desc">Bulk-clean stale worktrees + branches. Handles iCloud-evicted node_modules, stale git locks, force-deletes by PR-merge status.</p>
-    </div>
-    <div class="skill">
-      <div class="skill-head">
-        <span class="skill-cmd">/recap</span>
-      </div>
-      <p class="skill-tag-line">Stamp the work</p>
-      <p class="skill-desc">Visual HTML session report — PRs, tests, lessons, loose ends, plus a Decisions strip surfaced from operator ASK records. Pairs with session memory for a durable + readable pair.</p>
-    </div>
-    <div class="skill">
-      <div class="skill-head">
-        <span class="skill-cmd">/findings-rollup</span>
-      </div>
-      <p class="skill-tag-line">Punch out the slag</p>
-      <p class="skill-desc">After multi-critic review: file the P2/P3 rollup issue with checkboxes and dispatch a fix-up agent for the P0/P1 list — one invocation closes the 5-step manual sequence.</p>
-    </div>
-    <div class="skill">
-      <div class="skill-head">
-        <span class="skill-cmd">/issue-to-spec</span>
-      </div>
-      <p class="skill-tag-line">Inspect the iron</p>
-      <p class="skill-desc">Verify a GitHub issue body's factual claims against the codebase before locking a plan. Catches the "issue body is wrong" class of plan bug at lock-time.</p>
-    </div>
-    <div class="skill">
-      <div class="skill-head">
-        <span class="skill-cmd">/refine-plan</span>
-      </div>
-      <p class="skill-tag-line">Re-temper</p>
-      <p class="skill-desc">Mid-grind plan correction. Update plan files in-place, write a <code>plan-revised</code> event to the log, comment on any in-flight PRs whose contract just moved.</p>
-    </div>
-    <div class="skill">
-      <div class="skill-head">
-        <span class="skill-cmd">/config-bootstrap</span>
-      </div>
-      <p class="skill-tag-line">Charge the forge</p>
-      <p class="skill-desc">Populate <code>.anvil/</code> configs from the project's existing context docs (CLAUDE.md / AGENTS.md / post-mortems). Companion to <code>bin/init-anvil-config.sh</code>.</p>
+      <p class="skill-desc">Squash + delete branch + wipe worktree + clear stale locks + sync main. One call replaces five manual operations and the cloud-sync / stale-lock / branch-busy footguns.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/post-merge-debrief</span>
       </div>
-      <p class="skill-tag-line">Mark the work</p>
-      <p class="skill-desc">Single-PR cleanup + next-slice dispatch outside <code>/grind</code>. Verify-merge → sweep-worktree → mark-merged-in-event-log → pull-main → auto-dispatch-next-slice.</p>
+      <p class="skill-desc">After a one-off merge outside <code>/grind</code>: verify-merge → sweep-worktree → mark merged in event log → pull main → dispatch next slice.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/self-review</span>
+      </div>
+      <p class="skill-desc">Adversarial diff review via an Opus sub-agent. <code>--multi-critic</code> runs four parallel critics (correctness / security / test-coverage / architecture) plus a synthesizer. Codex fallback.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/findings-rollup</span>
+      </div>
+      <p class="skill-desc">Translate a multi-critic review into action: file P2/P3 as a rollup issue with checkboxes + dispatch a fix-up agent for the P0/P1 list. One invocation closes the 5-step manual sequence.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/refine-plan</span>
+      </div>
+      <p class="skill-desc">Mid-grind plan correction. Edit plan files in-place, write a <code>plan-revised</code> event to the log, comment on any in-flight PRs whose contract just moved.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/config-bootstrap</span>
+      </div>
+      <p class="skill-desc">Derive <code>.anvil/</code> configs (forbidden patterns, dispatch defaults, known flakes) from your project's existing context docs (CLAUDE.md / AGENTS.md / post-mortems). Companion to <code>bin/init-anvil-config.sh</code>.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/issue-to-spec</span>
+      </div>
+      <p class="skill-desc">Verify a GitHub issue body's factual claims against the codebase before locking a plan. Catches "issue body is wrong" errors at lock-time.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/sweep-worktrees</span>
+      </div>
+      <p class="skill-desc">Bulk-clean stale worktrees + branches. Handles cloud-sync-evicted <code>node_modules</code>, stale git locks, force-deletes by PR-merge status.</p>
+    </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/recap</span>
+      </div>
+      <p class="skill-desc">Visual HTML session report — PRs, tests, lessons, loose ends, plus a Decisions strip surfaced from operator ASK records. Dropped into <code>~/.claude/showme/</code>.</p>
     </div>
   </div>
   </details>
