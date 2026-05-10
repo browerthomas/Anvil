@@ -55,5 +55,5 @@ Initial Phase 0 release. Inner-loop helpers + visual reporting + cleanup, manual
 - Phase 0 is intentionally manual-composition. Phase 1's `/dispatch-slice` + `/pre-merge-gate` + `/auto-merge` will reduce per-PR operator overhead from ~12 manual operations to 3 invocations.
 - Real-world test: a 28-PR sprint executed via manual composition produced the implementation patterns these skills codify.
 
-[Unreleased]: https://github.com/<owner>/anvil/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/<owner>/anvil/releases/tag/v0.1.0
+[Unreleased]: https://github.com/browerthomas/Anvil/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/browerthomas/Anvil/releases/tag/v0.1.0

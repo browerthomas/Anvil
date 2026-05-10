@@ -5,8 +5,8 @@
   "tagline": "Plans come in raw. PRs come out forged.",
   "author": "anvil contributors",
   "license": "MIT",
-  "homepage": "https://github.com/<owner>/anvil",
-  "repository": "https://github.com/<owner>/anvil.git",
+  "homepage": "https://github.com/browerthomas/Anvil",
+  "repository": "https://github.com/browerthomas/Anvil.git",
   "skills": [
     "skills/sweep-worktrees",
     "skills/self-review",

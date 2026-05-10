@@ -184,7 +184,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md). TL;DR:
 
 1. Push the repo to GitHub.
 2. **Settings → Pages → Source: Deploy from a branch → main → /docs**.
-3. The page goes live at `https://<owner>.github.io/anvil/` within a minute.
+3. The page goes live at `https://browerthomas.github.io/Anvil/` within a minute.
 
 GitHub Pages also renders `docs/architecture.md` and `docs/getting-started.md` as web pages at the same root — you get free `/architecture.html` and `/getting-started.html` routes.
 

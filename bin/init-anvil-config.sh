@@ -54,7 +54,7 @@ av_ok "wrote $ANVIL_DIR/.gitignore"
 cat > "$ANVIL_DIR/README.md" <<'EOF'
 # .anvil/
 
-Project-specific configuration consumed by [anvil](https://github.com/<owner>/anvil) skills.
+Project-specific configuration consumed by [anvil](https://github.com/browerthomas/Anvil) skills.
 
 | File | Read by | Purpose |
 |---|---|---|
