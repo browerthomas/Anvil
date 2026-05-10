@@ -192,19 +192,19 @@ fi
 echo
 echo "===================="
 if [ "${#FAILS[@]}" -gt 0 ]; then
-  printf "${SY_RED}🔴 BLOCKED${SY_RESET}\n"
+  printf "${AV_RED}🔴 BLOCKED${AV_RESET}\n"
   for f in "${FAILS[@]}"; do
-    printf "  ${SY_RED}✗${SY_RESET} %s\n" "$f"
+    printf "  ${AV_RED}✗${AV_RESET} %s\n" "$f"
   done
   exit 1
 fi
 if [ "${#WARNS[@]}" -gt 0 ]; then
-  printf "${SY_YELLOW}🟡 YELLOW FLAGS${SY_RESET}\n"
+  printf "${AV_YELLOW}🟡 YELLOW FLAGS${AV_RESET}\n"
   for w in "${WARNS[@]}"; do
-    printf "  ${SY_YELLOW}~${SY_RESET} %s\n" "$w"
+    printf "  ${AV_YELLOW}~${AV_RESET} %s\n" "$w"
   done
   if [ "$STRICT" -eq 1 ]; then exit 1; fi
   exit 2
 fi
-printf "${SY_GREEN}🟢 MERGE-READY${SY_RESET}\n"
+printf "${AV_GREEN}🟢 MERGE-READY${AV_RESET}\n"
 exit 0

@@ -179,7 +179,9 @@ slices:
       - "Doc covers: levels, fields, filtering, allowlist, vendor-future"
     operator-decision:
       ask: "Should the docs include a vendor-migration section (Datadog/Logtail) to make future migration easier?"
+      verbs: [approve, reject, respond]
       default: skip-with-warning
+      timeout-hours: 24
     operator-paced: false
 ```
 

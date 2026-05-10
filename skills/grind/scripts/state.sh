@@ -122,7 +122,7 @@ case "$cmd" in
     mkdir -p "$ANVIL_DIR"
 
     # Extract YAML manifest from plan
-    yaml=$(awk '/^```yaml/{flag=1; next} /^```/{if(flag){print; exit}; next} flag {print}' "$yaml_source")
+    yaml=$(awk '/^```yaml/{flag=1; next} /^```/{if(flag){exit}; next} flag {print}' "$yaml_source")
     if ! echo "$yaml" | grep -q "slices:"; then
       av_fail "plan does not contain a slices: YAML block (looked in $yaml_source)"
       exit 1

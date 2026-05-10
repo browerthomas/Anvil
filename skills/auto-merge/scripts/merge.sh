@@ -125,7 +125,7 @@ fi
 
 # === REPORT ===
 echo
-printf "${SY_GREEN}✅ Merged: PR #%s — %s${SY_RESET}\n" "$PR" "$TITLE"
-printf "${SY_GREEN}🧹 Cleaned: worktree + branch + admin${SY_RESET}\n"
-[ "$PULL_MAIN" -eq 1 ] && printf "${SY_GREEN}📥 Synced: local main${SY_RESET}\n"
+printf "${AV_GREEN}✅ Merged: PR #%s — %s${AV_RESET}\n" "$PR" "$TITLE"
+printf "${AV_GREEN}🧹 Cleaned: worktree + branch + admin${AV_RESET}\n"
+[ "$PULL_MAIN" -eq 1 ] && printf "${AV_GREEN}📥 Synced: local main${AV_RESET}\n"
 exit 0
