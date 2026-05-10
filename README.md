@@ -5,7 +5,7 @@
 **Forge intent into merged PRs.**
 
 Plans come in raw. PRs come out forged.
-An open framework for AI-orchestrated engineering work in Claude Code.
+An open framework for AI-orchestrated engineering work — markdown skills + bash + MCP, runs in any agent harness that speaks the open Agent Skills spec.
 
 `/spec` → `/grind` → `/recap`
 
@@ -17,7 +17,7 @@ An open framework for AI-orchestrated engineering work in Claude Code.
 
 ## What it is
 
-A composable bundle of Claude Code skills that turns a structured plan into merged PRs with minimal operator intervention. Three phases:
+A composable bundle of agent skills that turns a structured plan into merged PRs with minimal operator intervention. Written to the open Anthropic Agent Skills spec — works in Claude Code today, Codex CLI has adopted the same format, and the pre-merge gate also ships as an MCP server for hosts on the MCP rail (Cursor, Windsurf, ChatGPT desktop). Three phases:
 
 | | Skill | Verb |
 |---|---|---|

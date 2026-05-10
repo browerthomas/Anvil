@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>anvil — forge intent into merged PRs</title>
-<meta name="description" content="An open framework for AI-orchestrated engineering work in Claude Code. Plan, grind, recap. No platform lock-in." />
+<meta name="description" content="An open framework for AI-orchestrated engineering work. Plan, grind, recap. Markdown skills + bash + MCP — runs in any agent harness that speaks the open Agent Skills spec. No platform lock-in." />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M5 18 L 27 18 L 25 22 L 22 22 L 22 26 L 10 26 L 10 22 L 7 22 Z' fill='%23ff7530'/%3E%3Crect x='13' y='14' width='6' height='4' fill='%23ff7530'/%3E%3C/svg%3E" />
 <style>
   :root {
@@ -558,9 +558,9 @@
 
 <section class="hero wrap">
   <div>
-    <p class="eyebrow">Open framework for Claude Code</p>
+    <p class="eyebrow">v0.3 — Production ready</p>
     <h1>Forge intent into <span class="ember">merged PRs.</span></h1>
-    <p class="hero-sub">Plans come in raw. PRs come out forged. Compose <code>/spec</code> → <code>/grind</code> → <code>/recap</code>. Markdown skills, no platform lock-in, no monthly fee. <strong>Lives in your repo, runs in your IDE.</strong></p>
+    <p class="hero-sub">Plans come in raw. PRs come out forged. Compose <code>/spec</code> → <code>/grind</code> → <code>/recap</code>. Eight composable skills, structured operator decisions, append-only event log, multi-critic review, failure-mode triage. <strong>MIT, fully local, no platform lock-in, no monthly fee.</strong></p>
     <div class="cta-row">
       <a class="cta" href="#start">
         Stoke the forge
@@ -784,19 +784,19 @@
 <!-- TOOLCHAIN STRIP -->
 <div class="toolchain">
   <div class="wrap">
-    <p class="toolchain-label">Composes natively with</p>
+    <p class="toolchain-label">Composes with</p>
     <div class="toolchain-row">
       <span>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1L1 4v8l7 3 7-3V4z"/></svg>
-        Claude Code
+        Agent Skills hosts
+      </span>
+      <span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 5h6M5 8h6M5 11h4"/></svg>
+        MCP clients
       </span>
       <span>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2v12"/></svg>
         GitHub CLI
-      </span>
-      <span>
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.6 0 0 3.6 0 8s3.6 8 8 8 8-3.6 8-8-3.6-8-8-8zm3.5 12L8 8.5 4.5 12 3 10.5 6.5 7 3 3.5 4.5 2 8 5.5 11.5 2 13 3.5 9.5 7l3.5 3.5z"/></svg>
-        Codex CLI
       </span>
       <span>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M8 5v6"/></svg>
@@ -814,7 +814,7 @@
 <section id="how" class="how wrap bordered">
   <p class="section-eyebrow">Three phases</p>
   <h2 class="section-title">Lay it. Strike it. Stamp it.</h2>
-  <p class="section-sub">Each phase is a Claude Code skill. Each composes the layer below. Adopt incrementally — they work standalone, and they work together.</p>
+  <p class="section-sub">Each phase is one composable skill. Each composes the layer below. Adopt incrementally — they work standalone, and they work together.</p>
 
   <div class="flow">
     <div class="flow-step">
@@ -869,48 +869,48 @@
 <section id="skills" class="skills wrap bordered">
   <p class="section-eyebrow">The toolkit</p>
   <h2 class="section-title">Eight skills. One toolbox.</h2>
-  <p class="section-sub">Each stands alone. Together they're a framework. Markdown files in <code style="font-family:'JetBrains Mono',monospace;background:var(--surface);padding:2px 7px;border-radius:4px;font-size:14px;color:var(--ember-2);border:1px solid var(--border);">~/.claude/skills/</code> — no compilation, no platform.</p>
+  <p class="section-sub">Each stands alone. Together they're a framework. Written to the open Agent Skills spec — works in Claude Code today, Codex CLI adopted the spec, others are following. The pre-merge gate also ships as an MCP server for hosts on the MCP rail (Cursor, Windsurf, ChatGPT desktop). No compilation, no platform.</p>
 
   <div class="skill-grid">
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/spec</span>
-        <span class="skill-status queued">spec'd</span>
+        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Lay the blueprint</p>
-      <p class="skill-desc">Interactive plan capture. Probes for detail using the template, runs adversarial validation, outputs structured plan markdown.</p>
+      <p class="skill-desc">Interactive plan capture. Probes until the slice manifest is unambiguous, supports flat or OpenSpec-style folder layout, then runs the validator (Spec-Kit-style) before <code>/grind</code> can execute.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/grind</span>
-        <span class="skill-status queued">spec'd</span>
+        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Run the forge</p>
-      <p class="skill-desc">End-to-end orchestrator. Reads a plan, dispatches in dep order, gates merges, files follow-ups, recaps. The conductor.</p>
+      <p class="skill-desc">End-to-end orchestrator. Topo-sorts slices, dispatches in parallel where safe, reviews per PR, gates each merge. Pauses only at structured ASK verbs you defined; defers + continues siblings on failure (Symphony triage). Replayable from the append-only event log.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/dispatch-slice</span>
-        <span class="skill-status queued">spec'd</span>
+        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Strike a billet</p>
-      <p class="skill-desc">Codifies the agent prompt template — worktree, deps, commit format, return shape. Three-line invocation in place of 600-word briefs.</p>
+      <p class="skill-desc">Codifies the agent prompt template — worktree, deps, hard constraints, commit format, return shape. Three-line invocation in place of 600-word briefs.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/pre-merge-gate</span>
-        <span class="skill-status queued">spec'd</span>
+        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Inspect the seam</p>
-      <p class="skill-desc">Combinator: rebase + tsc + vitest + fitness ratchets + grep-for-forbidden-patterns. One verdict, six manual checks gone.</p>
+      <p class="skill-desc">Combinator: rebase + tsc + tests + fitness ratchets + grep-for-forbidden-patterns + GH check status. One verdict. Also ships as an MCP server (<code>@anvil/gate-mcp</code>) so Cursor / Windsurf / ChatGPT desktop can call the same gate.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/auto-merge</span>
-        <span class="skill-status queued">spec'd</span>
+        <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Quench and ship</p>
-      <p class="skill-desc">When CI green: squash-merge + delete branch + wipe worktree + sync main. One call replaces five manual operations.</p>
+      <p class="skill-desc">When CI green: squash-merge + delete branch + wipe worktree + clear stale locks + sync main. One call replaces five manual operations and the iCloud / stale-lock / branch-busy footguns.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
@@ -918,7 +918,7 @@
         <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Test the temper</p>
-      <p class="skill-desc">Adversarial diff review via Opus sub-agent. Codex-fallback when subscription is rate-limited. Structured P0/P1/P2/P3 findings.</p>
+      <p class="skill-desc">Adversarial diff review via Opus sub-agent. <code>--multi-critic</code> mode runs four parallel critics (correctness / security / test-coverage / architecture) plus a synthesizer — ~2x catch rate for high-stakes diffs.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
@@ -934,7 +934,7 @@
         <span class="skill-status live">live</span>
       </div>
       <p class="skill-tag-line">Stamp the work</p>
-      <p class="skill-desc">Visual HTML session report — PRs, tests, lessons, loose ends. Pairs with session memory for durable + readable record.</p>
+      <p class="skill-desc">Visual HTML session report — PRs, tests, lessons, loose ends, plus a Decisions strip surfaced from operator ASK records. Pairs with session memory for a durable + readable pair.</p>
     </div>
   </div>
 </section>
@@ -944,40 +944,44 @@
   <div class="wrap">
     <p class="section-eyebrow">Get started</p>
     <h2 class="section-title">Heat it. Strike it.</h2>
-    <p class="section-sub">Five minutes from clone to first strike. Symlink-mode means edits to skills are live immediately.</p>
+    <p class="section-sub">Five minutes from clone to first strike. Symlink-mode means edits to skills are live immediately. Per-repo config lives in <code style="font-family:'JetBrains Mono',monospace;background:var(--surface);padding:2px 7px;border-radius:4px;font-size:14px;color:var(--ember-2);border:1px solid var(--border);">.anvil/</code> and stays committable.</p>
 
     <div class="terminal-wrap">
       <div class="terminal-bar">
         <div class="terminal-dot"></div>
         <div class="terminal-dot"></div>
         <div class="terminal-dot"></div>
-        <div class="terminal-title">~/Desktop/anvil</div>
+        <div class="terminal-title">bash</div>
       </div>
       <div class="terminal">
-<span class="cmt"># 1. Heat the forge — verify your environment</span><br/>
-<span class="prompt">$</span> <span class="cmd">~/Desktop/anvil/bin/preflight.sh</span><br/>
+<span class="cmt"># 1. Clone the framework</span><br/>
+<span class="prompt">$</span> <span class="cmd">git clone https://github.com/browerthomas/Anvil.git ~/anvil</span><br/>
+<span class="prompt">$</span> <span class="cmd">cd ~/anvil</span><br/><br/>
+
+<span class="cmt"># 2. Heat the forge — verify your environment</span><br/>
+<span class="prompt">$</span> <span class="cmd">bin/preflight.sh</span><br/>
 <span class="out ok">  ✓ git, gh, node, jq found</span><br/>
 <span class="out ok">  ✓ ~/.claude/skills/ writable</span><br/>
 <span class="out ok">  ✓ find -delete works</span><br/>
 <span class="out ok">  preflight clean — ready to install</span><br/><br/>
 
-<span class="cmt"># 2. Stoke it — install the skills</span><br/>
-<span class="prompt">$</span> <span class="cmd">~/Desktop/anvil/bin/install.sh</span><br/>
-<span class="out ok">  + sweep-worktrees</span><br/>
-<span class="out ok">  + self-review</span><br/>
-<span class="out ok">  + recap</span><br/>
-<span class="out ok">  + dispatch-slice</span><br/>
-<span class="out ok">  + pre-merge-gate</span><br/>
-<span class="out ok">  + auto-merge</span><br/>
-<span class="out ok">  + spec</span><br/>
-<span class="out ok">  + grind</span><br/>
+<span class="cmt"># 3. Stoke it — install the skills (symlinked into ~/.claude/skills/)</span><br/>
+<span class="prompt">$</span> <span class="cmd">bin/install.sh</span><br/>
+<span class="out ok">  + sweep-worktrees, self-review, recap</span><br/>
+<span class="out ok">  + dispatch-slice, pre-merge-gate, auto-merge</span><br/>
+<span class="out ok">  + spec, grind</span><br/>
 <span class="out ok">  installed 8 skills</span><br/><br/>
 
-<span class="cmt"># 3. Strike — capture a plan, then run it</span><br/>
-<span class="prompt-claude">claude&gt;</span> <span class="cmd">/spec "what you want built"</span><br/>
-<span class="prompt-claude">claude&gt;</span> <span class="cmd">/grind docs/plans/&lt;slug&gt;.md</span><br/><br/>
+<span class="cmt"># 4. Bootstrap a project's .anvil/ config (run from inside the target repo)</span><br/>
+<span class="prompt">$</span> <span class="cmd">cd /path/to/your/project</span><br/>
+<span class="prompt">$</span> <span class="cmd">~/anvil/bin/init-anvil-config.sh</span><br/>
+<span class="out ok">  ✓ wrote .anvil/forbidden-patterns.txt</span><br/>
+<span class="out ok">  ✓ wrote .anvil/pre-merge-gate.config.json</span><br/>
+<span class="out ok">  ✓ wrote .anvil/dispatch-defaults.txt + known-flakes.txt</span><br/><br/>
 
-<span class="cmt"># 4. Stamp — recap when the dust settles</span><br/>
+<span class="cmt"># 5. Strike — capture a plan, then run it</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/spec "what you want built"</span><br/>
+<span class="prompt-claude">claude&gt;</span> <span class="cmd">/grind docs/plans/&lt;slug&gt;.md</span><br/>
 <span class="prompt-claude">claude&gt;</span> <span class="cmd">/recap</span><br/>
       </div>
     </div>
@@ -986,7 +990,7 @@
 
 <!-- CLOSING -->
 <section class="closing wrap">
-  <p class="closing-line">Built on Claude Code. Anvil is open source.</p>
+  <p class="closing-line">MIT. Fully local. Host-agnostic.</p>
   <p class="closing-sub">Your plan, your hammer, your ship.</p>
   <a class="cta closing-cta" href="https://github.com/browerthomas/Anvil" target="_blank">
     Clone on GitHub
@@ -996,15 +1000,19 @@
 
 <footer>
   <div class="wrap">
-    <p>v0.1 — phase 0 (manual composition). Phase 1 (inner-loop trio) shipping next sprint.</p>
+    <p>v0.3 — production-ready. Eight skills, plan validator, multi-critic review, failure-mode triage, append-only event log, MCP-portable gate.</p>
     <div class="footer-row">
       <a href="https://github.com/browerthomas/Anvil" target="_blank">GitHub</a>
       <span class="sep">·</span>
-      <a href="docs/architecture.md">Architecture</a>
+      <a href="https://github.com/browerthomas/Anvil/blob/main/CHANGELOG.md" target="_blank">Changelog</a>
       <span class="sep">·</span>
-      <a href="examples/example-plan.md">Example plan</a>
+      <a href="https://github.com/browerthomas/Anvil/blob/main/ROADMAP.md" target="_blank">Roadmap</a>
       <span class="sep">·</span>
-      <a href="LICENSE">MIT license</a>
+      <a href="https://github.com/browerthomas/Anvil/blob/main/docs/architecture.md" target="_blank">Architecture</a>
+      <span class="sep">·</span>
+      <a href="https://github.com/browerthomas/Anvil/blob/main/examples/example-plan.md" target="_blank">Example plan</a>
+      <span class="sep">·</span>
+      <a href="https://github.com/browerthomas/Anvil/blob/main/LICENSE" target="_blank">MIT</a>
     </div>
   </div>
 </footer>
