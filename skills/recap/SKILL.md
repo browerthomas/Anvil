@@ -31,7 +31,7 @@ gh issue list --state all --limit 50 --json number,title,createdAt,closedAt,stat
 git diff --stat <baseSHA>..HEAD | tail -1
 ```
 
-If the operator gives a window ("last 2 days" / "since Monday" / "this sprint"), use that. Otherwise default to "since the last memory file in `~/.claude/projects/.../memory/project_session*` was written."
+If the operator gives a window ("last 2 days" / "since Monday" / "this sprint"), use that. Otherwise default to "since the last commit on the previous business day" — or whatever the host's session-memory mechanism provides if one is wired up.
 
 ### Step 2: Build the HTML
 

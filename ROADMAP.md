@@ -119,13 +119,13 @@ Spec-Kit's `/speckit.analyze` is the model.
 
 ## v0.4 — glue + correction layer — SHIPPED 2026-05-10
 
-Five new skills closing the manual sequences that surrounded the v0.3 core skills. All five surfaced from the first dogfood (`http-client-standardisation` plan). 13 skills total now.
+Five new skills closing the manual sequences that surrounded the v0.3 core skills. All five surfaced from the first end-to-end dogfood. 13 skills total now.
 
 ### 9. /findings-rollup ✅
 After `/self-review --multi-critic` or `/codex-review` returns findings, automatically: file P2/P3 as a single rollup issue with checkboxes, dispatch a fix-up agent against the same PR/branch with the P0/P1 list as its acceptance contract, comment on the PR linking both. Closes the 5-step manual dance every operator runs after every multi-critic review.
 
 ### 10. /issue-to-spec ✅
-Pre-lock plan validation. Takes a GitHub issue body, greps the codebase for each factual claim, outputs a corrected mini-spec marking claims as verified / contradicted / moved / unverifiable. Catches the "issue body wrong" class of plan bug (the `core/lulu.js — custom retry pattern` class).
+Pre-lock plan validation. Takes a GitHub issue body, greps the codebase for each factual claim, outputs a corrected mini-spec marking claims as verified / contradicted / moved / unverifiable. Catches the "issue body is wrong about the codebase" class of plan bug — e.g. an issue says a module has a "custom retry pattern" when reading the actual code shows only a single-attempt path. Plans built on that issue body would have wasted slice-agent time discovering the disconnect at code time.
 
 ### 11. /refine-plan ✅
 Mid-grind plan correction. Updates plan files in-place via Edit, writes a `plan-revised` event to `.anvil/grind-events.jsonl`, optionally comments on in-flight PRs whose contract moved.
@@ -164,7 +164,3 @@ Single-PR cleanup + next-slice dispatch in one call. For when an operator merges
 ## Anvil is production-ready
 
 After v0.3, the framework is complete enough to drive real multi-PR work end-to-end. The next priorities are sourced from real-world friction, not speculation. Drive a real plan, see what hurts, fix that.
-
-## Sources
-
-The research that drove this roadmap surveyed 30+ tools across hosted spec-to-product platforms, OSS agent frameworks, plan-driven engineering automation, GitHub-native PR review tools, and skill/extension ecosystems. The key references are linked inline above; the full source list is in the research transcript at `~/.claude/projects/.../tasks/<id>.output` (operator-local artifact, not committed).
