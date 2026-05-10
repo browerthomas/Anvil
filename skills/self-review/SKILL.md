@@ -28,7 +28,41 @@ Treat self-review as 70% of codex's value at 0% of codex's per-call cost. Use as
 | `<SHA>` | that specific commit |
 | `--pr <N>` | fetch PR #N's diff via `gh pr diff <N>` |
 
+Modes:
+
+| Flag | Behavior |
+|---|---|
+| (default) | Single-pass adversarial review with the omnibus prompt — fast, catches obvious slips |
+| `--multi-critic` | Four parallel critics (correctness, security, test-coverage, architecture) + synthesis pass — slower, dramatically higher catch rate |
+| `--critics <list>` | Run a subset (e.g. `--critics correctness,security` for diffs that don't touch test files) |
+
+**When to use multi-critic:** any diff that touches auth, payments, state machines, schema migrations, or that's >500 LoC. The Greptile vs CodeRabbit benchmark (82% catch vs 44%) is mostly explained by multiple specialized lenses + full-codebase context vs one lens + diff-only.
+
 If the operator passes other text (e.g. "focus on auth"), pass it as a custom prompt that augments the default review.
+
+## Multi-critic mode
+
+When `--multi-critic` is set:
+
+1. **Spawn 4 Opus sub-agents in parallel**, each with a different critic prompt from `templates/critics/`:
+   - `correctness.md` — logic bugs, race conditions, edge cases
+   - `security.md` — auth, injection, CSRF, secrets, sanitization
+   - `test-coverage.md` — negative cases, weak assertions, bypassed contracts
+   - `architecture.md` — layer boundaries, vendor SDK boundaries, fitness rules
+
+   Each critic gets the same diff text but is told to stay in its lane (skip findings outside its lens).
+
+2. **Wait for all 4 to return.**
+
+3. **Spawn a 5th synthesizer agent** with `templates/synthesizer.md`. It:
+   - Deduplicates findings that multiple critics surfaced
+   - Re-ranks by severity
+   - Identifies cross-critic risk areas (modules surfaced by ≥2 critics)
+   - Returns a verdict: `BLOCK | PROCEED-WITH-CAUTION | CLEAN`
+
+4. **Save the full transcript** under `.codex-log/<timestamp>-multi-critic.md` for paper trail.
+
+**Trade-off:** 5x agent cost (4 critics + 1 synthesizer) for ~2x catch rate. Use on high-stakes diffs.
 
 ## Procedure
 
