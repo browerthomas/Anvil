@@ -172,12 +172,59 @@ Legacy operator behavior (verbs unset / freeform answer):
 
 The `default` fires if operator is unreachable for >N hours (configurable via `--ask-timeout`).
 
-## Resilience
+## Failure-mode triage (Symphony pattern)
 
-- **Codex outage:** detect rate-limit error from `/codex-review`; fall back to `/self-review` automatically. Don't block.
-- **Test flakes:** if `vitest` fails on a known-flaky test (pattern match against `.anvil/known-flakes.txt`), retry once before declaring failure.
-- **Rebase conflicts:** if a slice's PR conflicts after sibling merges, attempt auto-rebase. If conflict requires real reasoning: defer slice + file an issue + continue with non-conflicting siblings.
-- **Operator unreachable:** at decision points, fire the `default` action; never block indefinitely.
+`/grind` distinguishes three classes of failure and handles each differently. The default posture is **"defer and continue"** — never halt the whole orchestration when a single slice trips.
+
+### 1. Slice-fail — defer this slice, keep the rest going
+
+Symptoms: agent returns an error, CI fails (real test failure), pre-merge-gate blocks, review surfaces a P0/P1 finding.
+
+Handler:
+- Mark slice as `deferred` in the event log with the reason.
+- File a follow-up issue using `.github/ISSUE_TEMPLATE/grind-deferral.md`.
+- Continue with sibling slices that don't depend on this one. A sibling with `depends-on: [<this-slice>]` cascades to deferred; siblings with no dep stay in flight.
+
+### 2. Plan-fail — halt with structured incident
+
+Symptoms: plan validation fails mid-run; state file corrupted; ≥3 slices fail in a row (suggests systemic issue); critical operator-decision aborted.
+
+Handler:
+- Write `.anvil/incidents/<timestamp>-<reason>.md` with last successful slice + failed slice + raw error + event-log tail (last 50 events) + operator action required.
+- Stop dispatching new agents; let in-flight agents finish (drain).
+- Emit final state-event so `/grind --resume` can see the halt point.
+
+### 3. Infra-fail — skip-this-tick, keep reconciliation alive
+
+Symptoms: `gh` API rate-limited, codex subscription rate-limited, network hiccup, GitHub Pages 503, Sentry endpoint timeout.
+
+Handler:
+- Don't mark the slice as failed.
+- Circuit-breaker backoff: 30s → 1m → 5m → 15m on consecutive failures.
+- Try the next slice in parallel (an unrelated slice may not hit the same rate limit).
+- Model fallback chain on agent dispatch:
+  - **Opus rate-limited** → retry with Sonnet (tighter constraints + agent told it's the fallback).
+  - **Sonnet rate-limited** → file an issue with the slice spec, defer slice.
+  - **Both rate-limited for >1h** → escalate to plan-fail.
+
+### Known flakes
+
+Per-project flake list at `.anvil/known-flakes.txt` (see `skills/pre-merge-gate/templates/known-flakes.example.txt` for shape). One regex per line; matches against test names + file paths. `/grind` retries matching failures once before treating as slice-fail.
+
+### Resilience matrix
+
+| Failure | Class | Handler |
+|---|---|---|
+| Agent dispatch fails (worktree busy, deps install) | infra-fail | retry once after 30s; persists → defer |
+| CI fails on known flake | infra-fail | retry once; persists → slice-fail |
+| CI fails on real test | slice-fail | defer + file issue |
+| pre-merge-gate blocks | slice-fail | defer + file issue with gate's specific failure |
+| Review finds P0/P1 | slice-fail | defer + file follow-up issue with finding |
+| Trivial sibling rebase conflict | (auto-rebase) | rebase + retry |
+| Non-trivial rebase conflict | slice-fail | defer + file issue + continue siblings |
+| codex-review rate-limited | infra-fail | fall back to /self-review automatically |
+| Operator unreachable at decision point | (operator-paced) | apply `default`; never block indefinitely |
+| 3 slices fail in a row | plan-fail | halt; write incident; require operator restart |
 
 ## What this skill DOES NOT do
 
