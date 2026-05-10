@@ -1,6 +1,6 @@
 {
   "name": "anvil-orchestrator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "anvil end-to-end orchestrator — interactive plan capture (/spec) and full plan-to-merged-PR drive (/grind). Pauses only at operator decision points you defined. Composes anvil-pr + anvil-core under the hood.",
   "tagline": "Lay the blueprint. Run the forge.",
   "author": "Thomas Brower",

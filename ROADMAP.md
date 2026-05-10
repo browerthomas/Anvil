@@ -20,11 +20,11 @@ Phase 2 skills (spec'd):
 
 Plus: plan template, 2 worked example plans, plugin manifest, MIT license, CHANGELOG, CONTRIBUTING, .github/ templates, GH Pages-ready landing at `docs/index.html`, `bin/init-anvil-config.sh` for per-repo bootstrapping.
 
-## v0.2 — composability + observability
+## v0.2 — composability + observability — SHIPPED 2026-05-10
 
-The five highest-leverage moves from competitive research, ordered by user impact:
+All five highest-leverage moves from competitive research landed:
 
-### 1. Composable skill distribution
+### 1. Composable skill distribution ✅
 
 Today anvil is monolithic — `bin/install.sh` puts all 8 skills in `~/.claude/skills/`. With 4,200+ skills in the Claude Code marketplace by May 2026, monolithic installs are harder to discover than focused single-purpose ones.
 
@@ -36,7 +36,7 @@ Today anvil is monolithic — `bin/install.sh` puts all 8 skills in `~/.claude/s
 
 **Why now:** distribution lever in a crowded marketplace. The narrative shifts from "install our framework" to "compose what you need."
 
-### 2. Append-only event log + observability adapter
+### 2. Append-only event log + observability adapter ✅
 
 `.anvil/grind-state.json` is a flat snapshot today. LangGraph's checkpointer writes a per-node event frame; that gives you replay-from-checkpoint, time-travel debugging, and per-slice token cost / latency / prompt traces (via Langfuse).
 
@@ -48,7 +48,7 @@ Today anvil is monolithic — `bin/install.sh` puts all 8 skills in `~/.claude/s
 
 **Why now:** closes the largest gap vs LangGraph + LangSmith. Operators get post-mortem traces for free. Zero lock-in (Langfuse is OSS).
 
-### 3. Structured ASK verbs (LangGraph HITL pattern)
+### 3. Structured ASK verbs (LangGraph HITL pattern) ✅
 
 Anvil's `operator-decision.ask` is freeform today — operator can answer anything, recap can't structure it. LangGraph's `interrupt()` + `Command(resume=...)` defines four verbs: `approve`, `edit`, `reject`, `respond`.
 
@@ -60,7 +60,7 @@ Anvil's `operator-decision.ask` is freeform today — operator can answer anythi
 
 **Why now:** turns operator-in-the-loop from chat into a reproducible artifact. Recap quality jumps from "what shipped" to "what shipped + why operator approved/edited."
 
-### 4. OpenSpec change-folder plan layout
+### 4. OpenSpec change-folder plan layout ✅
 
 Today an anvil plan is one markdown file (`docs/plans/<slug>.md`). OpenSpec puts each change in a folder: `proposal.md` (the why) + `specs/` (acceptance scenarios) + `design.md` (the how) + `tasks.md` (the slice list).
 
@@ -73,7 +73,7 @@ Today an anvil plan is one markdown file (`docs/plans/<slug>.md`). OpenSpec puts
 
 **Why now:** sharpens adversarial review from "vibes vs diff" to "specs vs diff." Drive-by readers grok proposal-vs-design-vs-tasks separation faster than wall-of-markdown.
 
-### 5. MCP-ize `/pre-merge-gate`
+### 5. MCP-ize `/pre-merge-gate` ✅
 
 Today the gate is a Claude Code skill. The 5,000+ MCP server ecosystem (March 2026) is portable across Cursor, Windsurf, Claude Code, ChatGPT desktop, and more.
 
@@ -134,9 +134,10 @@ Spec-Kit's `/speckit.analyze` is the model.
 
 ## Cadence
 
-- v0.1 (now): shipped above.
-- v0.2 (next 2-4 weeks): composability + observability + ASK verbs + folder plans + MCP gate.
-- v0.3 (4-8 weeks): multi-critic review + failure triage + plan validator.
+- v0.1 — shipped 2026-05-10 (initial scaffold + 8 skills + plugin manifest + landing page).
+- v0.2 — shipped 2026-05-10 (composability + event log + ASK verbs + folder plans + MCP gate).
+- v0.2.1 — Langfuse adapter implementation, MCP gate publish to npm. Open.
+- v0.3 (4-8 weeks): multi-critic review + failure triage + plan validator. See section above.
 - v0.4+ (open-ended): speculative items above, prioritized by adoption signal.
 
 ## Sources

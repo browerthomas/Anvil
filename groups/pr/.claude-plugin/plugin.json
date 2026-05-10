@@ -1,6 +1,6 @@
 {
   "name": "anvil-pr",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "anvil per-PR cycle — agent dispatch with consistent briefing, pre-merge gate combinator (rebase + tsc + tests + fitness + grep-forbidden), squash-merge + cleanup. Replaces 12+ manual operations per PR with 3 invocations.",
   "tagline": "Strike a billet. Inspect the seam. Quench and ship.",
   "author": "Thomas Brower",

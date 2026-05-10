@@ -1,6 +1,6 @@
 {
   "name": "anvil-core",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "anvil core utilities — bulk worktree cleanup, adversarial diff review, visual session recap. The standalone primitives every Claude Code operator wants.",
   "tagline": "Reset the workshop. Test the temper. Stamp the work.",
   "author": "Thomas Brower",
