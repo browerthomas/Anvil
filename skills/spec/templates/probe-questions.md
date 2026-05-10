@@ -64,7 +64,7 @@ For each slice:
 
 If no test can be written: "What's the manual verification? (UI screenshot? Log line? Operator command output?)"
 
-## 7. Operator decision points
+## 7. Operator decision points (LangGraph HITL pattern)
 
 > Where in this plan would you want to be ASKED before the orchestrator continues?
 
@@ -74,11 +74,20 @@ If no test can be written: "What's the manual verification? (UI screenshot? Log 
 - Before merging a PR that touches billing
 - Before deleting a piece of legacy code
 
-For each ASK point:
-- "What's the question?"
-- "What's the default if you're unreachable for >N hours?" (skip-with-warning, retry, abort)
+For each ASK point, capture FOUR fields:
+
+1. **Question** — what specifically you want answered.
+2. **Verbs** — which subset of `[approve, edit, reject, respond]` are valid answers:
+   - `approve` — yes, proceed as planned
+   - `edit` — adjust the slice scope before proceeding (operator types the edit)
+   - `reject` — don't run this slice (defer, continue with siblings)
+   - `respond` — free-text answer with no scope change implied
+3. **Default** — fallback if you're unreachable for the timeout window: `skip-with-warning` | `retry` | `abort`.
+4. **Timeout hours** — how long before the default fires (default 4).
 
 If the operator says "no decision points needed" — confirm with: "So /grind can run fully autonomous, top-to-bottom? No human checkpoints?"
+
+Every triggered decision is appended as a structured record to the plan's `## Operator decision records` section + surfaced in `/recap`.
 
 ## 8. Validation checklist
 

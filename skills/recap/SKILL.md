@@ -61,6 +61,11 @@ The recap page should fit in one viewport at 1280×800 with no scroll for the he
 - Tier badge: BLOCKER (P0), FEATURE (P1), CLEANUP (P2/P3), DOCS, REFACTOR
 - Color-code tiers so visual scan groups by importance
 
+**Decisions strip (when running against a /grind output):**
+- Pulled from the plan's `## Operator decision records` section
+- Each entry: slice ID + verb (approve/edit/reject/respond) + one-line summary
+- Skipped if no decisions were recorded
+
 **Lessons-learned strip:**
 - 3-5 bullets of "what we learned" — usually pulled from session memory file
 - Mark ones that became permanent rules / fitness ratchets
