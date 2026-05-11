@@ -14,6 +14,8 @@
 
 ## Status
 
+**v0.6.0** — 19 skills · 17 review lenses · MIT, public, fully local.
+
 Anvil keeps plans, slice status, reviews, merge gates, and recaps **in your repo — not buried in chat**. It's a Claude Code skill suite that takes a multi-PR plan (multiple stacked or independent PRs that ship one logical change) and drives it from spec → PRs → merged. Markdown skills + bash + MCP. No platform, no compilation, no lock-in.
 
 **Tired of Claude stopping mid-sprint?** State lives in plan files, an append-only event log, and worktrees on disk — not the conversation. Stop and resume anywhere. The next slice fires in a fresh agent with full context.
