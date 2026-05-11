@@ -90,7 +90,7 @@ If you adopt anvil and want to be added here, open a PR.
 
 ## Skills
 
-Sixteen skills. You won't call all of them — `/grind` composes most. Plain-English descriptions below; skill names stay stable for backwards compatibility.
+17 skills. You won't call all of them — `/grind` composes most. Plain-English descriptions below; skill names stay stable for backwards compatibility.
 
 | Skill | What it does |
 |---|---|
@@ -110,6 +110,7 @@ Sixteen skills. You won't call all of them — `/grind` composes most. Plain-Eng
 | [`/issue-to-spec`](skills/issue-to-spec/SKILL.md) | Verify a GitHub issue body's factual claims against the codebase before locking a plan. Catches issue-body-is-wrong errors at lock-time. |
 | [`/sweep-worktrees`](skills/sweep-worktrees/SKILL.md) | Bulk-clean stale worktrees + branches. Handles cloud-sync-evicted `node_modules` and stale git locks. |
 | [`/recap`](skills/recap/SKILL.md) | Visual HTML session report — PRs shipped, tests added, decisions made, loose ends. Dropped into `~/.claude/showme/`. |
+| [`/anvil-status`](skills/anvil-status/SKILL.md) | Read-only text dashboard of a plan's state — what to think about next, what's in-flight, what's blocked, what's shipped. Folds `.anvil/grind-events.jsonl` + tasks.md + `gh pr list`. |
 
 ### Optional companions
 
