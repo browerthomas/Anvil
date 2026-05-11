@@ -53,6 +53,10 @@ cd /path/to/your/project
 ~/anvil/bin/init-anvil-config.sh
 ```
 
+`bin/install.sh` writes `~/.claude/anvil-config.sh` exporting `ANVIL_ROOT` so skill scripts can locate `shared/lib.sh` regardless of where the checkout lives. Override with `ANVIL_ROOT=/elsewhere/anvil <command>` at runtime. `--prefix <dir>` (or `ANVIL_HOME` / `CLAUDE_HOME`) installs to a non-default location — used by `tests/install.test.sh`.
+
+`bin/install.sh` invokes `bin/preflight.sh` automatically at the end. Preflight now verifies installed skills work post-install (syntax-check + `shared/lib.sh` resolution smoke) — failures abort the install with the specific failure printed. Pass `--no-preflight` to skip.
+
 ### Subsets
 
 Anvil ships as three composable groups. Install only what you need:
@@ -63,7 +67,17 @@ Anvil ships as three composable groups. Install only what you need:
 ~/anvil/bin/install.sh --group orchestrator   # /spec /grind
 ```
 
-`--copy` instead of symlink for a stable install that survives folder moves. `bin/uninstall.sh` to remove.
+`--copy` instead of symlink for a stable install that survives folder moves. `bin/uninstall.sh` to remove (also drops `anvil-config.sh`).
+
+### Tests
+
+Before submitting changes:
+
+```bash
+bash tests/install.test.sh
+```
+
+End-to-end test of install + preflight + uninstall against a temp HOME. Asserts `anvil-config.sh` is created with the right `ANVIL_ROOT`, every skill script syntax-checks, the `shared/lib.sh` resolution works in both copy and symlink modes, and uninstall cleans up.
 
 ## Battle-tested
 

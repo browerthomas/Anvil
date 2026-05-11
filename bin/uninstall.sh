@@ -1,10 +1,25 @@
 #!/usr/bin/env bash
-# anvil uninstall — removes anvil skills from ~/.claude/skills/
+# anvil uninstall — removes anvil skills + anvil-config.sh from $HOME/.claude/
+# (or the install root selected via --prefix / ANVIL_HOME / CLAUDE_HOME).
 
 set -eu
 
 ANVIL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SKILLS_DIR="${HOME}/.claude/skills"
+INSTALL_ROOT="${ANVIL_HOME:-${CLAUDE_HOME:-${HOME}/.claude}}"
+
+# Parse args (--prefix kept symmetric with install.sh)
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --prefix) INSTALL_ROOT="$2"; shift 2;;
+    --help|-h)
+      echo "Usage: uninstall.sh [--prefix <dir>]"
+      exit 0;;
+    *) echo "unknown arg: $1" >&2; exit 1;;
+  esac
+done
+
+SKILLS_DIR="${INSTALL_ROOT}/skills"
+CONFIG_FILE="${INSTALL_ROOT}/anvil-config.sh"
 
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -47,3 +62,9 @@ done
 
 echo
 printf "${GREEN}removed${RESET} %d, kept %d non-anvil skills\n" "$REMOVED" "$KEPT"
+
+# Remove the anvil-config.sh that install.sh wrote.
+if [ -f "$CONFIG_FILE" ]; then
+  rm -f "$CONFIG_FILE"
+  printf "  ${GREEN}-${RESET} %s (config removed)\n" "$CONFIG_FILE"
+fi

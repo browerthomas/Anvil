@@ -14,8 +14,29 @@
 
 set -u
 
+# Resolve ANVIL_ROOT (in order):
+#   1. existing env var       — operator override
+#   2. anvil-config.sh next to skills/ — post-install (any prefix; copy or symlink)
+#   3. env-honoured anvil-config.sh    — $ANVIL_HOME/$CLAUDE_HOME/$HOME/.claude
+#   4. relative-path fallback ($SCRIPT_DIR/../../..)  — in-checkout / dev mode
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ANVIL_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+if [ -z "${ANVIL_ROOT:-}" ]; then
+  # The script lives at <install-root>/skills/<name>/scripts/<file>.sh; the
+  # config file is at <install-root>/anvil-config.sh — 3 levels up.
+  _av_cfg="$SCRIPT_DIR/../../../anvil-config.sh"
+  if [ -f "$_av_cfg" ]; then
+    # shellcheck source=/dev/null
+    . "$_av_cfg"
+  fi
+  unset _av_cfg
+fi
+if [ -z "${ANVIL_ROOT:-}" ] && [ -f "${ANVIL_HOME:-${CLAUDE_HOME:-${HOME}/.claude}}/anvil-config.sh" ]; then
+  # shellcheck source=/dev/null
+  . "${ANVIL_HOME:-${CLAUDE_HOME:-${HOME}/.claude}}/anvil-config.sh"
+fi
+if [ -z "${ANVIL_ROOT:-}" ]; then
+  ANVIL_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+fi
 # shellcheck source=/dev/null
 . "$ANVIL_ROOT/shared/lib.sh"
 
