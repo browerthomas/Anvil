@@ -18,9 +18,13 @@
 #   slice-skipped   — operator-paced or rejected
 #   issue-filed     — follow-up issue tracked
 #   decision        — operator-decision invoked; data has verb, free-text, outcome
+#   resume          — `/grind --resume` invoked; data has plan_path, resumed_from,
+#                     merged_count, total_count, fresh_init (audit-only;
+#                     additive — does not mutate slice status directly)
 #
 # Usage:
 #   state.sh init <plan-path>             # write plan-init event from plan
+#   state.sh resume <plan-path>           # auto-resume from event log's last slice-merged
 #   state.sh next                         # print next ready slice id
 #   state.sh ready                        # print all ready slices
 #   state.sh mark <slice-id> <type>       # append a slice-<type> event
@@ -72,6 +76,73 @@ ensure_events_file() {
   fi
 }
 
+# Acquire an exclusive lock on the events file using mkdir (atomic +
+# cross-platform — works on macOS without flock). Returns 0 on lock-held,
+# non-zero if another process already holds it. On success, registers a
+# trap so the lock is released on exit.
+LOCK_HELD=0
+acquire_events_lock() {
+  local lock_dir="${EVENTS_FILE}.lock"
+  if mkdir "$lock_dir" 2>/dev/null; then
+    LOCK_HELD=1
+    # Store pid for diagnostics; safe to ignore on read.
+    echo $$ > "$lock_dir/pid" 2>/dev/null || true
+    trap 'release_events_lock' EXIT INT TERM
+    return 0
+  fi
+  return 1
+}
+
+release_events_lock() {
+  if [ "$LOCK_HELD" = "1" ]; then
+    local lock_dir="${EVENTS_FILE}.lock"
+    rm -rf "$lock_dir" 2>/dev/null || true
+    LOCK_HELD=0
+  fi
+}
+
+# Resolve the YAML→slices JSON for a given plan path. Echoes the JSON.
+# Exits 1 on failure with a user-facing av_fail message.
+parse_plan_yaml() {
+  local plan_path="$1"
+  local yaml_source
+  if [ -d "$plan_path" ]; then
+    local tasks_file="$plan_path/tasks.md"
+    if [ ! -f "$tasks_file" ]; then
+      av_fail "folder plan must contain tasks.md (got: $plan_path)"
+      return 1
+    fi
+    yaml_source="$tasks_file"
+  elif [ -f "$plan_path" ]; then
+    yaml_source="$plan_path"
+  else
+    av_fail "plan not found (neither file nor folder): $plan_path"
+    return 1
+  fi
+
+  local yaml
+  yaml=$(awk '/^```yaml/{flag=1; next} /^```/{if(flag){exit}; next} flag {print}' "$yaml_source")
+  if ! echo "$yaml" | grep -q "slices:"; then
+    av_fail "plan does not contain a slices: YAML block (looked in $yaml_source)"
+    return 1
+  fi
+
+  local slices_json
+  if command -v yq >/dev/null 2>&1; then
+    slices_json=$(echo "$yaml" | yq -o=json)
+  elif command -v python3 >/dev/null 2>&1; then
+    slices_json=$(echo "$yaml" | python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin)))' 2>/dev/null)
+  else
+    av_fail "need yq or python3+pyyaml to parse plan YAML"
+    return 1
+  fi
+  if [ -z "$slices_json" ]; then
+    av_fail "could not parse plan YAML"
+    return 1
+  fi
+  echo "$slices_json"
+}
+
 # Append a single event line to the event log.
 emit_event() {
   local ev="$1" slice="$2" data="$3"
@@ -121,20 +192,10 @@ case "$cmd" in
       exit 1
     fi
 
-    # Plan can be a flat file OR a folder (OpenSpec-style layout).
-    # Folder must contain tasks.md with the slice manifest.
+    # Plan must be a flat file or a folder layout.
     if [ -d "$plan_path" ]; then
-      # Folder layout
-      tasks_file="$plan_path/tasks.md"
-      if [ ! -f "$tasks_file" ]; then
-        av_fail "folder plan must contain tasks.md (got: $plan_path)"
-        exit 1
-      fi
-      yaml_source="$tasks_file"
       av_info "loaded folder plan: $plan_path"
     elif [ -f "$plan_path" ]; then
-      # Flat file layout
-      yaml_source="$plan_path"
       av_info "loaded flat plan: $plan_path"
     else
       av_fail "plan not found (neither file nor folder): $plan_path"
@@ -142,22 +203,8 @@ case "$cmd" in
     fi
     mkdir -p "$ANVIL_DIR"
 
-    # Extract YAML manifest from plan
-    yaml=$(awk '/^```yaml/{flag=1; next} /^```/{if(flag){exit}; next} flag {print}' "$yaml_source")
-    if ! echo "$yaml" | grep -q "slices:"; then
-      av_fail "plan does not contain a slices: YAML block (looked in $yaml_source)"
-      exit 1
-    fi
-
-    if command -v yq >/dev/null 2>&1; then
-      slices_json=$(echo "$yaml" | yq -o=json)
-    elif command -v python3 >/dev/null 2>&1; then
-      slices_json=$(echo "$yaml" | python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin)))' 2>/dev/null)
-    else
-      av_fail "need yq or python3+pyyaml to parse plan YAML"
-      exit 1
-    fi
-    [ -z "$slices_json" ] && { av_fail "could not parse plan YAML"; exit 1; }
+    # Extract slices JSON via shared helper.
+    slices_json=$(parse_plan_yaml "$plan_path") || exit 1
 
     # Build the plan-init payload
     init_payload=$(jq -nc --arg plan "$plan_path" --argjson sj "$slices_json" '
@@ -180,6 +227,96 @@ case "$cmd" in
     av_ok "event log initialized at $EVENTS_FILE"
     n=$(jq '.slices | length' "$SNAPSHOT_FILE")
     echo "  $n slices loaded"
+    ;;
+
+  resume)
+    plan_path="${1:-}"
+    if [ -z "$plan_path" ]; then
+      av_fail "usage: state.sh resume <plan-path>"
+      exit 1
+    fi
+    # Validate plan path exists (file or folder layout).
+    if [ ! -e "$plan_path" ]; then
+      av_fail "plan not found (neither file nor folder): $plan_path"
+      exit 1
+    fi
+    if [ -d "$plan_path" ] && [ ! -f "$plan_path/tasks.md" ]; then
+      av_fail "folder plan must contain tasks.md (got: $plan_path)"
+      exit 1
+    fi
+
+    mkdir -p "$ANVIL_DIR"
+
+    # Acquire lock — second concurrent invocation prints warning + exits 0
+    # without dispatching (no resume event written, idempotency preserved).
+    if ! acquire_events_lock; then
+      av_warn "another /grind --resume is in flight (lock held: ${EVENTS_FILE}.lock) — exiting without resume"
+      exit 0
+    fi
+
+    # If event log does not exist yet, initialize it first.
+    fresh_init=0
+    if [ ! -f "$EVENTS_FILE" ]; then
+      slices_json=$(parse_plan_yaml "$plan_path") || exit 1
+      init_payload=$(jq -nc --arg plan "$plan_path" --argjson sj "$slices_json" '
+        {plan_path: $plan, slices: ($sj.slices | map({key: .id, value: {
+          status: "pending",
+          depends_on: (.["depends-on"] // []),
+          operator_paced: (.["operator-paced"] // false)
+        }}) | from_entries)}
+      ')
+      : > "$EVENTS_FILE"
+      emit_event "plan-init" "" "$init_payload"
+      for sid in $(jq -r '.slices | keys[]' "$SNAPSHOT_FILE"); do
+        emit_event "slice-pending" "$sid" "null"
+      done
+      fresh_init=1
+    fi
+
+    # Refresh snapshot so the resume payload can quote correct status counts.
+    refresh_snapshot
+
+    # Any non-merged, non-pending slices (deferred / in-flight / skipped) get
+    # re-pended so the next/ready queries pick them up. `failed != merged` —
+    # the operator's --resume retries failed slices.
+    deferred_slices=$(jq -r '
+      .slices | to_entries
+      | map(select(.value.status == "deferred" or .value.status == "in-flight"))
+      | .[] .key
+    ' "$SNAPSHOT_FILE")
+    for sid in $deferred_slices; do
+      emit_event "slice-pending" "$sid" "null"
+    done
+
+    # Compute next ready slice.
+    refresh_snapshot
+    resumed_from=$(jq -r '
+      .slices as $s
+      | $s | to_entries
+      | map(select(.value.status == "pending" and .value.operator_paced == false))
+      | map(select((.value.depends_on // []) | all($s[.] .status == "merged")))
+      | (first // empty).key // empty
+    ' "$SNAPSHOT_FILE")
+
+    merged_count=$(jq '[.slices | to_entries[] | select(.value.status == "merged")] | length' "$SNAPSHOT_FILE")
+    total_count=$(jq '.slices | length' "$SNAPSHOT_FILE")
+
+    resume_data=$(jq -nc \
+      --arg plan "$plan_path" \
+      --arg from "$resumed_from" \
+      --argjson merged "$merged_count" \
+      --argjson total "$total_count" \
+      --argjson fresh "$fresh_init" \
+      '{plan_path: $plan, resumed_from: (if $from == "" then null else $from end), merged_count: $merged, total_count: $total, fresh_init: ($fresh == 1)}')
+    emit_event "resume" "" "$resume_data"
+
+    if [ -z "$resumed_from" ]; then
+      av_ok "resumed plan $plan_path — no ready slice (all $total_count merged or blocked)"
+    else
+      av_ok "resumed plan $plan_path — next slice: $resumed_from ($merged_count/$total_count merged)"
+      echo "$resumed_from"
+    fi
+    release_events_lock
     ;;
 
   next)
@@ -299,7 +436,7 @@ case "$cmd" in
     ;;
 
   *)
-    av_fail "usage: state.sh {init|next|ready|mark|set-pr|decision|add-issue|status|trace|snapshot|replay} [args]"
+    av_fail "usage: state.sh {init|resume|next|ready|mark|set-pr|decision|add-issue|status|trace|snapshot|replay} [args]"
     exit 1
     ;;
 esac
