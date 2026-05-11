@@ -44,6 +44,23 @@ done
 
 SKILLS_DIR="${INSTALL_ROOT}/skills"
 CONFIG_FILE="${INSTALL_ROOT}/anvil-config.sh"
+MIGRATOR_SENTINEL="${INSTALL_ROOT}/.anvil-lens-migrated"
+
+# ── /persona → /lens migrator (Phase C of the 2026-05-11 sprint) ────────
+# Auto-invoke once if we detect a stale /persona install OR the sentinel is
+# missing. The migrator is idempotent + writes the sentinel itself, so a
+# second install.sh run is a no-op.
+if [ ! -f "$MIGRATOR_SENTINEL" ] \
+   || [ -L "$SKILLS_DIR/persona" ] \
+   || [ -e "$SKILLS_DIR/persona" ]; then
+  if [ -x "$ANVIL_ROOT/bin/migrate-persona-to-lens.sh" ]; then
+    printf "${GREEN}/persona → /lens migration check${RESET}\n"
+    "$ANVIL_ROOT/bin/migrate-persona-to-lens.sh" --prefix "$INSTALL_ROOT" || {
+      printf "${RED}migrator failed — fix above before re-running install.sh${RESET}\n" >&2
+      exit 1
+    }
+  fi
+fi
 
 # Resolve which skills to install based on group
 if [ -n "$GROUP" ]; then
