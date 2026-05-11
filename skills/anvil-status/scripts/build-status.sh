@@ -289,6 +289,7 @@ slice_review_state() {
 emit_next() {
   local sid status deps dep dep_status all_merged ready_ids found
   found=""
+  ready_ids=""
   while IFS= read -r sid; do
     [ -z "$sid" ] && continue
     status=$(slice_status "$sid")
