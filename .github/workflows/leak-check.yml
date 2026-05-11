@@ -25,7 +25,7 @@ jobs:
       - name: Verify required tools
         run: |
           set -e
-          for tool in bash grep awk sort jq; do
+          for tool in bash grep awk sort; do
             if ! command -v "$tool" >/dev/null 2>&1; then
               echo "::error::required tool missing: $tool"
               exit 2
@@ -42,9 +42,12 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           set -e
-          # Match `[leak-allow: <reason>]`. Reason can be any non-`]` content.
-          if printf '%s' "$PR_BODY" | grep -qE '\[leak-allow:[[:space:]]*[^]]+\]'; then
-            REASON=$(printf '%s' "$PR_BODY" | grep -oE '\[leak-allow:[[:space:]]*[^]]+\]' | head -1 | sed -E 's/^\[leak-allow:[[:space:]]*//; s/\]$//')
+          # Match `[leak-allow: <reason>]` ONLY when it appears at the start of a
+          # line (with optional leading whitespace). Anchor prevents false-matches
+          # on backtick-fenced examples (e.g. a PR documenting the override
+          # mechanic would otherwise accidentally trigger it).
+          if printf '%s' "$PR_BODY" | grep -qE '^[[:space:]]*\[leak-allow:[[:space:]]*[^]]+\]'; then
+            REASON=$(printf '%s' "$PR_BODY" | grep -oE '^[[:space:]]*\[leak-allow:[[:space:]]*[^]]+\]' | head -1 | sed -E 's/^[[:space:]]*\[leak-allow:[[:space:]]*//; s/\]$//')
             echo "override=true" >> "$GITHUB_OUTPUT"
             echo "reason<<EOF_REASON_MARKER" >> "$GITHUB_OUTPUT"
             echo "$REASON" >> "$GITHUB_OUTPUT"
@@ -63,11 +66,16 @@ jobs:
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
           # Exit-code contract:
           #   0 → clean
-          #   1 → leak found (will be soft-passed only if PR body has override)
+          #   1 → pattern leak found (will be soft-passed only if PR body has override)
           #   2 → script crash / dependency missing — fail-closed
+          #   3 → conflict marker found — NEVER soft-pass, even with override
           if [ "$rc" -eq 2 ]; then
             echo "::error::check-leaks.sh crashed (rc=2). Workflow fails closed."
             exit 2
+          fi
+          if [ "$rc" -eq 3 ]; then
+            echo "::error::check-leaks.sh found a stale conflict marker (rc=3). PR-body override cannot waive this — fix the marker."
+            exit 3
           fi
           # rc=0 / rc=1 are not fatal here; the next step decides.
           exit 0
@@ -103,10 +111,12 @@ jobs:
           (Posted by .github/workflows/leak-check.yml)
           EOF
           )
-              gh pr comment "$PR_NUMBER" --body "$COMMENT_BODY" || \
-                echo "::warning::failed to post override comment (continuing)"
+              if ! gh pr comment "$PR_NUMBER" --body "$COMMENT_BODY"; then
+                echo "::error::failed to post override audit comment — override requires a posted comment for the audit trail. Workflow fails closed."
+                exit 1
+              fi
             fi
             exit 0
           fi
-          echo "::error::leak-check FAILED — see scan step output. To override (with justification), add [leak-allow: <reason>] to the PR body and re-run."
+          echo "::error::leak-check FAILED — see scan step output. To override (with justification), add [leak-allow: <reason>] to the PR body on a line of its own (not inside a code block) and re-run."
           exit 1

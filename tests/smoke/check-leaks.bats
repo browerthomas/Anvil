@@ -82,7 +82,7 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-@test "stale conflict marker fails (hardcoded check)" {
+@test "stale conflict marker fails with rc=3 (override cannot bypass)" {
   # No patterns file at all — only the hardcoded conflict-marker check runs.
   # Construct the markers dynamically so this bats file itself doesn't trip
   # the check on a future run (which would self-block).
@@ -101,9 +101,46 @@ EOF
   git add half-merged.md
   git commit -q -m "seed: stale conflict"
   run bash bin/check-leaks.sh
-  [ "$status" -eq 1 ]
+  # rc=3 is the conflict-marker exit code — distinct from rc=1 (pattern leak).
+  # The workflow uses this to refuse the [leak-allow:] override on conflict markers.
+  [ "$status" -eq 3 ]
   [[ "$output" == *"conflict marker"* ]]
   [[ "$output" == *"half-merged.md"* ]]
+}
+
+@test "pattern leak fails with rc=1 (override can soft-pass)" {
+  # Verify pattern leaks return rc=1, distinct from conflict markers (rc=3).
+  mkdir -p "$REPO_DIR/.anvil"
+  cat > "$REPO_DIR/.anvil/check-leaks.patterns.txt" <<'EOF'
+forbidden_token_for_test :: **/* ::
+EOF
+  echo "leaks a forbidden_token_for_test" > "$REPO_DIR/leak.md"
+  git add .anvil/check-leaks.patterns.txt leak.md
+  git commit -q -m "seed: pattern leak"
+  run bash bin/check-leaks.sh
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"PATTERN LEAKS FOUND"* ]]
+}
+
+@test "PR-body override regex requires line-start anchor (workflow contract)" {
+  # The workflow's override regex anchors to ^[[:space:]]*[ to prevent
+  # backtick-fenced documentation examples from triggering soft-pass.
+  # Verify the anchor shape against fixtures.
+  local rx='^[[:space:]]*\[leak-allow:[[:space:]]*[^]]+\]'
+
+  # Positive — line-start (with or without leading whitespace).
+  echo "[leak-allow: legit override]" | grep -qE "$rx"
+  [ "$?" -eq 0 ]
+  echo "  [leak-allow: indented but still line-start]" | grep -qE "$rx"
+  [ "$?" -eq 0 ]
+
+  # Negative — inside an inline backtick code-block, NOT at line start.
+  echo "See \`[leak-allow: example]\` for the override mechanic." | grep -qvE "$rx"
+  [ "$?" -eq 0 ]
+
+  # Negative — buried in middle of a sentence.
+  echo "Some prose. [leak-allow: in the middle of a line] more prose." | grep -qvE "$rx"
+  [ "$?" -eq 0 ]
 }
 
 @test "PR-body override pattern recognized (regex isolation against fixture)" {

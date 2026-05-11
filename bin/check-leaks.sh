@@ -143,7 +143,7 @@ build_changelog_exclusion_lines() {
   local file="$1"
   [ -f "$file" ] || return 0
   awk '
-    /^## \[(v?[0-9]+\.[0-9]+\.[0-9]+[^]]*|Unreleased)\] - [0-9]{4}-[0-9]{2}-[0-9]{2}/ {
+    /^## \[v?[0-9]+\.[0-9]+\.[0-9]+[^]]*\] - [0-9]{4}-[0-9]{2}-[0-9]{2}/ {
       in_past = 1
       print NR
       next
@@ -269,9 +269,14 @@ pp_rc=$?
 set -e
 trap on_err ERR
 
-if [ "$cm_rc" -ne 0 ] || [ "$pp_rc" -ne 0 ]; then
+if [ "$cm_rc" -ne 0 ]; then
   echo
-  printf "${RED}OVERALL: ✗ LEAKS FOUND${RESET} — fix above before merging\n" >&2
+  printf "${RED}OVERALL: ✗ CONFLICT MARKERS FOUND${RESET} — these cannot be overridden\n" >&2
+  exit 3
+fi
+if [ "$pp_rc" -ne 0 ]; then
+  echo
+  printf "${RED}OVERALL: ✗ PATTERN LEAKS FOUND${RESET} — fix above (or override via PR body)\n" >&2
   exit 1
 fi
 
