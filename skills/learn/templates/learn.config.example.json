@@ -1,0 +1,7 @@
+{
+  "_comment": "Optional per-project tuning for /learn. Defaults match the values below; the file is a hook for future extension.",
+  "default_idempotency_window_seconds": 60,
+  "search_default_limit": 10,
+  "summary_default_limit": 20,
+  "export_min_confidence": "medium"
+}

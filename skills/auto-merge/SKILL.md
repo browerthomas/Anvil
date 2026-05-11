@@ -112,7 +112,41 @@ git -C "$REPO_ROOT" checkout main
 git -C "$REPO_ROOT" pull origin main
 ```
 
-### Step 8: Report
+### Step 8: Auto-emit a learning when the merge involved a non-trivial rebase
+
+If the merge required `/pre-merge-gate` to rebase the branch (i.e. it wasn't already up-to-date with `origin/main`), the rebase shape itself is worth remembering — especially for stacked-PR work where the *next* slice will face the same dance.
+
+```bash
+# Read the rebase-commit count if /pre-merge-gate recorded it.
+# (e.g. exported as PRE_MERGE_GATE_REBASE_COMMITS by the caller, or 0 if absent)
+rebase_commits="${PRE_MERGE_GATE_REBASE_COMMITS:-0}"
+
+if [ "$rebase_commits" -gt 0 ]; then
+  # Slice + plan-slug detection mirrors post-merge-debrief.
+  case "$BRANCH" in
+    feat-*-S[0-9]*) slice_id=$(echo "$BRANCH" | sed 's/.*-S\([0-9]*\).*/S\1/');;
+    fix-[0-9]*)     slice_id=$(echo "$BRANCH" | sed 's/^fix-//');;
+    *)              slice_id="";;
+  esac
+
+  merge_key="rebase-shape-${BRANCH//\//-}"
+
+  bash "$ANVIL_ROOT/skills/learn/scripts/learn-add.sh" \
+    "$merge_key" "migration-shape" \
+    "PR #${PR_NUMBER} merged after rebase of ${rebase_commits} commits onto origin/main. Branch: ${BRANCH}." \
+    --confidence low \
+    --source /auto-merge \
+    --slice "$slice_id" \
+    --tag rebase \
+    2>/dev/null || true
+fi
+```
+
+Confidence is `low` because a single merge isn't yet a pattern — but the `key` shape ensures that if the same plan's later slices all need the same dance, `prior_count` accumulates and `/learn search rebase` surfaces it.
+
+Soft-fail. If `/learn add` errors, the merge has already landed; report continues.
+
+### Step 9: Report
 
 Print:
 - ✅ Merged: PR #<n> — <title>

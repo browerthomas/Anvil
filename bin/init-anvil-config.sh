@@ -78,10 +78,25 @@ av_ok "wrote $ANVIL_DIR/dispatch-defaults.txt"
 cat > "$ANVIL_DIR/.gitignore" <<'EOF'
 # anvil runtime state — not for the repo
 grind-state.json
+grind-events.jsonl
+grind-snapshot.json
 dispatched-agents.json
+
+# Per-project learnings — append-only JSONL; default-gitignored for privacy.
+# Operators who want the log shared across the team can `git add -f` it.
+learnings.jsonl
+learnings.archive.jsonl
+
 *.log
 EOF
 av_ok "wrote $ANVIL_DIR/.gitignore"
+
+# Seed an empty learnings.jsonl so the file shows up in `ls .anvil/` from day one.
+# Skill scripts auto-create it on first /learn add — this just makes it explicit.
+# JSONL has no native comment syntax (jq would choke on a header line), so we
+# touch an empty file and document its purpose in the README.md below.
+touch "$ANVIL_DIR/learnings.jsonl"
+av_ok "wrote $ANVIL_DIR/learnings.jsonl (empty — append-only learnings log; see /learn)"
 
 cat > "$ANVIL_DIR/README.md" <<'EOF'
 # .anvil/
@@ -105,6 +120,8 @@ Project-specific configuration consumed by [anvil](https://github.com/browerthom
 | `grind-state.json` | `/grind` | Per-plan execution state (auto-managed) | no (gitignored) |
 | `grind-events.jsonl` | `/grind` | Append-only event log (auto-managed) | no (gitignored) |
 | `dispatched-agents.json` | `/dispatch-slice` | Tracking of in-flight agents (auto-managed) | no (gitignored) |
+| `learnings.jsonl` | `/learn` | Append-only per-project learnings log (auto-managed) | no (gitignored; opt-in via `git add -f`) |
+| `learnings.archive.jsonl` | `/learn prune` | Pruned learnings (preserved, not deleted) | no (gitignored) |
 
 Edit the static files; let anvil manage the runtime ones.
 EOF
@@ -119,3 +136,4 @@ echo
 av_info "Now in Claude Code, try:"
 echo "  /pre-merge-gate <pr-number>"
 echo "  /dispatch-slice <slice-id> --scope \"...\""
+echo "  /learn search <topic>   # surface prior learnings before starting work"

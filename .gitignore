@@ -33,6 +33,10 @@ build/
 
 # anvil per-repo state (orchestration runtime, log artifacts)
 .anvil/grind-state.json
+.anvil/grind-events.jsonl
+.anvil/grind-snapshot.json
+.anvil/learnings.jsonl
+.anvil/learnings.archive.jsonl
 .anvil/*.log
 .codex-log/
 

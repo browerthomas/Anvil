@@ -115,6 +115,33 @@ If `.anvil/grind-events.jsonl` exists in the repo root, append a `findings-rolle
 
 The `slice` is auto-derived from the PR's branch name pattern (`fix-<id>` / `feat-<plan>-S<N>` → `S<N>`) if it matches; otherwise null.
 
+### Step 7: Auto-emit a learning when the multi-critic surfaced ≥3 P1s
+
+A multi-critic review consolidating ≥3 P1 findings usually exposes a cross-cutting pattern (auth boundary, error-propagation, transaction safety, etc.). That pattern is exactly the kind of thing the *next* sprint should see in `/learn search`.
+
+```bash
+# Fire only when the synthesis produced ≥3 P1s.
+p1_count=$(echo "$findings" | jq '.p1 | length')
+if [ "$p1_count" -ge 3 ]; then
+  # Cross-critic theme is in the synthesis; we copy a one-paragraph excerpt.
+  theme=$(echo "$findings" | jq -r '.cross_cutting_theme // (.p1[0:3] | map(.summary) | join("; "))')
+
+  # Plan slug + slice id come from the branch name + plan path (already derived above).
+  rollup_key="multi-critic-${PLAN_SLUG:-$REPO_NAME}-${SLICE_ID:-pr$PR_NUMBER}"
+
+  bash "$ANVIL_ROOT/skills/learn/scripts/learn-add.sh" \
+    "$rollup_key" "gotcha" \
+    "Multi-critic review on PR #${PR_NUMBER} consolidated ${p1_count} P1s — cross-cutting theme: ${theme}. See review at ${REVIEW_PATH}." \
+    --confidence medium \
+    --source /findings-rollup \
+    --slice "${SLICE_ID:-}" \
+    --tag multi-critic --tag cross-cutting \
+    2>/dev/null || true
+fi
+```
+
+Soft-fail. If `/learn add` errors, the rollup completes regardless.
+
 ## Output
 
 ```

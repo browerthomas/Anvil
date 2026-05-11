@@ -114,6 +114,7 @@ case "$GROUP" in
     echo "  /sweep-worktrees    # cleanup pile-up"
     echo "  /self-review        # adversarial diff review"
     echo "  /recap              # visual session report"
+    echo "  /learn search <q>   # surface prior per-project learnings"
     ;;
   pr)
     echo "Try the per-PR cycle (anvil-pr):"

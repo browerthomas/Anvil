@@ -62,6 +62,35 @@ wait
 
 Run deps install in BACKGROUND so the agent dispatch doesn't block waiting.
 
+**If `git worktree add` fails** (branch already in use by another worktree, target dir already exists, base-branch invalid) OR deps install fails (npm registry timeout, lockfile mismatch, iCloud-evicted node_modules), auto-emit a `gotcha` learning so the next dispatcher sees it:
+
+```bash
+# Pseudocode — wrap each failure mode.
+case "$failure_kind" in
+  "worktree-add-failed-branch-in-use")
+    detail="branch '$BRANCH' already in use by another worktree" ;;
+  "worktree-add-failed-dir-exists")
+    detail="target directory '$WORKTREE_PATH' already exists" ;;
+  "worktree-add-failed-base-invalid")
+    detail="base '$BASE_BRANCH' could not be resolved (did you fetch?)" ;;
+  "deps-install-failed")
+    detail="npm install in $WORKTREE_PATH failed — possibly icloud-evicted node_modules or registry timeout" ;;
+esac
+
+key="dispatch-fail-${failure_kind}"
+
+bash "$ANVIL_ROOT/skills/learn/scripts/learn-add.sh" \
+  "$key" "gotcha" \
+  "Dispatch for slice '$ID' failed: $detail. Operator action needed before re-dispatching." \
+  --confidence medium \
+  --source /dispatch-slice \
+  --slice "$ID" \
+  --tag dispatch-fail \
+  2>/dev/null || true
+```
+
+Soft-fail. The learning emit must not mask the original failure — the dispatch fails loudly and the operator sees the real cause; the JSONL entry is a paper trail.
+
 ### Step 3: Build the agent prompt
 
 Use the canonical template at `templates/agent-prompt.md` (relative to this skill dir). Variables in `{{ ... }}` are filled from the args. Helpers from `shared/lib.sh`:

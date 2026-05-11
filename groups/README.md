@@ -4,12 +4,12 @@ Anvil ships as three composable plugin groups + a meta-bundle. Pick what you nee
 
 ```
 groups/
-├── core/                  # anvil-core      → 3 skills (everyday helpers)
+├── core/                  # anvil-core      → 4 skills (everyday helpers)
 ├── pr/                    # anvil-pr        → 3 skills (per-PR cycle)
 └── orchestrator/          # anvil-orchestrator → 2 skills (end-to-end driver)
 ```
 
-The top-level `.claude-plugin/plugin.json` (one directory up) is the meta-bundle that installs all 8 skills — the simplest path for new users.
+The top-level `.claude-plugin/plugin.json` (one directory up) is the meta-bundle that installs all 14 skills — the simplest path for new users.
 
 ## Why groups?
 
@@ -43,6 +43,7 @@ Each group has its own marketplace identity, so you discover and install the sli
         │ /sweep-worktrees             │
         │ /self-review                 │
         │ /recap                       │
+        │ /learn                       │
         └──────────────────────────────┘
 ```
 
@@ -53,8 +54,8 @@ Higher groups recommend lower groups but don't require them — `anvil-orchestra
 ### Symlink mode (development)
 
 ```bash
-~/Desktop/anvil/bin/install.sh                        # all 8 skills (meta-bundle)
-~/Desktop/anvil/bin/install.sh --group core           # just anvil-core (3 skills)
+~/Desktop/anvil/bin/install.sh                        # all 14 skills (meta-bundle)
+~/Desktop/anvil/bin/install.sh --group core           # just anvil-core (4 skills)
 ~/Desktop/anvil/bin/install.sh --group pr             # just anvil-pr (3 skills)
 ~/Desktop/anvil/bin/install.sh --group orchestrator   # just anvil-orchestrator (2 skills)
 ```
@@ -62,8 +63,8 @@ Higher groups recommend lower groups but don't require them — `anvil-orchestra
 ### Marketplace install (when published)
 
 ```
-/plugin install anvil              # meta-bundle, all 8 skills
-/plugin install anvil-core         # 3 skills only
+/plugin install anvil              # meta-bundle, all 14 skills
+/plugin install anvil-core         # 4 skills only
 /plugin install anvil-pr           # 3 skills only
 /plugin install anvil-orchestrator # 2 skills only
 ```
