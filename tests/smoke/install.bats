@@ -21,7 +21,7 @@ setup() {
 }
 
 @test "install.sh creates ~/.claude/skills and symlinks every skill" {
-  run env HOME="$FAKE_HOME" bash "$ANVIL_ROOT/bin/install.sh"
+  run env HOME="$FAKE_HOME" bash "$ANVIL_ROOT/bin/install.sh" --no-preflight
   [ "$status" -eq 0 ]
   [ -d "$FAKE_HOME/.claude/skills" ]
   # Each anvil skill should have a corresponding entry.
@@ -35,8 +35,8 @@ setup() {
 }
 
 @test "install.sh second run is idempotent (no error)" {
-  env HOME="$FAKE_HOME" bash "$ANVIL_ROOT/bin/install.sh" >/dev/null
-  run env HOME="$FAKE_HOME" bash "$ANVIL_ROOT/bin/install.sh"
+  env HOME="$FAKE_HOME" bash "$ANVIL_ROOT/bin/install.sh" --no-preflight >/dev/null
+  run env HOME="$FAKE_HOME" bash "$ANVIL_ROOT/bin/install.sh" --no-preflight
   [ "$status" -eq 0 ]
 }
 
@@ -46,7 +46,7 @@ setup() {
 }
 
 @test "install.sh --copy mode actually copies (not symlinks)" {
-  run env HOME="$FAKE_HOME" bash "$ANVIL_ROOT/bin/install.sh" --copy
+  run env HOME="$FAKE_HOME" bash "$ANVIL_ROOT/bin/install.sh" --copy --no-preflight
   [ "$status" -eq 0 ]
   # Pick any installed skill and confirm it's a directory, not a symlink.
   for sk in "$FAKE_HOME"/.claude/skills/*/; do
