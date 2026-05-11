@@ -3,7 +3,7 @@
 Smoke-test suite for anvil's own skills. Catches the obvious-regression class
 of bugs that would otherwise surface at dogfood time — a script blows up on
 its argument parser, a SKILL.md drops its frontmatter, a markdown bash block
-has unbalanced quotes, a persona file leaks project-private references.
+has unbalanced quotes, a lens file leaks project-private references.
 
 These are **smoke tests, not comprehensive tests.** They confirm scripts run
 and outputs are shape-correct. They don't validate semantic correctness of
@@ -54,7 +54,7 @@ tests/
 | `issue-to-spec.bats` | `verify-issue.sh` arg validation | 3 |
 | `codex-review.bats` | `/codex-review` SKILL.md presence + syntax | 2 (skip if absent) |
 | `codex-confer.bats` | `/codex-confer` SKILL.md presence + syntax | 2 (skip if absent) |
-| `personas.bats` | every persona file: shape, placeholder, no leaks | 6 |
+| `lenses.bats` | every lens file: shape, placeholder, no leaks | 6 |
 | `markdown-syntax.bats` | every SKILL.md's bash blocks parse | 16 |
 | `skill-structure.bats` | frontmatter, name match, no project-private refs | 10 |
 | `install.bats` | `bin/install.sh` against a throwaway HOME | 6 |
@@ -113,8 +113,8 @@ fix is usually one of:
   the line number after the helper extracts blocks to a `.sh` file.
 - A SKILL.md lost its YAML frontmatter or the `name:` field — restore
   it; the `skill-structure.bats` test names which file.
-- A persona file lost the `{{project_context}}` placeholder — re-add
-  it; the `personas.bats` test will name the file.
+- A lens file lost the `{{project_context}}` placeholder — re-add
+  it; the `lenses.bats` test will name the file.
 - A script's argument parser was changed and no longer accepts what
   the smoke test passes — update the smoke test if the change is
   intentional.

@@ -4,28 +4,36 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 
 ## [Unreleased]
 
+### Changed — `/persona` → `/lens` hard rename (2026-05-11)
+
+- The skill formerly known as `/persona` is now `/lens`. C1 (PR #44) renamed `skills/persona/` → `skills/lens/` and `.anvil/persona-context.md` → `.anvil/lens-context.md`. C2 (this PR) sweeps the remaining internal text references — README + landing + this CHANGELOG's [Unreleased] block + dispatch-slice / grind composition notes + test fixtures.
+- "Review lens" vocabulary is consistent across all anvil-internal docs. The 17 role files under `skills/lens/lenses/{systems,saas,generic}/` are referred to as **lenses**, not personas. Bare-name lookup + the `oncall-3am` → `systems/sre-incident-responder` shim still work.
+- Landing-page badge copy: `17 skills · 17 review lenses` (was `16 skills · 17 adversarial personas`). Skill count is the real current value (17, post-C1).
+- **Operator action post-merge:** re-run `bin/install.sh` (auto-invokes the migrator that removes any stale `~/.claude/skills/persona/` install). Then `grep -l '/persona' ~/.claude/projects/*/memory/MEMORY.md` and rewrite operator memory references to `/lens`.
+- Past CHANGELOG entries (date-prefixed semver blocks below) preserve `/persona` as historical wording — that's the language used at the time they shipped. The [Unreleased] block is updated to current `/lens` terminology because it describes the next-release surface area.
+
 ### Changed — `docs/index.html` maturation pass (2026-05-11)
 
 - Critic-read feedback from the maintainer's 2026-05-11 dogfood pass surfaced seven landing-page gaps. Single PR covers all seven.
 - **One-liner install** above the existing 3-tier quickstart tabs — single `git clone … && install.sh` row labelled "Just run this" for visitors who want one paste-and-go command. The 3-tier panel (single skill / inner loop / full orchestration) is preserved below for operators who want the explicit version.
 - **Copy buttons on all four terminal blocks** (one-liner + tier 1 / 2 / 3). ~15 lines of vanilla JS; click pulls `.cmd` text content out of the target terminal, joins with newlines, copies via `navigator.clipboard.writeText()`, flashes "Copied!" for 1.5s.
 - **Hero copy tightened** — merged the two stacked `.hero-sub` paragraphs into one crisp elevator + one italic differentiator line. Dropped the "Built for solo developers" sentence (that framing moves into the new "Who it's for" callout).
-- **Smoke-test + CI credibility badges** under the hero CTAs: `100+ tests · CI on every push` (links to `.github/workflows/smoke-test.yml`), `16 skills · 17 adversarial personas`, `Vanilla GitHub · no SaaS, no GitHub App`.
-- **New "Who it's for" section** between hero and entry-tiers, audience grid of four cards — systems engineers, software engineers, SaaS operators, OSS maintainers. Expands the framing past the original solo-developer-SaaS-shaped audience to reflect anvil#20's persona namespacing.
-- **Persona namespacing surfaced** as a callout block inside the skills section: 17 personas across `systems/` (8) / `saas/` (6) / `generic/` (3) listed explicitly. Closes the gap where the landing claimed 17 personas in a badge but never showed the namespace structure.
-- **Persona examples balanced** — `/persona systems/*`, `/persona saas/*`, `/persona systems/open-source-maintainer` lead with systems-coded callouts so the SaaS bias from earlier copy is visibly broken.
+- **Smoke-test + CI credibility badges** under the hero CTAs: `100+ tests · CI on every push` (links to `.github/workflows/smoke-test.yml`), `17 skills · 17 review lenses`, `Vanilla GitHub · no SaaS, no GitHub App`.
+- **New "Who it's for" section** between hero and entry-tiers, audience grid of four cards — systems engineers, software engineers, SaaS operators, OSS maintainers. Expands the framing past the original solo-developer-SaaS-shaped audience to reflect anvil#20's lens namespacing.
+- **Lens namespacing surfaced** as a callout block inside the skills section: 17 lenses across `systems/` (8) / `saas/` (6) / `generic/` (3) listed explicitly. Closes the gap where the landing claimed 17 lenses in a badge but never showed the namespace structure.
+- **Lens examples balanced** — `/lens systems/*`, `/lens saas/*`, `/lens systems/open-source-maintainer` lead with systems-coded callouts so the SaaS bias from earlier copy is visibly broken.
 - Mobile breakpoints extended for the new sections (audience grid collapses to 1col, copy button compresses, oneliner padding tightens).
 - No new fonts, no new CDN dependencies, no analytics/tracking, no project-private references.
 
-### Changed — `/persona` namespaced into `saas/` / `systems/` / `generic/`; 7 new systems personas added
+### Changed — `/lens` namespaced into `saas/` / `systems/` / `generic/`; 7 new systems lenses added
 
-- Anvil's real audience is systems + software engineers, not just SaaS operators. The original 10 personas leaned SaaS-coded (Stripe references, customer-support framing, AI-product exposé lens). The skill now namespaces personas into three categories so systems-engineering work has first-class lenses too.
-- **`systems/`** — eight personas covering kernel development (memory safety, locking, ABI), SRE incident response (renamed from `oncall-3am`), embedded engineering (WCET, ISR safety), distributed systems (consensus, idempotency, retries), performance engineering (hot paths, allocation, syscall overhead), compiler/build engineering (hermeticity, reproducibility), OSS maintainership (PR triage, ABI stability), and architecture review (boundaries, coupling, dependency direction).
-- **`saas/`** — six existing personas moved unchanged: `privacy-lawyer`, `payment-risk`, `angry-customer`, `competitor-recon`, `end-user`, `journalist`.
-- **`generic/`** — three personas genericized to drop SaaS-coded language so they work across both categories: `security-researcher` (broadened beyond web-stack vulnerabilities), `new-engineer` (already generic), `vendor-tos-auditor` (broadened from LLM/API focus to cover any external dependency: libraries, compilers, runtimes, cloud, package licenses + AUPs).
-- **New helper:** `skills/persona/scripts/resolve-persona.sh` resolves a persona name (bare or `category/<name>`) to its prompt body. Handles bare-name cross-category lookup, ambiguity errors, and the `oncall-3am` → `systems/sre-incident-responder` backward-compat shim.
-- **Backward compat:** existing `/persona privacy-lawyer "..."` invocations from operator memory still work — the resolver looks across categories when given a bare name. The legacy `oncall-3am` name resolves to `systems/sre-incident-responder` and prints a one-line deprecation notice; the rename will be enforced in a future release.
-- Persona count: 10 → 17 (7 net-new in `systems/`; the eighth systems persona is the `oncall-3am` rename).
+- Anvil's real audience is systems + software engineers, not just SaaS operators. The original 10 lenses leaned SaaS-coded (Stripe references, customer-support framing, AI-product exposé framing). The skill now namespaces lenses into three categories so systems-engineering work has first-class lenses too.
+- **`systems/`** — eight lenses covering kernel development (memory safety, locking, ABI), SRE incident response (renamed from `oncall-3am`), embedded engineering (WCET, ISR safety), distributed systems (consensus, idempotency, retries), performance engineering (hot paths, allocation, syscall overhead), compiler/build engineering (hermeticity, reproducibility), OSS maintainership (PR triage, ABI stability), and architecture review (boundaries, coupling, dependency direction).
+- **`saas/`** — six existing lenses moved unchanged: `privacy-lawyer`, `payment-risk`, `angry-customer`, `competitor-recon`, `end-user`, `journalist`.
+- **`generic/`** — three lenses genericized to drop SaaS-coded language so they work across both categories: `security-researcher` (broadened beyond web-stack vulnerabilities), `new-engineer` (already generic), `vendor-tos-auditor` (broadened from LLM/API focus to cover any external dependency: libraries, compilers, runtimes, cloud, package licenses + AUPs).
+- **New helper:** `skills/lens/scripts/resolve-lens.sh` resolves a lens name (bare or `category/<name>`) to its prompt body. Handles bare-name cross-category lookup, ambiguity errors, and the `oncall-3am` → `systems/sre-incident-responder` backward-compat shim.
+- **Backward compat:** existing `/lens privacy-lawyer "..."` invocations from operator memory still work — the resolver looks across categories when given a bare name. The legacy `oncall-3am` name resolves to `systems/sre-incident-responder` and prints a one-line deprecation notice; the rename will be enforced in a future release.
+- Lens count: 10 → 17 (7 net-new in `systems/`; the eighth systems lens is the `oncall-3am` rename).
 - Motivation: dogfood feedback during the 2026-05-11 self-critique pass flagged the SaaS lean as a barrier to adoption among systems engineers. Namespacing was the minimum-change fix that preserves the existing prompts while opening room for systems-coded lenses.
 
 ### Fixed — install reliability (#19, 2026-05-11)
@@ -39,9 +47,9 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 
 ### Added — bats smoke-test suite for all 16 skills (2026-05-11)
 
-- `tests/smoke/` — bats-based smoke-test suite covering all 16 skills + the install / preflight scripts. ~100 tests across 17 files. Catches the obvious-regression class (script blows up on argument parser, SKILL.md drops its frontmatter, persona file leaks a project-private reference, markdown bash block has unbalanced quotes).
+- `tests/smoke/` — bats-based smoke-test suite covering all 16 skills + the install / preflight scripts. ~100 tests across 17 files. Catches the obvious-regression class (script blows up on argument parser, SKILL.md drops its frontmatter, lens file leaks a project-private reference, markdown bash block has unbalanced quotes).
 - Per-skill coverage: `/learn` (14 tests across 5 scripts), `/dispatch-slice`, `/config-bootstrap`, `/findings-rollup`, `/spec`, `/grind` (9 tests across state-machine subcommands), `/dual-review`, `/auto-merge`, `/pre-merge-gate`, `/issue-to-spec`. Markdown-only skills (`/recap`, `/refine-plan`, `/self-review`, `/post-merge-debrief`, `/sweep-worktrees`) covered by `markdown-syntax.bats` — every fenced bash block must `bash -n` after placeholder substitution.
-- Cross-cutting tests: every persona file has the `{{project_context}}` placeholder + no project-private leaks; every SKILL.md has YAML frontmatter with a `name:` matching its directory; every script under `skills/*/scripts/` and `bin/` passes `bash -n`.
+- Cross-cutting tests: every lens file has the `{{project_context}}` placeholder + no project-private leaks; every SKILL.md has YAML frontmatter with a `name:` matching its directory; every script under `skills/*/scripts/` and `bin/` passes `bash -n`.
 - `tests/test_helper.bash` — shared `setup_fresh_repo` + `setup_fresh_repo_with_seed_learnings` + `extract_md_bash_blocks` helpers. Idempotent setup so a test can call its own re-setup mid-flight without `git init` collisions.
 - `tests/Makefile` — `make smoke` target. Single-file mode via `make smoke FILE=learn.bats`.
 - `.github/workflows/smoke-test.yml` — CI runs the suite on every push to `main` and every PR. Ubuntu, `apt install bats jq`, `make -C tests smoke`.

@@ -669,35 +669,35 @@
     border: 1px solid var(--border);
   }
 
-  /* Persona namespace callout */
-  .persona-callout {
+  /* Lens namespace callout */
+  .lens-callout {
     margin-top: 22px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 22px 26px;
   }
-  .persona-callout-head {
+  .lens-callout-head {
     color: var(--text);
     font-weight: 700;
     font-size: 15px;
     margin: 0 0 14px;
   }
-  .persona-callout-row {
+  .lens-callout-row {
     color: var(--text-2);
     font-size: 13.5px;
     line-height: 1.65;
     margin: 0 0 8px;
   }
-  .persona-callout-row:last-child { margin-bottom: 0; }
-  .persona-callout-row strong {
+  .lens-callout-row:last-child { margin-bottom: 0; }
+  .lens-callout-row strong {
     color: var(--ember-2);
     font-family: 'JetBrains Mono', ui-monospace, monospace;
     font-weight: 700;
     font-size: 12.5px;
     margin-right: 4px;
   }
-  .persona-callout-row code {
+  .lens-callout-row code {
     background: var(--bg-deep);
     padding: 1px 5px;
     border-radius: 3px;
@@ -766,7 +766,7 @@
       <a class="badge" href="https://github.com/browerthomas/Anvil/blob/main/.github/workflows/smoke-test.yml" target="_blank" rel="noopener">
         <span class="badge-check">&#10003;</span> 100+ tests &middot; CI on every push
       </a>
-      <span class="badge" data-skill-count="17"><span class="badge-check">&#10003;</span> 17 skills &middot; 17 adversarial personas</span>
+      <span class="badge" data-skill-count="17"><span class="badge-check">&#10003;</span> 17 skills &middot; 17 review lenses</span>
       <span class="badge"><span class="badge-check">&#10003;</span> Vanilla GitHub &middot; no SaaS, no GitHub App</span>
     </div>
   </div>
@@ -780,7 +780,7 @@
   <div class="audience-grid">
     <div class="audience-card">
       <p class="audience-name">Systems engineers</p>
-      <p>Kernel, SRE, embedded, distributed systems, performance, compiler/build engineering. <code>/persona systems/*</code> gives you the lens.</p>
+      <p>Kernel, SRE, embedded, distributed systems, performance, compiler/build engineering. <code>/lens systems/*</code> gives you the lens.</p>
     </div>
     <div class="audience-card">
       <p class="audience-name">Software engineers</p>
@@ -788,11 +788,11 @@
     </div>
     <div class="audience-card">
       <p class="audience-name">SaaS operators</p>
-      <p>Customer-facing surfaces, refund/dispute exposure, content moderation. <code>/persona saas/*</code> covers the lens.</p>
+      <p>Customer-facing surfaces, refund/dispute exposure, content moderation. <code>/lens saas/*</code> covers the lens.</p>
     </div>
     <div class="audience-card">
       <p class="audience-name">OSS maintainers</p>
-      <p>PR triage at scale, ABI/API stability, contributor onboarding. <code>/persona systems/open-source-maintainer</code> is for you.</p>
+      <p>PR triage at scale, ABI/API stability, contributor onboarding. <code>/lens systems/open-source-maintainer</code> is for you.</p>
     </div>
   </div>
 </section>
@@ -1175,12 +1175,12 @@
   </div>
   </details>
 
-  <div class="persona-callout">
-    <p class="persona-callout-head">17 adversarial personas, 3 categories.</p>
-    <p class="persona-callout-row"><strong>systems/</strong>kernel-developer, sre-incident-responder, embedded-engineer, distributed-systems, performance-engineer, compiler-build-engineer, open-source-maintainer, architecture-reviewer.</p>
-    <p class="persona-callout-row"><strong>saas/</strong>payment-risk, privacy-lawyer, angry-customer, competitor-recon, end-user, journalist.</p>
-    <p class="persona-callout-row"><strong>generic/</strong>security-researcher, new-engineer, vendor-tos-auditor.</p>
-    <p class="persona-callout-row">Each wraps <code>/self-review</code> with a hard-coded role prefix. Operators add custom via <code>personas/&lt;name&gt;.md</code>.</p>
+  <div class="lens-callout">
+    <p class="lens-callout-head">17 review lenses, 3 categories.</p>
+    <p class="lens-callout-row"><strong>systems/</strong>kernel-developer, sre-incident-responder, embedded-engineer, distributed-systems, performance-engineer, compiler-build-engineer, open-source-maintainer, architecture-reviewer.</p>
+    <p class="lens-callout-row"><strong>saas/</strong>payment-risk, privacy-lawyer, angry-customer, competitor-recon, end-user, journalist.</p>
+    <p class="lens-callout-row"><strong>generic/</strong>security-researcher, new-engineer, vendor-tos-auditor.</p>
+    <p class="lens-callout-row">Each wraps <code>/self-review</code> with a hard-coded role prefix. Operators add custom via <code>lenses/&lt;name&gt;.md</code>.</p>
   </div>
 </section>
 
