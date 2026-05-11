@@ -170,6 +170,32 @@ if [ -n "$EXTRA_CONSTRAINTS" ]; then
   echo "$EXTRA_CONSTRAINTS" | sed 's/^/- /'
 fi
 
+# Inject "Recent decisions:" section by querying /learn decisions for any
+# type:decision rows whose affected_slices contains this slice id. Soft-fail
+# if the call errors — the dispatch must not block on a missing learnings file
+# or a transient jq failure.
+DECISIONS_JSON=""
+if [ -f "$ANVIL_ROOT/skills/learn/scripts/learn-search.sh" ] && [ -n "$ID" ]; then
+  DECISIONS_JSON=$(bash "$ANVIL_ROOT/skills/learn/scripts/learn-search.sh" \
+    decisions --affected "$ID" --json --limit 20 2>/dev/null || true)
+fi
+
+if [ -n "$DECISIONS_JSON" ] && [ "$DECISIONS_JSON" != "[]" ]; then
+  # Render one bullet per decision: [<decision_type>] <key> — <insight>
+  DECISIONS_BULLETS=$(echo "$DECISIONS_JSON" | jq -r '
+    .[] |
+    "- [" + (.decision_type // "decision") + "] " + .key + " — " + .insight
+  ' 2>/dev/null || true)
+  if [ -n "$DECISIONS_BULLETS" ]; then
+    echo
+    echo "## Recent decisions"
+    echo
+    echo "These design decisions (logged via \`/learn add --decision-type ...\`) affect this slice. Treat them as binding constraints unless your scope explicitly reverses them."
+    echo
+    echo "$DECISIONS_BULLETS"
+  fi
+fi
+
 cat <<EOF
 
 ## Procedure

@@ -111,10 +111,33 @@ Standard sections in the prompt (per template):
 4. **Scope** — operator-supplied scope paragraph
 5. **Required tests** — what the agent must add + target test count
 6. **Hard constraints** — defaults below + operator-supplied additions
-7. **Procedure** — `npm install` if needed, read relevant files, implement, run `tsc --noEmit && vitest run`, commit + push, open PR
-8. **Commit message format** — conventional commit (`feat(scope):`, `fix(scope):`, etc) referencing issue #
-9. **PR template** — fill `.github/pull_request_template.md` fully (What/Summary/Why/Risks/Testing/Scope/Links)
-10. **Return shape** — PR URL, test count, LoC delta, files changed, design decisions, pushback if any
+7. **Recent decisions** — auto-injected from `/learn decisions --affected <slice-id>` if any matching rows exist (see below)
+8. **Procedure** — `npm install` if needed, read relevant files, implement, run `tsc --noEmit && vitest run`, commit + push, open PR
+9. **Commit message format** — conventional commit (`feat(scope):`, `fix(scope):`, etc) referencing issue #
+10. **PR template** — fill `.github/pull_request_template.md` fully (What/Summary/Why/Risks/Testing/Scope/Links)
+11. **Return shape** — PR URL, test count, LoC delta, files changed, design decisions, pushback if any
+
+#### Recent decisions auto-injection
+
+Before assembling the prompt, query `/learn` for any `type:decision` rows whose `affected_slices` array contains the dispatching slice id:
+
+```bash
+bash "$ANVIL_ROOT/skills/learn/scripts/learn-search.sh" decisions \
+  --affected "$ID" --json 2>/dev/null
+```
+
+If the call returns a non-empty array, render a "## Recent decisions" section into the prompt — one bullet per row with `decision_type`, `key`, and `insight`. Example agent-visible output:
+
+```
+## Recent decisions
+
+These design decisions (logged via `/learn add --decision-type ...`) affect this slice. Treat them as binding constraints unless your scope explicitly reverses them.
+
+- [architecture] chose-redis-over-postgres-listen — retry semantics under worker restart cleaner with redis pub/sub; trade-off documented in design.md
+- [scope] no-new-state-files — extending /learn instead of adding /decide skill; same .anvil/learnings.jsonl with type:decision
+```
+
+If `/learn decisions` returns empty (no matching decisions), the section is omitted entirely — no empty "Recent decisions: (none)" noise. The injection is read-only on `.anvil/learnings.jsonl`. Soft-fail: if the call errors, the dispatch continues without the section.
 
 Default hard constraints (always include):
 

@@ -44,24 +44,45 @@ QUERY=""
 TYPE_FILTER=""
 SOURCE_FILTER=""
 KEY_FILTER=""
+AFFECTED_FILTER=""
 LIMIT=10
 JSON_OUT=0
 SHOW_ALL=0
 
+# /learn decisions subcommand sugar: if the only positional is `decisions`,
+# treat it as `--type decision` with no query. /learn decisions routes
+# through this path. A real substring query of "decisions" plus another
+# token still works (the sugar only fires when `decisions` is the SOLE
+# positional).
+POSITIONALS=()
+
 while [ $# -gt 0 ]; do
   case "$1" in
-    --type)   TYPE_FILTER="$2"; shift 2;;
-    --source) SOURCE_FILTER="$2"; shift 2;;
-    --key)    KEY_FILTER="$2"; shift 2;;
-    --limit)  LIMIT="$2"; shift 2;;
-    --json)   JSON_OUT=1; shift;;
-    --all)    SHOW_ALL=1; shift;;
+    --type)     TYPE_FILTER="$2"; shift 2;;
+    --source)   SOURCE_FILTER="$2"; shift 2;;
+    --key)      KEY_FILTER="$2"; shift 2;;
+    --affected) AFFECTED_FILTER="$2"; shift 2;;
+    --limit)    LIMIT="$2"; shift 2;;
+    --json)     JSON_OUT=1; shift;;
+    --all)      SHOW_ALL=1; shift;;
     -*) av_fail "unknown arg: $1"; exit 1;;
     *)
-      if [ -z "$QUERY" ]; then QUERY="$1"; else QUERY="$QUERY $1"; fi
+      POSITIONALS+=("$1")
       shift;;
   esac
 done
+
+if [ ${#POSITIONALS[@]} -eq 1 ] && [ "${POSITIONALS[0]}" = "decisions" ]; then
+  # Subcommand sugar — only when `decisions` is the sole positional.
+  if [ -z "$TYPE_FILTER" ]; then
+    TYPE_FILTER="decision"
+  fi
+else
+  # Existing behavior — concatenate positionals into a substring QUERY.
+  for p in "${POSITIONALS[@]}"; do
+    if [ -z "$QUERY" ]; then QUERY="$p"; else QUERY="$QUERY $p"; fi
+  done
+fi
 
 REPO_ROOT=$(av_repo_root) || { av_fail "not in a git repo"; exit 1; }
 LEARNINGS_FILE="$REPO_ROOT/.anvil/learnings.jsonl"
@@ -84,6 +105,7 @@ results=$(jq -sc \
   --arg type "$TYPE_FILTER" \
   --arg source "$SOURCE_FILTER" \
   --arg key "$KEY_FILTER" \
+  --arg affected "$AFFECTED_FILTER" \
   --argjson limit "$LIMIT" \
   '
   def conf_weight(c):
@@ -103,12 +125,19 @@ results=$(jq -sc \
         | ascii_downcase) | contains(($qq | ascii_downcase))
     end;
 
+  def matches_affected($a):
+    if ($a | length) == 0 then true
+    else
+      ((.affected_slices // []) | index($a)) != null
+    end;
+
   # Score = 10*confidence + min(prior_count,5).
   # Recency contributes only as the tie-breaker via the sort key.
   map(. as $e
       | select(($type | length) == 0 or .type == $type)
       | select(($source | length) == 0 or .source_skill == $source)
       | select(($key | length) == 0 or .key == $key)
+      | select(matches_affected($affected))
       | select(matches_q($q))
       | . + {
           _score: ((conf_weight(.confidence)) * 10 + (((.prior_count // 0) | if . > 5 then 5 else . end)))
@@ -140,10 +169,13 @@ echo
 echo "$results" | jq -r '
   def trunc(n): if length > n then .[0:(n-3)] + "..." else . end;
   .[] |
-  "  [" + (.type | ascii_upcase) + "/" + .confidence + "] " + .key +
+  "  [" + (.type | ascii_upcase) +
+  (if .decision_type then "/" + .decision_type else "" end) +
+  "/" + .confidence + "] " + .key +
   (if (.prior_count // 0) > 0 then "  (seen " + ((.prior_count + 1) | tostring) + "x)" else "" end) +
   "\n    " + (.insight | trunc(220)) +
   "\n    source: " + .source_skill + " · " +
   (if ((.files // []) | length) > 0 then "files: " + ((.files // []) | join(", ")) + " · " else "" end) +
+  (if ((.affected_slices // []) | length) > 0 then "affects: " + ((.affected_slices // []) | join(", ")) + " · " else "" end) +
   "ts: " + .timestamp + "\n"
 '
