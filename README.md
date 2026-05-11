@@ -12,15 +12,21 @@
 
 ---
 
-Anvil is a Claude Code skill suite that takes a multi-PR plan (multiple stacked or independent PRs that ship one logical change) and drives it from spec → PRs → merged. Markdown skills + bash + MCP. No platform, no compilation, no lock-in.
+## Status
 
-**Tired of Claude stopping mid-sprint?** State lives in plan files + an append-only event log + worktrees on disk — not the conversation. Stop and resume anywhere. The next slice fires in a fresh agent with full context.
+Anvil keeps plans, slice status, reviews, merge gates, and recaps **in your repo — not buried in chat**. It's a Claude Code skill suite that takes a multi-PR plan (multiple stacked or independent PRs that ship one logical change) and drives it from spec → PRs → merged. Markdown skills + bash + MCP. No platform, no compilation, no lock-in.
+
+**Tired of Claude stopping mid-sprint?** State lives in plan files, an append-only event log, and worktrees on disk — not the conversation. Stop and resume anywhere. The next slice fires in a fresh agent with full context.
 
 ## Who it's for
 
-- **Solo developers who want the agent to handle the GitHub review + merge dance**, not just write the code. Adversarial review, pre-merge gate, squash + branch + worktree cleanup — all scripted.
-- **Operators running multi-PR sprints** who want agent dispatch + review + merge orchestrated end-to-end across a dependency graph, pausing only at decision points they defined.
-- **Anyone who's hit Claude's conversation limit mid-implementation** and lost track of what shipped, what didn't, and what to fix.
+**Solo or small-team engineers running multi-PR Claude Code work** — you want the agent to handle the GitHub review + merge dance across a sprint, not just write the code. `/grind` dispatches each slice, `/pre-merge-gate` + `/auto-merge` close the loop, `/recap` writes it up.
+
+Also useful for systems engineers, software engineers shipping refactors and migrations, SaaS operators, and OSS maintainers — the 17 review lenses below cover those surfaces.
+
+## What makes this different
+
+Anvil treats plan state as a **product of the repo**, not a side effect of a conversation. Plan files, slice status, the append-only event log (`.anvil/grind-events.jsonl`), recorded decisions (`.anvil/learnings.jsonl`), and worktree layout all live on disk and version with your code. A fresh agent in a new session reads the same state your last agent wrote — no chat scrollback to rehydrate, no SaaS dashboard to log into. Everything runs **locally** against your existing `git` + `gh` + Claude Code install: no platform account, no hosted control plane, no telemetry leaving your machine. Anvil composes with what you already have rather than replacing it.
 
 ## Quickstart
 
@@ -94,23 +100,23 @@ If you adopt anvil and want to be added here, open a PR.
 
 | Skill | What it does |
 |---|---|
-| [`/spec`](skills/spec/SKILL.md) | Capture work as a structured plan (interactive probe). Validates before `/grind` can execute. |
-| [`/grind`](skills/grind/SKILL.md) | Drive a plan end-to-end. Topo-sorts slices, dispatches agents, reviews, gates, merges. Pauses only at operator decision points. |
-| [`/dispatch-slice`](skills/dispatch-slice/SKILL.md) | Fire an agent against one slice with the full prompt template (worktree, deps, constraints, PR template). Three-line invocation. |
-| [`/pre-merge-gate`](skills/pre-merge-gate/SKILL.md) | Verify a PR is mergeable: rebase + tsc + tests + fitness ratchets + grep for forbidden patterns + GH check status. One verdict. |
-| [`/auto-merge`](skills/auto-merge/SKILL.md) | Squash + delete branch + wipe worktree + sync main. One call. |
-| [`/post-merge-debrief`](skills/post-merge-debrief/SKILL.md) | After a one-off merge outside `/grind`: cleanup + mark merged in event log + pull main + dispatch next slice. |
-| [`/self-review`](skills/self-review/SKILL.md) | Adversarial diff review via an Opus sub-agent. `--multi-critic` mode runs four parallel critics + a synthesizer. Codex fallback. |
-| [`/dual-review`](skills/dual-review/SKILL.md) | Run `/self-review` + `/codex-review` in parallel; synthesize a single table with `Both` / `Claude only` / `Codex only`. Cross-model agreement signal for high-stakes diffs. |
-| [`/lens`](skills/lens/SKILL.md) | Adversarial review through a named lens. 17 lenses across three categories: `systems/` (kernel, SRE, distributed, performance, architecture, etc.), `saas/` (privacy lawyer, payment risk, end-user, etc.), `generic/` (security researcher, vendor auditor, new engineer). Bare names still work via cross-category lookup. Operators add custom via `lenses/<category>/<name>.md`. |
-| [`/learn`](skills/learn/SKILL.md) | Per-project append-only learnings log (`.anvil/learnings.jsonl`). `/learn add` records a finding; `/learn search` greps + ranks. Auto-emitted by `/pre-merge-gate`, `/findings-rollup`, `/auto-merge`, `/dispatch-slice`. |
-| [`/findings-rollup`](skills/findings-rollup/SKILL.md) | Translate a multi-critic review into action: file P2/P3 as a rollup issue + dispatch a fix-up agent for the P0/P1 list. |
-| [`/refine-plan`](skills/refine-plan/SKILL.md) | Mid-grind plan correction. Edit plan files in-place, log a `plan-revised` event, comment on in-flight PRs whose contract moved. |
-| [`/config-bootstrap`](skills/config-bootstrap/SKILL.md) | Derive `.anvil/` configs (forbidden patterns, dispatch defaults, known flakes) from your project's existing context docs (CLAUDE.md, AGENTS.md, post-mortems). |
-| [`/issue-to-spec`](skills/issue-to-spec/SKILL.md) | Verify a GitHub issue body's factual claims against the codebase before locking a plan. Catches issue-body-is-wrong errors at lock-time. |
-| [`/sweep-worktrees`](skills/sweep-worktrees/SKILL.md) | Bulk-clean stale worktrees + branches. Handles cloud-sync-evicted `node_modules` and stale git locks. |
-| [`/recap`](skills/recap/SKILL.md) | Visual HTML session report — PRs shipped, tests added, decisions made, loose ends. Dropped into `~/.claude/showme/`. |
-| [`/anvil-status`](skills/anvil-status/SKILL.md) | Read-only text dashboard of a plan's state — what to think about next, what's in-flight, what's blocked, what's shipped. Folds `.anvil/grind-events.jsonl` + tasks.md + `gh pr list`. |
+| [`/spec`](skills/spec/SKILL.md) | Capture work intent as a structured plan with explicit slices, dependencies, acceptance criteria, and operator decision points. Interactive — probes for detail until ambiguity is removed. Output is a markdown plan that `/grind` can execute. |
+| [`/grind`](skills/grind/SKILL.md) | Execute a plan end-to-end. Reads the slice manifest, dispatches agents in dependency order, runs review + pre-merge gate + auto-merge per slice, files follow-ups, recaps at end. The orchestrator wrapper. |
+| [`/dispatch-slice`](skills/dispatch-slice/SKILL.md) | Dispatch a single agent for a single plan slice with consistent briefing. Codifies the agent prompt template (worktree path, deps install reminder, commit format, PR template requirement, default-Opus posture, return shape). |
+| [`/pre-merge-gate`](skills/pre-merge-gate/SKILL.md) | Verify a PR is merge-ready before invoking `/auto-merge`. Combinator runs rebase + tsc + vitest + fitness ratchets + grep for forbidden patterns, returns ready/not-ready with the specific failure. |
+| [`/auto-merge`](skills/auto-merge/SKILL.md) | Squash-merge a PR + delete branch + wipe worktree + sync main, in one shot. Assumes `/pre-merge-gate` has already greenlit the PR. |
+| [`/post-merge-debrief`](skills/post-merge-debrief/SKILL.md) | After a single PR squash-merges outside `/grind`: bundle verify-merge + sweep-this-worktree + mark-merged-in-event-log + pull-main + auto-dispatch-next-slice-if-deps-met. Compresses 5 manual steps into one call. |
+| [`/self-review`](skills/self-review/SKILL.md) | Adversarial diff review via an Opus sub-agent when `/codex-review` is unavailable. Returns structured findings (P0/P1/P2/P3). Codex-fallback. `--multi-critic` mode runs four parallel critics + a synthesizer. |
+| [`/dual-review`](skills/dual-review/SKILL.md) | Run `/self-review` (Claude) and `/codex-review` (Codex) concurrently on a high-stakes diff, then emit a single agreement table — `Both` / `Claude only` / `Codex only` — so cross-model agreement signal is visible. |
+| [`/lens`](skills/lens/SKILL.md) | Adversarial review through a named review lens — kernel developer, SRE, distributed-systems engineer, privacy lawyer, security researcher, etc. Lenses are namespaced into `systems/` / `saas/` / `generic/`. Each lens wraps `/self-review` or `/codex-review` to focus the model's attention on one perspective. |
+| [`/learn`](skills/learn/SKILL.md) | Record + recall per-project learnings + decisions as an append-only JSONL log at `.anvil/learnings.jsonl`. Skills auto-append on discovery ("chronic flake X bit again, retry once"); operators search before re-rediscovering. Subcommands: add, search, decisions, prune, summary, export. |
+| [`/findings-rollup`](skills/findings-rollup/SKILL.md) | After `/self-review` or `/codex-review` produces a multi-finding report: file P2/P3 findings as a single rollup issue with checkboxes, and dispatch a fix-up agent against the same PR/branch with the P0/P1 list as its acceptance contract. |
+| [`/refine-plan`](skills/refine-plan/SKILL.md) | Mid-grind plan correction. Updates the plan files (proposal/design/tasks/specs) in-place, writes a `plan-revised` event to `.anvil/grind-events.jsonl`, and optionally comments on any in-flight PRs whose acceptance contract just moved. |
+| [`/config-bootstrap`](skills/config-bootstrap/SKILL.md) | Once per project that adopts anvil, populate `.anvil/forbidden-patterns.txt` + `.anvil/dispatch-defaults.txt` + `.anvil/known-flakes.txt` from the project's existing context docs (CLAUDE.md / AGENTS.md / README / post-mortems). |
+| [`/issue-to-spec`](skills/issue-to-spec/SKILL.md) | Before locking a plan that derives from a GitHub issue body, verify the issue's factual claims (file:line references, "X retries on N", "Y is at Z") against current code. Outputs a corrected mini-spec marking which claims were verified, which contradicted, which couldn't be verified. |
+| [`/sweep-worktrees`](skills/sweep-worktrees/SKILL.md) | Bulk-clean stale worktrees + branches after a multi-PR sprint. Handles iCloud-evicted `node_modules`, stale `.git/*.lock` files, `.git/worktrees/*` admin dirs, and force-deletes branches whose PRs are MERGED or CLOSED. |
+| [`/recap`](skills/recap/SKILL.md) | After a multi-PR sprint, generate a session recap. Two modes — v1 (visual HTML page in `~/.claude/showme/`) and v2 (structured TLDR + WHY markdown with citation resolution). |
+| [`/anvil-status`](skills/anvil-status/SKILL.md) | Read-only rank-ordered text dashboard of a plan's state — what to think about next, what's in-flight, what's blocked, what's shipped, what's deferred — plus cumulative test delta + open follow-up count. Folds `.anvil/grind-events.jsonl` + tasks.md + `gh pr list` (or `GH_OFFLINE=1` fallback). |
 | [`/followup-rollup`](skills/followup-rollup/SKILL.md) | Consolidate open follow-up issues for a multi-slice plan. Walks issues whose title carries the `[<plan>-<slice> followup]` prefix, groups by severity (P0/P1/P2/P3) + area (test-coverage / correctness / architecture / operability), suggests which slice should consume each cluster. Output: markdown pasteable into a planning doc. |
 
 ### Optional companions
