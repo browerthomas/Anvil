@@ -629,20 +629,18 @@
   a.badge:hover { color: var(--text); border-color: var(--border-2); background: var(--surface-2); }
   .badge-check { color: var(--ember-2); font-weight: 700; }
 
-  /* Who it's for — audience grid */
+  /* Who it's for — single primary card + inline secondary */
   .who-its-for { padding: 70px 0 30px; border-top: 1px solid var(--border); }
-  .audience-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-    margin-top: 26px;
-  }
   .audience-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 22px 24px;
     transition: transform 0.15s, border-color 0.15s, background 0.15s;
+    margin-top: 26px;
+  }
+  .audience-card.audience-primary {
+    border-color: var(--border-2);
   }
   .audience-card:hover { transform: translateY(-2px); border-color: var(--border-2); background: var(--surface-2); }
   .audience-name {
@@ -667,6 +665,14 @@
     font-size: 12.5px;
     font-family: 'JetBrains Mono', monospace;
     border: 1px solid var(--border);
+  }
+  .audience-secondary {
+    color: var(--text-2);
+    font-size: 13.5px;
+    line-height: 1.6;
+    margin: 16px 0 0;
+    text-align: center;
+    font-style: italic;
   }
 
   /* Lens namespace callout */
@@ -718,7 +724,6 @@
     .friction-arrow { transform: rotate(90deg); padding: 4px 0; }
     .artifacts-grid { grid-template-columns: 1fr; }
     .bt-grid { grid-template-columns: 1fr; }
-    .audience-grid { grid-template-columns: 1fr; }
     .badge-strip { justify-content: flex-start; }
     .oneliner-wrap .terminal { padding: 18px 18px; font-size: 12.5px; }
     .copy-btn { font-size: 11px; padding: 4px 8px; }
@@ -776,25 +781,11 @@
 <section class="who-its-for wrap">
   <p class="section-eyebrow">Who it's for</p>
   <h2 class="section-title">Engineers shipping multi-PR work.</h2>
-  <p class="section-sub">Solo developers who want the agent to handle the GitHub review + merge dance across a sprint that spans multiple stacked or independent PRs &mdash; not just write the code. Across systems, software, SaaS, and OSS.</p>
-  <div class="audience-grid">
-    <div class="audience-card">
-      <p class="audience-name">Systems engineers</p>
-      <p>Kernel, SRE, embedded, distributed systems, performance, compiler/build engineering. <code>/lens systems/*</code> gives you the lens.</p>
-    </div>
-    <div class="audience-card">
-      <p class="audience-name">Software engineers</p>
-      <p>Multi-PR refactors, library migrations, framework adoption. <code>/grind</code> drives the dispatch + review + merge dance.</p>
-    </div>
-    <div class="audience-card">
-      <p class="audience-name">SaaS operators</p>
-      <p>Customer-facing surfaces, refund/dispute exposure, content moderation. <code>/lens saas/*</code> covers the lens.</p>
-    </div>
-    <div class="audience-card">
-      <p class="audience-name">OSS maintainers</p>
-      <p>PR triage at scale, ABI/API stability, contributor onboarding. <code>/lens systems/open-source-maintainer</code> is for you.</p>
-    </div>
+  <div class="audience-card audience-primary">
+    <p class="audience-name">Solo or small-team engineers</p>
+    <p>Running multi-PR Claude Code work and want the agent to drive the GitHub review + merge dance across a sprint &mdash; not just write the code. <code>/grind</code> dispatches each slice, <code>/pre-merge-gate</code> + <code>/auto-merge</code> close the loop, <code>/recap</code> writes it up.</p>
   </div>
+  <p class="audience-secondary">Also useful for systems engineers, software engineers shipping refactors and migrations, SaaS teams, and OSS maintainers &mdash; the 17 review lenses below cover those surfaces.</p>
 </section>
 
 <!-- ENTRY-POINT TIERS -->
