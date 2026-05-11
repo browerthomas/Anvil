@@ -64,7 +64,7 @@ slices:
       - "'Strike'/'Quench' as decorative verbs returns 0 hits in skill descriptions"
 
   - id: A3
-    name: Audience wedge — single primary + 7-day rollback trigger
+    name: Audience wedge — single primary, secondaries inline
     depends-on: [A1]
     files:
       - docs/index.html
@@ -75,10 +75,7 @@ slices:
       one-line "also useful for" mention of systems/SaaS/OSS. Keep the
       17 review-lens callouts (`/lens systems/*`, `/lens saas/*`,
       `/lens generic/*`) inline somewhere on the page (skill section is
-      fine) so the namespace surface still advertises. Add a
-      conditional Phase A.5 trigger documented in proposal.md: if
-      stars/clones drop >20% vs the prior 7-day baseline by
-      2026-06-08, A3 reverts to a 4-audience single-column layout.
+      fine) so the namespace surface still advertises.
     constraints:
       - All 4 original audiences still mentioned somewhere on the page.
       - The 17 review-lens taxonomy stays visible (do not bury it).
@@ -86,12 +83,10 @@ slices:
       - "Audience section is one primary card + one inline secondary line"
       - "All 4 original audiences still mentioned somewhere on the page"
       - "17 review-lens callouts retained in the skill section"
-      - "Phase A.5 rollback trigger documented in proposal.md"
     operator-decision:
-      ask: "Confirm the primary wedge wording + the order of the 3 secondary mentions before merging A3 (the bet without measurement)."
-      verbs: [approve, edit, reject]
-      default: approve
-      timeout-hours: 4
+      ask: null
+      verbs: []
+      default: null
 
   - id: A4
     name: Drop forge metaphor + decorative imagery
