@@ -76,18 +76,22 @@ FILES=()
 TAGS=()
 SLICE_ID=""
 IDEM_WINDOW="60"
+DECISION_TYPE=""
+AFFECTED=()
 
 VALID_TYPES="flake gotcha invariant decision cost perf migration-shape"
 VALID_CONFIDENCES="low medium high"
+VALID_DECISION_TYPES="architecture scope trade-off reversal constraint"
 
-# Positional: <key> <type> "<insight>"
-if [ $# -lt 3 ]; then
-  echo "usage: learn-add.sh <key> <type> \"<insight>\" [--confidence ...] [--source ...] [--file ...] [--tag ...] [--slice ...] [--idempotency-window <seconds>] [--strict]" >&2
-  exit 1
-fi
-KEY="$1"; TYPE="$2"; INSIGHT="$3"
-shift 3
+# Two positional shapes are accepted:
+#   /learn add <key> <type> "<insight>"                  (existing)
+#   /learn add --decision-type <dt> <key> "<insight>"   (B3 — type implied
+#                                                        from --decision-type)
+# Flags can be interleaved before/after positionals.
 
+# First pass: extract --decision-type / --affected / --strict / flag-args
+# from anywhere on the line, leaving positionals in REST.
+REST=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --confidence) CONFIDENCE="$2"; shift 2;;
@@ -97,9 +101,49 @@ while [ $# -gt 0 ]; do
     --slice)      SLICE_ID="$2"; shift 2;;
     --idempotency-window) IDEM_WINDOW="$2"; shift 2;;
     --strict)     STRICT=1; shift;;
-    *) soft_fail "unknown arg: $1";;
+    --decision-type) DECISION_TYPE="$2"; shift 2;;
+    --affected)
+      # Accept comma-separated or repeatable. Split on commas.
+      IFS=',' read -r -a _affected_parts <<<"$2"
+      for _p in "${_affected_parts[@]}"; do
+        # Trim whitespace; skip empty.
+        _p="${_p#"${_p%%[![:space:]]*}"}"
+        _p="${_p%"${_p##*[![:space:]]}"}"
+        if [ -n "$_p" ]; then
+          AFFECTED+=("$_p")
+        fi
+      done
+      unset _affected_parts _p
+      shift 2;;
+    --*) soft_fail "unknown flag: $1";;
+    *) REST+=("$1"); shift;;
   esac
 done
+
+# Resolve positionals.
+if [ -n "$DECISION_TYPE" ]; then
+  # 2-positional form: <key> "<insight>". Type auto-set to "decision".
+  # Explicit 3-positional with --decision-type is ambiguous (user passed
+  # both --decision-type AND an explicit <type>) — reject it under --strict.
+  if [ ${#REST[@]} -gt 2 ]; then
+    soft_fail "--decision-type implies type:decision; use 2-positional form <key> \"<insight>\" (got ${#REST[@]} positionals — looks like an explicit <type> was also passed)"
+  fi
+  if [ ${#REST[@]} -lt 2 ]; then
+    echo "usage: learn-add.sh --decision-type <architecture|scope|trade-off|reversal|constraint> [--affected <slice-id>] <key> \"<insight>\" [--confidence ...] [--source ...] [--file ...] [--tag ...] [--slice ...] [--idempotency-window <seconds>] [--strict]" >&2
+    exit 1
+  fi
+  KEY="${REST[0]}"
+  INSIGHT="${REST[1]}"
+  TYPE="decision"
+else
+  # 3-positional form: <key> <type> "<insight>"
+  if [ ${#REST[@]} -lt 3 ]; then
+    echo "usage: learn-add.sh <key> <type> \"<insight>\" [--confidence ...] [--source ...] [--file ...] [--tag ...] [--slice ...] [--idempotency-window <seconds>] [--strict]" >&2
+    echo "       learn-add.sh --decision-type <type> [--affected <slice-id>] <key> \"<insight>\" ..." >&2
+    exit 1
+  fi
+  KEY="${REST[0]}"; TYPE="${REST[1]}"; INSIGHT="${REST[2]}"
+fi
 
 # --- Validate --------------------------------------------------------------
 if [ -z "$KEY" ]; then soft_fail "key is required"; fi
@@ -116,6 +160,25 @@ fi
 # Key must be slug-safe.
 if ! echo "$KEY" | grep -Eq '^[a-z0-9][a-z0-9._-]*$'; then
   soft_fail "key must be lowercase slug: $KEY"
+fi
+
+# Validate --decision-type if supplied.
+if [ -n "$DECISION_TYPE" ]; then
+  if ! echo " $VALID_DECISION_TYPES " | grep -q " $DECISION_TYPE "; then
+    soft_fail "invalid decision-type: $DECISION_TYPE (one of: $VALID_DECISION_TYPES)"
+  fi
+fi
+
+# Reject --decision-type / --affected on non-decision types — those flags are
+# decision-only ergonomics. If you're filing a non-decision row, --slice covers
+# the affected-slice case.
+if [ "$TYPE" != "decision" ]; then
+  if [ -n "$DECISION_TYPE" ]; then
+    soft_fail "--decision-type is only valid with type:decision rows"
+  fi
+  if [ ${#AFFECTED[@]} -gt 0 ]; then
+    soft_fail "--affected is only valid with type:decision rows"
+  fi
 fi
 
 # --- Resolve target file ---------------------------------------------------
@@ -163,6 +226,16 @@ if [ -n "$SLICE_ID" ]; then
   slice_arg=$(jq -n --arg s "$SLICE_ID" '$s')
 fi
 
+decision_type_arg="null"
+if [ -n "$DECISION_TYPE" ]; then
+  decision_type_arg=$(jq -n --arg s "$DECISION_TYPE" '$s')
+fi
+
+affected_json="[]"
+if [ ${#AFFECTED[@]} -gt 0 ]; then
+  affected_json=$(printf '%s\n' "${AFFECTED[@]}" | jq -R . | jq -sc .)
+fi
+
 line=$(jq -nc \
   --arg key "$KEY" \
   --arg type "$TYPE" \
@@ -174,6 +247,8 @@ line=$(jq -nc \
   --argjson tags "$tags_json" \
   --argjson slice "$slice_arg" \
   --argjson prior "$PRIOR_COUNT" \
+  --argjson decision_type "$decision_type_arg" \
+  --argjson affected "$affected_json" \
   '{
     key: $key,
     type: $type,
@@ -185,7 +260,10 @@ line=$(jq -nc \
     slice_id: $slice,
     prior_count: $prior,
     timestamp: $ts
-  }' 2>/dev/null) || soft_fail "jq failed to build line"
+  }
+  + (if $decision_type != null then {decision_type: $decision_type} else {} end)
+  + (if ($affected | length) > 0 then {affected_slices: $affected} else {} end)
+  ' 2>/dev/null) || soft_fail "jq failed to build line"
 
 # --- Append (atomic-ish) --------------------------------------------------
 if ! echo "$line" >> "$LEARNINGS_FILE" 2>/dev/null; then

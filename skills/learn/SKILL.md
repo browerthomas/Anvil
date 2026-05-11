@@ -1,6 +1,6 @@
 ---
 name: learn
-description: Use to record + recall per-project learnings as an append-only JSONL log at .anvil/learnings.jsonl. Skills auto-append on discovery ("chronic flake X bit again, retry once"); operators search before re-rediscovering. Subcommands add, search, prune, summary, export. Invoke with /learn add <key> <type> "<insight>", /learn search <query>, /learn summary, /learn prune --before <date>, /learn export, or when the operator says "log this lesson", "have we seen this flake before", "what did we learn last sprint".
+description: Use to record + recall per-project learnings + decisions as an append-only JSONL log at .anvil/learnings.jsonl. Skills auto-append on discovery ("chronic flake X bit again, retry once"); operators search before re-rediscovering. Subcommands add, search, decisions, prune, summary, export. Invoke with /learn add <key> <type> "<insight>", /learn add --decision-type <type> --affected <slice> <key> "<insight>", /learn search <query>, /learn decisions, /learn summary, /learn prune --before <date>, /learn export, or when the operator says "log this lesson", "have we seen this flake before", "what did we learn last sprint", "log this decision".
 ---
 
 # /learn — append-only per-project learnings log
@@ -58,6 +58,8 @@ Each line:
 | `slice_id` | Optional reference to a plan slice (e.g. `"B1"`). |
 | `prior_count` | Auto-managed: count of prior entries with this `key`. Re-confirmations rank higher in search. |
 | `timestamp` | ISO 8601 UTC. |
+| `decision_type` | Decision-only. Closed vocabulary: `architecture \| scope \| trade-off \| reversal \| constraint`. Present only when `type == decision`. |
+| `affected_slices` | Decision-only. Array of slice ids the decision constrains (e.g. `["B1","B3"]`). `/dispatch-slice` auto-injects matching decisions into the slice agent's prompt. |
 
 **Dedup semantics:** The JSONL is append-only. Re-adding the same `key` does NOT overwrite — it appends a new line with `prior_count` incremented. `/learn search` dedup-by-key by default (keep the most-confident, most-recent), surfaces re-confirmation count next to the key.
 
@@ -86,6 +88,22 @@ Append a new entry.
 | `--slice <id>` | — | Plan slice reference (e.g. `S3`, `B1`) |
 | `--idempotency-window <s>` | `60` | Skip if same (key,source) added within window. `0` = disabled. |
 | `--strict` | off | Exit non-zero on validation failure (use in tests). Default: soft-fail (exit 0, warn to stderr) so auto-emit can't block the parent skill. |
+| `--decision-type <dt>` | — | Decision-only. One of `architecture`, `scope`, `trade-off`, `reversal`, `constraint`. Implies `type:decision` — pass `<key>` + `<insight>` (2 positionals) instead of `<key> <type> <insight>` (3). Only valid when emitting a decision row. |
+| `--affected <slice-id>` | — | Decision-only. Repeatable OR comma-separated (`--affected B1,B3`). Stored in `affected_slices`. `/dispatch-slice` reads this to auto-inject matching decisions into the slice agent's prompt. Only valid when emitting a decision row. |
+
+#### Decision-add shape (2-positional form)
+
+When `--decision-type` is supplied, the `<type>` positional is replaced by the flag — pass `<key>` + `<insight>` only:
+
+```bash
+/learn add --decision-type architecture --affected B1,B3 \
+  chose-redis-over-postgres-listen \
+  "retry semantics under worker restart cleaner with redis pub/sub; trade-off documented in design.md" \
+  --confidence high \
+  --source manual
+```
+
+This writes a row with `type:decision`, `decision_type:architecture`, and `affected_slices:["B1","B3"]`. The row lives in the same `.anvil/learnings.jsonl` as every other learning — no second store, no segregation. `/learn search redis` returns it (single store); `/learn decisions` (see below) filters to decisions-only.
 
 ### `/learn search <query>`
 
@@ -102,6 +120,19 @@ Substring search with ranking. Default top 10.
 **Ranking:** `confidence_weight * 10 + min(prior_count, 5)`, tie-broken by recency. Re-confirmed high-confidence learnings always float to the top.
 
 **Default dedup:** one row per `key` (the highest-scoring). Pass `--all` to see every line.
+
+### `/learn decisions`
+
+Thin filter on `/learn search` — lists rows where `type:decision`. The implementation is just `learn-search.sh decisions` (subcommand sugar) or equivalently `learn-search.sh --type decision`. All `/learn search` flags compose (`--source`, `--limit`, `--json`, `--affected`).
+
+```bash
+/learn decisions                                  # all decisions
+/learn decisions --limit 5
+/learn decisions --affected B1                    # only decisions affecting slice B1
+/learn decisions --source manual --json
+```
+
+Decisions live in the same `.anvil/learnings.jsonl` as every other learning. `/learn decisions` is the lens that pulls just decisions; `/learn search <q>` (without `--type decision`) returns rows of any type matching the substring — including decisions.
 
 ### `/learn prune --before <YYYY-MM-DD>`
 
@@ -139,10 +170,12 @@ Emit a MEMORY.md-compatible markdown chunk on stdout. The operator can paste it 
 ### `/learn add`
 
 1. Validate args: `key` is a slug; `type` is in the closed vocabulary; `confidence` is `low|medium|high`.
+   - If `--decision-type` is set: validate it (one of `architecture|scope|trade-off|reversal|constraint`); auto-set `type:decision`; accept 2-positional form `<key> "<insight>"`.
+   - `--decision-type` and `--affected` are decision-only flags — reject if `type != decision`.
 2. Resolve `.anvil/learnings.jsonl` (auto-create if missing).
 3. Check idempotency window: if same `(key, source_skill)` within 60s, no-op.
 4. Count prior entries with this `key` → `prior_count`.
-5. Build the JSON line + append.
+5. Build the JSON line + append. Decision-type rows get `decision_type` + `affected_slices` fields; non-decision rows omit them entirely.
 6. Print confirmation (or "re-confirmed Nx" if `prior_count > 0`).
 
 ### `/learn search`
@@ -154,6 +187,14 @@ Emit a MEMORY.md-compatible markdown chunk on stdout. The operator can paste it 
 5. Default-dedup by `key` (keep highest-scored). `--all` to skip dedup.
 6. Take top `--limit` (default 10).
 7. Print human table, or `--json` for raw matches.
+
+### `/learn decisions`
+
+1. Resolve `.anvil/learnings.jsonl`. If absent: "no learnings yet" + exit 0.
+2. Invoke `learn-search.sh` with `--type decision` (under the hood, calling `learn-search.sh decisions` is sugar for the same).
+3. Apply any operator-supplied filters: `--affected <slice>`, `--source`, `--limit`, `--json`.
+4. Score + sort + dedup as in `/learn search`.
+5. Print the human table (or JSON if `--json`).
 
 ### `/learn prune`
 
@@ -216,6 +257,8 @@ The archive file (`.anvil/learnings.archive.jsonl`) is gitignored under the same
 - After `/codex-review` or `/self-review --multi-critic` lands findings → consider `/learn add` for the cross-cutting pattern (or let `/findings-rollup` auto-emit one).
 - Before `/spec`-ing a new plan in a familiar problem area → `/learn search <topic>` first.
 - After `/grind` reports a slice deferral → `/learn add <slice-id> gotcha "..."` so the next plan touching the same area gets a heads-up.
+- During plan design — when locking an architectural choice or rejecting an alternative — log it via `/learn add --decision-type architecture --affected <slice-id> <key> "<rationale>"` so the dispatched slice agent sees the decision in its prompt.
+- `/dispatch-slice` reads `type:decision` rows whose `affected_slices` contains the dispatching slice id and injects them into the agent prompt under a "Recent decisions:" section — so slice agents inherit architecture/scope/trade-off/reversal/constraint decisions made by the operator. See `skills/dispatch-slice/SKILL.md` for the auto-injection contract.
 - `/recap` could pull last-N entries by type — left as a follow-up.
 
 ## Configuration
@@ -248,4 +291,21 @@ $ /learn search vitest
   [FLAKE/high] chronic-vitest-flake  (seen 3x)
     vitest worker crash on macOS 25.3 under CPU contention; retry once
     source: /grind · ts: 2026-05-11T00:14:35Z
+
+$ /learn add --decision-type architecture --affected B1,B3 chose-redis-over-postgres-listen "retry semantics under worker restart cleaner with redis pub/sub" --confidence high
+✓ learning recorded: chose-redis-over-postgres-listen [decision/high]
+
+$ /learn decisions
+[anvil] Top 1 learnings:
+
+  [DECISION/architecture/high] chose-redis-over-postgres-listen
+    retry semantics under worker restart cleaner with redis pub/sub
+    source: manual · affects: B1, B3 · ts: 2026-05-11T00:18:02Z
+
+$ /learn search redis
+[anvil] Top 1 learnings:
+
+  [DECISION/architecture/high] chose-redis-over-postgres-listen
+    retry semantics under worker restart cleaner with redis pub/sub
+    source: manual · affects: B1, B3 · ts: 2026-05-11T00:18:02Z
 ```
