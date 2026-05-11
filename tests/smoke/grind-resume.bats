@@ -103,7 +103,7 @@ setup() {
   [[ "$output" == *"plan not found"* ]]
 }
 
-@test "grind resume — concurrent invocation hits file lock + exits 0 with warning" {
+@test "grind resume — concurrent invocation hits file lock + exits 0 with warning (simulated)" {
   seed_3slice_plan
   bash "$SCRIPT_PATH" init "$REPO_DIR/plan.md" >/dev/null
 
@@ -123,6 +123,41 @@ setup() {
 
   # Clean up the synthetic lock so any later teardown doesn't trip on it.
   rm -rf "$REPO_DIR/.anvil/grind-events.jsonl.lock"
+}
+
+@test "grind resume — REAL concurrent invocation: two processes race, exactly one writes resume event" {
+  seed_3slice_plan
+  bash "$SCRIPT_PATH" init "$REPO_DIR/plan.md" >/dev/null
+
+  # Fire two real processes racing on the same resume call. Each tries to
+  # take the mkdir lock; one should win + emit a resume event; the other
+  # should detect the held lock + exit 0 with warning.
+  out1="$REPO_DIR/.race.out1"
+  out2="$REPO_DIR/.race.out2"
+  (bash "$SCRIPT_PATH" resume "$REPO_DIR/plan.md" >"$out1" 2>&1) &
+  pid1=$!
+  (bash "$SCRIPT_PATH" resume "$REPO_DIR/plan.md" >"$out2" 2>&1) &
+  pid2=$!
+  wait "$pid1"
+  rc1=$?
+  wait "$pid2"
+  rc2=$?
+
+  # Both must exit 0 — neither should propagate a hard failure.
+  [ "$rc1" -eq 0 ]
+  [ "$rc2" -eq 0 ]
+
+  # Exactly one resume event in the log (the winner emitted; the loser saw lock).
+  resume_count=$(jq -s 'map(select(.ev == "resume")) | length' "$REPO_DIR/.anvil/grind-events.jsonl")
+  [ "$resume_count" -eq 1 ]
+
+  # At least one process saw the lock-held warning.
+  cat "$out1" "$out2" | grep -q "another /grind --resume is in flight" || {
+    echo "expected one of the racers to see the in-flight warning"
+    echo "--- out1 ---"; cat "$out1"
+    echo "--- out2 ---"; cat "$out2"
+    return 1
+  }
 }
 
 @test "grind resume retries a deferred (failed) slice — failed != merged" {

@@ -435,8 +435,16 @@ case "$cmd" in
     av_ok "replayed $slice_id (back to pending — re-dispatch via /grind or /dispatch-slice)"
     ;;
 
+  from)
+    # DEPRECATED alias for `resume`. Emits a warning + chains to resume so
+    # any operator scripts still calling `state.sh from <plan-path>` keep
+    # working. Will be removed in a future major release.
+    av_warn "'state.sh from' is deprecated — use 'state.sh resume <plan-path>' (chaining now)"
+    exec "$0" resume "$@"
+    ;;
+
   *)
-    av_fail "usage: state.sh {init|resume|next|ready|mark|set-pr|decision|add-issue|status|trace|snapshot|replay} [args]"
+    av_fail "usage: state.sh {init|resume|from(deprecated)|next|ready|mark|set-pr|decision|add-issue|status|trace|snapshot|replay} [args]"
     exit 1
     ;;
 esac
