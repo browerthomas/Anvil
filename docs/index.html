@@ -522,7 +522,7 @@
   .friction-arrow { display: flex; align-items: center; justify-content: center; color: var(--ember); }
   .friction-arrow svg { width: 32px; height: 32px; }
 
-  /* Battle-tested strip */
+  /* Where-it's-been-used strip */
   .battle-tested { padding: 80px 0 60px; }
   .bt-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
   .bt-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 26px 28px; position: relative; transition: transform 0.15s, border-color 0.15s; }
@@ -775,8 +775,8 @@
 <!-- WHO IT'S FOR — audience framing right after the hero -->
 <section class="who-its-for wrap">
   <p class="section-eyebrow">Who it's for</p>
-  <h2 class="section-title">Engineers shipping multi-slice work.</h2>
-  <p class="section-sub">Solo developers who want the agent to handle the GitHub review + merge dance, not just write the code. Across systems, software, SaaS, and OSS.</p>
+  <h2 class="section-title">Engineers shipping multi-PR work.</h2>
+  <p class="section-sub">Solo developers who want the agent to handle the GitHub review + merge dance across a sprint that spans multiple stacked or independent PRs &mdash; not just write the code. Across systems, software, SaaS, and OSS.</p>
   <div class="audience-grid">
     <div class="audience-card">
       <p class="audience-name">Systems engineers</p>
@@ -878,10 +878,10 @@
   </div>
 </section>
 
-<!-- BATTLE-TESTED STRIP -->
+<!-- WHERE IT'S BEEN USED -->
 <section class="battle-tested wrap">
-  <p class="section-eyebrow">Battle-tested</p>
-  <h2 class="section-title">Dogfooded on real multi-slice sprints.</h2>
+  <p class="section-eyebrow">Where it's been used</p>
+  <h2 class="section-title">Dogfooded on real multi-PR sprints.</h2>
   <p class="section-sub">Anvil is run against its maintainer's main project. Two recent grinds:</p>
   <div class="bt-grid">
     <div class="bt-card">
@@ -928,9 +928,9 @@
 
 <!-- HOW IT WORKS — flow diagram -->
 <section id="how" class="how wrap bordered">
-  <p class="section-eyebrow">Three phases</p>
-  <h2 class="section-title">Lay it. Strike it. Stamp it.</h2>
-  <p class="section-sub">Each phase is one composable skill. Each composes the layer below. Adopt incrementally — they work standalone, and they work together.</p>
+  <p class="section-eyebrow">How it works</p>
+  <h2 class="section-title">Plan, run, recap.</h2>
+  <p class="section-sub">Three composable skills. Each composes the layer below. Adopt incrementally &mdash; they work standalone, and they work together.</p>
 
   <div class="flow">
     <div class="flow-step">
@@ -940,7 +940,7 @@
         <circle cx="29" cy="28" r="2" fill="#ff7530"/>
       </svg>
       <p class="flow-cmd">/spec</p>
-      <p class="flow-verb">Lay the blueprint</p>
+      <p class="flow-verb">Capture the plan</p>
       <h3>Plan</h3>
       <p>Capture intent. Probe for ambiguity until the slice manifest is unambiguous. Lock the plan, mark operator decision points, ship it to the orchestrator.</p>
     </div>
@@ -958,9 +958,9 @@
         <circle cx="26" cy="22" r="1.5" fill="#ffac4a"/>
       </svg>
       <p class="flow-cmd">/grind</p>
-      <p class="flow-verb">Run the forge</p>
-      <h3>Forge</h3>
-      <p>Heat the plan. Strike per slice. Agents in parallel worktrees, adversarial review, pre-merge gate, auto-merge on green. Pauses only at decision points you defined.</p>
+      <p class="flow-verb">Run the plan</p>
+      <h3>Run</h3>
+      <p>Drive the plan. One slice at a time: agents in parallel worktrees, adversarial review, pre-merge gate, auto-merge on green. Pauses only at decision points you defined.</p>
     </div>
     <div class="flow-arrow">
       <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -974,7 +974,7 @@
         <circle cx="30" cy="14" r="2" fill="#5fbf7a" stroke="#5fbf7a"/>
       </svg>
       <p class="flow-cmd">/recap</p>
-      <p class="flow-verb">Stamp the work</p>
+      <p class="flow-verb">Summarise the work</p>
       <h3>Recap</h3>
       <p>A scannable artifact you can share, archive, or fold into the next plan. PRs shipped, tests added, lessons learned, loose ends.</p>
     </div>
@@ -1028,7 +1028,7 @@
       </div>
       <div class="artifact-meta">
         <p class="artifact-name">/spec → docs/plans/&lt;slug&gt;/</p>
-        <p class="artifact-desc">OpenSpec-style folder layout with proposal, design, tasks, and per-slice acceptance scenarios. Lives in your repo, diff-friendly, signed off in the PR that introduces it.</p>
+        <p class="artifact-desc">Folder layout for non-trivial plans with proposal, design, tasks, and per-slice acceptance scenarios. Lives in your repo, diff-friendly, signed off in the PR that introduces it.</p>
       </div>
     </a>
 
@@ -1091,13 +1091,13 @@
       <div class="skill-head">
         <span class="skill-cmd">/spec</span>
       </div>
-      <p class="skill-desc">Capture work as a structured plan (interactive probe). Supports flat or OpenSpec-style folder layout, validates before <code>/grind</code> can execute.</p>
+      <p class="skill-desc">Capture work as a structured plan (interactive probe). Supports flat or folder layout (the folder layout is the one for non-trivial plans), validates before <code>/grind</code> can execute.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/grind</span>
       </div>
-      <p class="skill-desc">Drive a plan end-to-end. Topo-sorts slices, dispatches in parallel where safe, reviews per PR, gates each merge. Pauses only at structured ASK verbs you defined; defers + continues siblings on failure. Replayable from the append-only event log.</p>
+      <p class="skill-desc">Drive a plan end-to-end. Topo-sorts slices, dispatches in parallel where safe, reviews per PR, gates each merge. Pauses only at operator decision points you defined; defers + continues siblings on failure. Replayable from the append-only event log.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
@@ -1163,13 +1163,13 @@
       <div class="skill-head">
         <span class="skill-cmd">/recap</span>
       </div>
-      <p class="skill-desc">Visual HTML session report — PRs, tests, lessons, loose ends, plus a Decisions strip surfaced from operator ASK records. Dropped into <code>~/.claude/showme/</code>.</p>
+      <p class="skill-desc">Visual HTML session report — PRs, tests, lessons, loose ends, plus a Decisions strip surfaced from operator decision records. Dropped into <code>~/.claude/showme/</code>.</p>
     </div>
     <div class="skill">
       <div class="skill-head">
         <span class="skill-cmd">/learn</span>
       </div>
-      <p class="skill-tag-line">Forge a memory</p>
+      <p class="skill-tag-line">Persist a learning</p>
       <p class="skill-desc">Append-only per-project learnings log at <code>.anvil/learnings.jsonl</code>. Subcommands <code>add</code>, <code>search</code>, <code>prune</code>, <code>summary</code>, <code>export</code>. Skills auto-emit on discovery so chronic flakes stop being rediscovered every sprint.</p>
     </div>
   </div>
@@ -1188,7 +1188,7 @@
 <section class="quickstart">
   <div class="wrap">
     <p class="section-eyebrow">Quickstart</p>
-    <h2 class="section-title">From clone to first strike.</h2>
+    <h2 class="section-title">From clone to first PR.</h2>
     <p class="section-sub">Pick the tier you chose above. Each is a complete onboarding path; you can level up later by re-running the next tier's bootstrap.</p>
 
     <div class="oneliner-wrap">
@@ -1293,7 +1293,7 @@
 <span class="out">  S3 ASK: "wire log-level env now or post-merge?" [approve|edit|reject|respond]</span><br/>
 <span class="out ok">  ... 7/7 slices merged, 2 P2 follow-ups filed, 0 deferred</span><br/><br/>
 
-<span class="cmt"># 3. Stamp the work.</span><br/>
+<span class="cmt"># 3. Summarise the work.</span><br/>
 <span class="prompt-claude">claude&gt;</span> <span class="cmd">/recap</span> <span class="cmt"># visual HTML report</span><br/>
 <span class="prompt-claude">claude&gt;</span> <span class="cmd">/sweep-worktrees</span> <span class="cmt"># bulk-clean per-slice worktrees</span><br/>
         </div>
@@ -1305,7 +1305,7 @@
 <!-- CLOSING -->
 <section class="closing wrap">
   <p class="closing-line">MIT. Fully local. Host-agnostic.</p>
-  <p class="closing-sub">Your plan, your hammer, your ship.</p>
+  <p class="closing-sub">Your plan, your repo, your ship.</p>
   <a class="cta closing-cta" href="https://github.com/browerthomas/Anvil" target="_blank">
     Clone on GitHub
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>

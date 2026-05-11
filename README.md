@@ -2,7 +2,7 @@
 
 # anvil
 
-**Forge ideas into shipped code.**
+**Ship large Claude Code tasks without losing state.**
 
 `/spec` → `/grind` → `/recap`
 
@@ -12,14 +12,14 @@
 
 ---
 
-Anvil is a Claude Code skill suite that takes a multi-slice plan and drives it from spec → PRs → merged. Markdown skills + bash + MCP. No platform, no compilation, no lock-in.
+Anvil is a Claude Code skill suite that takes a multi-PR plan (multiple stacked or independent PRs that ship one logical change) and drives it from spec → PRs → merged. Markdown skills + bash + MCP. No platform, no compilation, no lock-in.
 
 **Tired of Claude stopping mid-sprint?** State lives in plan files + an append-only event log + worktrees on disk — not the conversation. Stop and resume anywhere. The next slice fires in a fresh agent with full context.
 
 ## Who it's for
 
 - **Solo developers who want the agent to handle the GitHub review + merge dance**, not just write the code. Adversarial review, pre-merge gate, squash + branch + worktree cleanup — all scripted.
-- **Operators running multi-slice sprints** who want agent dispatch + review + merge orchestrated end-to-end across a dependency graph, pausing only at decision points they defined.
+- **Operators running multi-PR sprints** who want agent dispatch + review + merge orchestrated end-to-end across a dependency graph, pausing only at decision points they defined.
 - **Anyone who's hit Claude's conversation limit mid-implementation** and lost track of what shipped, what didn't, and what to fix.
 
 ## Quickstart
@@ -79,7 +79,7 @@ bash tests/install.test.sh
 
 End-to-end test of install + preflight + uninstall against a temp HOME. Asserts `anvil-config.sh` is created with the right `ANVIL_ROOT`, every skill script syntax-checks, the `shared/lib.sh` resolution works in both copy and symlink modes, and uninstall cleans up.
 
-## Battle-tested
+## Where it's been used
 
 Anvil is dogfooded on its maintainer's main project. Recent grinds:
 
@@ -95,7 +95,7 @@ Sixteen skills. You won't call all of them — `/grind` composes most. Plain-Eng
 | Skill | What it does |
 |---|---|
 | [`/spec`](skills/spec/SKILL.md) | Capture work as a structured plan (interactive probe). Validates before `/grind` can execute. |
-| [`/grind`](skills/grind/SKILL.md) | Drive a plan end-to-end. Topo-sorts slices, dispatches agents, reviews, gates, merges. Pauses only at ASK decision points. |
+| [`/grind`](skills/grind/SKILL.md) | Drive a plan end-to-end. Topo-sorts slices, dispatches agents, reviews, gates, merges. Pauses only at operator decision points. |
 | [`/dispatch-slice`](skills/dispatch-slice/SKILL.md) | Fire an agent against one slice with the full prompt template (worktree, deps, constraints, PR template). Three-line invocation. |
 | [`/pre-merge-gate`](skills/pre-merge-gate/SKILL.md) | Verify a PR is mergeable: rebase + tsc + tests + fitness ratchets + grep for forbidden patterns + GH check status. One verdict. |
 | [`/auto-merge`](skills/auto-merge/SKILL.md) | Squash + delete branch + wipe worktree + sync main. One call. |
@@ -138,7 +138,7 @@ Each layer composes the layer below; each is invocable standalone. Full architec
 Two layouts, both supported by `/spec` and `/grind`:
 
 - **Flat:** [`templates/plan-template.md`](templates/plan-template.md) — single markdown file with the YAML manifest inline. For <5 slices, no architecture decisions.
-- **Folder (OpenSpec-style):** [`templates/plan-folder-template/`](templates/plan-folder-template/) — `proposal.md` + `design.md` + `tasks.md` + `specs/`. For substantive plans; the adversarial reviewer gets the `specs/` files as context.
+- **Folder layout for non-trivial plans:** [`templates/plan-folder-template/`](templates/plan-folder-template/) — `proposal.md` + `design.md` + `tasks.md` + `specs/`. For substantive plans; the adversarial reviewer gets the `specs/` files as context.
 
 Required sections: Goal, Scope, Architecture decisions, Hard constraints, Slice manifest (YAML with deps + acceptance + operator decision points), Validation checklist.
 
