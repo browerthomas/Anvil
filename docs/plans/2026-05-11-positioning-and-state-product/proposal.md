@@ -81,8 +81,6 @@ No other humans loop in.
 - [ ] Version bumped to v0.6.0; CHANGELOG entry covers the sprint.
 - [ ] No project-private references in any committed file (verified by `bin/check-leaks.sh`).
 
-## Phase A.5 conditional rollback trigger
+## Audience positioning posture
 
-A3 (audience wedge collapse) is a positioning bet without measurement. If by 2026-06-08 the 7-day star + clone count drops more than 20% vs the prior 7-day baseline taken at A3 merge time, **Phase A.5 fires** — revert A3 to a 4-audience single-column layout (no metaphor return, just structural). Other Phase A slices stay. Captured in the plan's `## Operator decision records` post-merge.
-
-If the metric is unmeasurable (e.g. GitHub Insights latency), default to "operator inspects landing analytics manually + decides." No automated revert.
+A3 (audience wedge collapse) is operator-facing — anvil is currently used by the maintainer + small team, not a public adoption funnel. No automated rollback trigger; if the wedge wording feels off post-merge, operator edits in-place or files a follow-up issue.
