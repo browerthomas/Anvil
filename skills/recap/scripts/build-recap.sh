@@ -69,6 +69,8 @@ MODE="v1"                     # v1 | v2 | resolve
 PLAN_PATH=""
 INPUT_PATH=""                 # for --resolve
 OUTPUT_PATH=""                # optional; default stdout
+HTML_PATH=""                  # optional; emit styled HTML alongside markdown
+GH_REPO=""                    # optional; for citation links (owner/repo)
 SINCE=""
 UNTIL=""
 MODEL_CMD="${RECAP_MODEL_CMD:-}"
@@ -86,6 +88,8 @@ while [ $# -gt 0 ]; do
     --resolve)           MODE="resolve"; INPUT_PATH="${2:-}"; shift 2;;
     --plan)              PLAN_PATH="$2"; shift 2;;
     --output|--out|-o)   OUTPUT_PATH="$2"; shift 2;;
+    --html)              HTML_PATH="$2"; shift 2;;
+    --gh-repo)           GH_REPO="$2"; shift 2;;
     --since)             SINCE="$2"; shift 2;;
     --until)             UNTIL="$2"; shift 2;;
     --model-cmd)         MODEL_CMD="$2"; shift 2;;
@@ -639,6 +643,11 @@ build_v2() {
   fi
 
   av_ok "v2 recap written to $recap_md_path"
+  if [ -n "$HTML_PATH" ]; then
+    render_html "$recap_md_path" "$HTML_PATH" || {
+      av_warn "html render failed (recap markdown still at $recap_md_path)"
+    }
+  fi
   if [ -z "$OUTPUT_PATH" ]; then
     cat "$recap_md_path"
   fi
@@ -659,7 +668,184 @@ build_resolve() {
   if [ "$rc" -ne 0 ]; then
     exit 2
   fi
+  if [ -n "$HTML_PATH" ]; then
+    render_html "$INPUT_PATH" "$HTML_PATH" || {
+      av_warn "html render failed (recap markdown still at $INPUT_PATH)"
+      exit 2
+    }
+    av_ok "html rendered to $HTML_PATH"
+  fi
   av_ok "structure + citations resolved for $INPUT_PATH"
+}
+
+# --- HTML render ---------------------------------------------------------
+#
+# render_html <validated-md> <output-html>
+#
+# Reads a v2 markdown file (assumed validated + cited) + emits a self-
+# contained styled HTML page using templates/v2-html-shell.html. The
+# styling is dark-theme by default with a light-mode media query. Pulls
+# the per-section bodies + TLDR sentences + converts citations to colored
+# pills (file:line / #PR / sha).
+#
+# Citation pills become anchor tags when:
+#   - file:line — link to `<path>#L<N>` if `$GH_REPO` is set (e.g.
+#     owner/repo); otherwise unlinked badge.
+#   - #PR       — link to https://github.com/$GH_REPO/pull/<N> if set.
+#   - sha       — link to https://github.com/$GH_REPO/commit/<sha> if set.
+
+render_html() {
+  local md="$1"
+  local out="$2"
+  local tpl="$SCRIPT_DIR/../templates/v2-html-shell.html"
+  if [ ! -f "$tpl" ]; then
+    av_fail "html template missing: $tpl"
+    return 1
+  fi
+
+  # Pull TLDR body + each section body separately.
+  local tldr_raw
+  tldr_raw=$(awk '
+    /^## TLDR[[:space:]]*$/ {flag=1; next}
+    /^## / && flag {flag=0}
+    flag {print}
+  ' "$md")
+
+  # Convert TLDR into <li> rows, one per sentence. Strategy: strip abbreviation
+  # periods to a sentinel, then split on sentence-terminator + space + capital.
+  local tldr_items
+  tldr_items=$(printf '%s' "$tldr_raw" \
+    | tr '\n' ' ' \
+    | sed -E '
+        s/(^|[^A-Za-z])(Mr|Mrs|Ms|Dr|Inc|Co|Ltd|St|Jr|Sr|Prof|Capt|Sgt)\.[[:space:]]/\1\2ZZZABBR /g
+        s/(^|[^A-Za-z])(e|i)\.(g|e)\.[[:space:]]/\1\2\3ZZZABBR /g
+        s/(^|[^A-Za-z])(vs|etc|cf|al|approx|min|max|pp|vol|ed|eds|fig|figs|no|nos)\.[[:space:]]/\1\2ZZZABBR /g
+        s/(^|[^A-Za-z])v([0-9]+)\.([0-9]+)?\.?[[:space:]]/\1v\2_\3ZZZABBR /g
+        s/([.!?]+)[[:space:]]+([A-Z])/\1__BREAK__\2/g
+      ' \
+    | tr '\n' ' ' \
+    | awk 'BEGIN{RS="__BREAK__"} NF{
+        s=$0
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", s)
+        gsub(/ZZZABBR/, ".", s)
+        if (length(s) > 0) printf "    <li>%s</li>\n", s
+      }')
+
+  # Section bodies. Convert each to HTML by:
+  #   - bullets `- foo` → <li>foo</li>
+  #   - non-empty non-bullet line → <p>line</p>
+  #   - inline `code` → <code>code</code>
+  #   - citations matching #N | path:N | sha → <a class="cite-..."> pills
+  local shipped_body assumptions_body drift_body risk_body
+  shipped_body=$(section_to_html "$md" "## What shipped")
+  assumptions_body=$(section_to_html "$md" "## What assumptions changed")
+  drift_body=$(section_to_html "$md" "## What architectural drift")
+  risk_body=$(section_to_html "$md" "## What residual risk")
+
+  # Header fields.
+  local title subtitle generated_at plan_display
+  title=$(head -1 "$md" | sed -E 's/^#[[:space:]]+//' | sed -E 's/[&<>]/_/g')
+  [ -z "$title" ] && title="Sprint recap"
+  subtitle="Structured WHY — v2"
+  generated_at=$(date -u +"%Y-%m-%d %H:%MZ")
+  plan_display="${PLAN_PATH:-(unspecified plan)}"
+  plan_display=$(printf '%s' "$plan_display" | sed -E 's/[&<>]/_/g')
+
+  # Multi-line substitution via tmpfiles + awk getline. -v can't carry
+  # newline-bearing strings on POSIX awk; tmpfile-per-block is the
+  # cross-platform way to splice them in safely.
+  local tldr_f shipped_f assumptions_f drift_f risk_f
+  tldr_f=$(mktemp -t anvil-recap-tldr.XXXXXX)
+  shipped_f=$(mktemp -t anvil-recap-shipped.XXXXXX)
+  assumptions_f=$(mktemp -t anvil-recap-assumptions.XXXXXX)
+  drift_f=$(mktemp -t anvil-recap-drift.XXXXXX)
+  risk_f=$(mktemp -t anvil-recap-risk.XXXXXX)
+  printf '%s\n' "$tldr_items" > "$tldr_f"
+  printf '%s\n' "$shipped_body" > "$shipped_f"
+  printf '%s\n' "$assumptions_body" > "$assumptions_f"
+  printf '%s\n' "$drift_body" > "$drift_f"
+  printf '%s\n' "$risk_body" > "$risk_f"
+
+  awk \
+    -v title="$title" \
+    -v subtitle="$subtitle" \
+    -v generated_at="$generated_at" \
+    -v plan_path="$plan_display" \
+    -v tldr_f="$tldr_f" \
+    -v shipped_f="$shipped_f" \
+    -v assumptions_f="$assumptions_f" \
+    -v drift_f="$drift_f" \
+    -v risk_f="$risk_f" \
+    '
+    function inject(path,    line) {
+      while ((getline line < path) > 0) print line
+      close(path)
+    }
+    {
+      line = $0
+      gsub(/\{\{title\}\}/, title, line)
+      gsub(/\{\{subtitle\}\}/, subtitle, line)
+      gsub(/\{\{generated_at\}\}/, generated_at, line)
+      gsub(/\{\{plan_path\}\}/, plan_path, line)
+      if (line ~ /\{\{tldr_items\}\}/)        { inject(tldr_f); next }
+      if (line ~ /\{\{shipped_body\}\}/)      { inject(shipped_f); next }
+      if (line ~ /\{\{assumptions_body\}\}/)  { inject(assumptions_f); next }
+      if (line ~ /\{\{drift_body\}\}/)        { inject(drift_f); next }
+      if (line ~ /\{\{risk_body\}\}/)         { inject(risk_f); next }
+      print line
+    }
+  ' "$tpl" > "$out"
+
+  rm -f "$tldr_f" "$shipped_f" "$assumptions_f" "$drift_f" "$risk_f"
+}
+
+# section_to_html <md-file> <section-heading>
+# Emits HTML body for one section. Bullets → <ul><li>; non-bullet lines drop
+# (recaps are bullet-shaped); inline code → <code>; citations → pills.
+section_to_html() {
+  local md="$1"
+  local section="$2"
+  local body
+  body=$(awk -v s="$section" '
+    $0 == s {flag=1; next}
+    /^## / && flag {flag=0}
+    flag {print}
+  ' "$md")
+  if [ -z "$body" ]; then
+    printf '  <p style="color:var(--text-3);font-style:italic;">(no entries)</p>\n'
+    return 0
+  fi
+  # Filter to bullet lines only, then transform.
+  local html
+  html=$(printf '%s\n' "$body" \
+    | grep -E '^[[:space:]]*[-*][[:space:]]' \
+    | sed -E '
+        s/^[[:space:]]*[-*][[:space:]]+//
+        s/&/\&amp;/g
+        s/</\&lt;/g
+        s/>/\&gt;/g
+        s/`([^`]+)`/<code>\1<\/code>/g
+      ' \
+    | citations_to_pills \
+    | awk 'NF { printf "    <li>%s</li>\n", $0 }')
+  if [ -z "$html" ]; then
+    printf '  <p style="color:var(--text-3);font-style:italic;">(no entries)</p>\n'
+  else
+    printf '  <ul>\n%s  </ul>\n' "$html"
+  fi
+}
+
+# citations_to_pills — stdin filter that converts citation tokens to pill anchors.
+# Honors $GH_REPO for link targets when set.
+citations_to_pills() {
+  # BSD sed -E doesn't honour \b — anchor file:N citations via "preceded by
+  # start-of-line or non-path-char". Use separate -e expressions because
+  # BSD sed's handling of multi-line -E scripts is finicky.
+  local repo="${GH_REPO:-anvil/anvil}"
+  sed -E \
+    -e "s|#([0-9]+)|<a class='cite cite-pr' href='https://github.com/${repo}/pull/\\1'>#\\1</a>|g" \
+    -e "s|<([0-9a-f]{7,40})>|<a class='cite cite-sha' href='https://github.com/${repo}/commit/\\1'>\\1</a>|g" \
+    -e "s|(^\|[^A-Za-z0-9._/-])([A-Za-z0-9_./-]+\\.[A-Za-z]+):([0-9]+)|\\1<a class='cite cite-file' href='\\2#L\\3'>\\2:\\3</a>|g"
 }
 
 # --- main ---------------------------------------------------------------
