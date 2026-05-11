@@ -23,7 +23,8 @@
     "skills/post-merge-debrief",
     "skills/dual-review",
     "skills/learn",
-    "skills/persona"
+    "skills/persona",
+    "skills/anvil-status"
   ],
   "templates": [
     "templates/plan-template.md"
