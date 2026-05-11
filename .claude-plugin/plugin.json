@@ -24,7 +24,8 @@
     "skills/dual-review",
     "skills/learn",
     "skills/lens",
-    "skills/anvil-status"
+    "skills/anvil-status",
+    "skills/followup-rollup"
   ],
   "templates": [
     "templates/plan-template.md"
