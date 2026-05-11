@@ -4,6 +4,17 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 
 ## [Unreleased]
 
+### Changed — `/persona` namespaced into `saas/` / `systems/` / `generic/`; 7 new systems personas added
+
+- Anvil's real audience is systems + software engineers, not just SaaS operators. The original 10 personas leaned SaaS-coded (Stripe references, customer-support framing, AI-product exposé lens). The skill now namespaces personas into three categories so systems-engineering work has first-class lenses too.
+- **`systems/`** — eight personas covering kernel development (memory safety, locking, ABI), SRE incident response (renamed from `oncall-3am`), embedded engineering (WCET, ISR safety), distributed systems (consensus, idempotency, retries), performance engineering (hot paths, allocation, syscall overhead), compiler/build engineering (hermeticity, reproducibility), OSS maintainership (PR triage, ABI stability), and architecture review (boundaries, coupling, dependency direction).
+- **`saas/`** — six existing personas moved unchanged: `privacy-lawyer`, `payment-risk`, `angry-customer`, `competitor-recon`, `end-user`, `journalist`.
+- **`generic/`** — three personas genericized to drop SaaS-coded language so they work across both categories: `security-researcher` (broadened beyond web-stack vulnerabilities), `new-engineer` (already generic), `vendor-tos-auditor` (broadened from LLM/API focus to cover any external dependency: libraries, compilers, runtimes, cloud, package licenses + AUPs).
+- **New helper:** `skills/persona/scripts/resolve-persona.sh` resolves a persona name (bare or `category/<name>`) to its prompt body. Handles bare-name cross-category lookup, ambiguity errors, and the `oncall-3am` → `systems/sre-incident-responder` backward-compat shim.
+- **Backward compat:** existing `/persona privacy-lawyer "..."` invocations from operator memory still work — the resolver looks across categories when given a bare name. The legacy `oncall-3am` name resolves to `systems/sre-incident-responder` and prints a one-line deprecation notice; the rename will be enforced in a future release.
+- Persona count: 10 → 17 (7 net-new in `systems/`; the eighth systems persona is the `oncall-3am` rename).
+- Motivation: dogfood feedback during the 2026-05-11 self-critique pass flagged the SaaS lean as a barrier to adoption among systems engineers. Namespacing was the minimum-change fix that preserves the existing prompts while opening room for systems-coded lenses.
+
 ### Changed — docs polish per #3 (Bill's feedback, 2026-05-11)
 
 - README restructure: elevator pitch + "Who it's for" framing up top; Quickstart and Install moved to top; battle-tested dogfood section surfaced (http-client 4/4, arch-standardisation 5/15 in flight); skill glossary rebuilt as plain-English `Skill → What it does` rows (no decorative taglines, names preserved for backwards compatibility); GitHub Pages hosting moved out of README.
