@@ -146,7 +146,7 @@ Wired to:
 bash skills/plan-health/scripts/check-health.sh <plan-path>
 ```
 
-Skip the hook via `--no-plan-health` for codex-outage windows where gh is already saturated. Skipping does not break orchestration — it's just one fewer best-effort signal.
+The hook fails-safe: if `gh` is rate-limited or unreachable, plan-health crashes silently + `/grind` continues unaffected. No opt-out needed — the gate is non-blocking by design.
 
 ### Step 4: Periodic check-in
 
