@@ -4,7 +4,6 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 
 ## [Unreleased]
 
-<<<<<<< HEAD
 ### Changed — `/persona` namespaced into `saas/` / `systems/` / `generic/`; 7 new systems personas added
 
 - Anvil's real audience is systems + software engineers, not just SaaS operators. The original 10 personas leaned SaaS-coded (Stripe references, customer-support framing, AI-product exposé lens). The skill now namespaces personas into three categories so systems-engineering work has first-class lenses too.
@@ -35,10 +34,10 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 - `.github/workflows/smoke-test.yml` — CI runs the suite on every push to `main` and every PR. Ubuntu, `apt install bats jq`, `make -C tests smoke`.
 - `tests/README.md` — covers run instructions, the helper API, how to add a new test, common failure modes.
 
-### Changed — docs polish per #3 (Bill's feedback, 2026-05-11)
+### Changed — docs polish per #3 (2026-05-11)
 
-- README restructure: elevator pitch + "Who it's for" framing up top; Quickstart and Install moved to top; battle-tested dogfood section surfaced (http-client 4/4, arch-standardisation 5/15 in flight); skill glossary rebuilt as plain-English `Skill → What it does` rows (no decorative taglines, names preserved for backwards compatibility); GitHub Pages hosting moved out of README.
-- `docs/index.html` polish: decorative `skill-tag-line` strings removed from the skills disclosure; new **Battle-tested** strip with theirownstory PR numbers and counts; entry-tiers section relabelled "Install + entry points" for clarity; hero subtitle tightened to the elevator pitch + Who-it's-for framing; CTA copy "Install" instead of "Pick your entry point"; "Written to the open Agent Skills spec" sub-blurb dropped from the skills section.
+- README restructure: elevator pitch + "Who it's for" framing up top; Quickstart and Install moved to top; battle-tested dogfood section surfaced (described abstractly); skill glossary rebuilt as plain-English `Skill → What it does` rows (no decorative taglines, names preserved for backwards compatibility); GitHub Pages hosting moved out of README.
+- `docs/index.html` polish: decorative `skill-tag-line` strings removed from the skills disclosure; new **Battle-tested** strip describing recent dogfood grinds; entry-tiers section relabelled "Install + entry points" for clarity; hero subtitle tightened to the elevator pitch + Who-it's-for framing; CTA copy "Install" instead of "Pick your entry point"; "Written to the open Agent Skills spec" sub-blurb dropped from the skills section.
 - `CONTRIBUTING.md`: GitHub Pages hosting workflow moved here from README.
 
 ## [0.5.0] — 2026-05-11
@@ -131,7 +130,7 @@ Glue + correction layer. Five new skills closing the manual sequences that surro
 - Composes existing scripts; no new helpers.
 
 ### Notes
-- All five skills surfaced from real friction during the first dogfood (`http-client-standardisation` plan against the TOS pilot project, 2026-05-10). Each closes a manual sequence the operator was running step-by-step.
+- All five skills surfaced from real friction during the first dogfood (`http-client-standardisation` plan, 2026-05-10). Each closes a manual sequence the operator was running step-by-step.
 - Plugin manifest bumped to 0.4.0; skills array now lists 13 skills.
 
 [0.4.0]: https://github.com/browerthomas/Anvil/releases/tag/v0.4.0

@@ -1,8 +1,7 @@
 # gstack vs anvil — what's gold in those hills
 
 **Date:** 2026-05-11
-**Repo studied:** https://github.com/garrytan/gstack (MIT, ~1419 PRs deep, very active)
-**Author:** Garry Tan
+**Repo studied:** gstack (MIT, ~1419 PRs deep, very active)
 **Purpose of this doc:** decide what to steal for anvil.
 
 ---
