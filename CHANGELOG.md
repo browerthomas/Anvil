@@ -4,6 +4,19 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 
 ## [Unreleased]
 
+### Changed — `docs/index.html` maturation pass (2026-05-11)
+
+- Critic-read feedback from the maintainer's 2026-05-11 dogfood pass surfaced seven landing-page gaps. Single PR covers all seven.
+- **One-liner install** above the existing 3-tier quickstart tabs — single `git clone … && install.sh` row labelled "Just run this" for visitors who want one paste-and-go command. The 3-tier panel (single skill / inner loop / full orchestration) is preserved below for operators who want the explicit version.
+- **Copy buttons on all four terminal blocks** (one-liner + tier 1 / 2 / 3). ~15 lines of vanilla JS; click pulls `.cmd` text content out of the target terminal, joins with newlines, copies via `navigator.clipboard.writeText()`, flashes "Copied!" for 1.5s.
+- **Hero copy tightened** — merged the two stacked `.hero-sub` paragraphs into one crisp elevator + one italic differentiator line. Dropped the "Built for solo developers" sentence (that framing moves into the new "Who it's for" callout).
+- **Smoke-test + CI credibility badges** under the hero CTAs: `100+ tests · CI on every push` (links to `.github/workflows/smoke-test.yml`), `16 skills · 17 adversarial personas`, `Vanilla GitHub · no SaaS, no GitHub App`.
+- **New "Who it's for" section** between hero and entry-tiers, audience grid of four cards — systems engineers, software engineers, SaaS operators, OSS maintainers. Expands the framing past the original solo-developer-SaaS-shaped audience to reflect anvil#20's persona namespacing.
+- **Persona namespacing surfaced** as a callout block inside the skills section: 17 personas across `systems/` (8) / `saas/` (6) / `generic/` (3) listed explicitly. Closes the gap where the landing claimed 17 personas in a badge but never showed the namespace structure.
+- **Persona examples balanced** — `/persona systems/*`, `/persona saas/*`, `/persona systems/open-source-maintainer` lead with systems-coded callouts so the SaaS bias from earlier copy is visibly broken.
+- Mobile breakpoints extended for the new sections (audience grid collapses to 1col, copy button compresses, oneliner padding tightens).
+- No new fonts, no new CDN dependencies, no analytics/tracking, no project-private references.
+
 ### Changed — `/persona` namespaced into `saas/` / `systems/` / `generic/`; 7 new systems personas added
 
 - Anvil's real audience is systems + software engineers, not just SaaS operators. The original 10 personas leaned SaaS-coded (Stripe references, customer-support framing, AI-product exposé lens). The skill now namespaces personas into three categories so systems-engineering work has first-class lenses too.
