@@ -4,71 +4,25 @@
 
 **Forge ideas into shipped code.**
 
-Plans come in raw. PRs come out forged.
-An open framework for AI-orchestrated engineering work — markdown skills + bash + MCP, runs in any agent harness that speaks the open Agent Skills spec.
-
 `/spec` → `/grind` → `/recap`
 
-[Quickstart](#quickstart) · [How it works](#how-it-works) · [Skills](#skills) · [Plan format](#plan-format) · [Contributing](CONTRIBUTING.md)
+[Quickstart](#quickstart) · [Install](#install) · [Skills](#skills) · [How it works](#how-it-works) · [Contributing](CONTRIBUTING.md)
 
 </div>
 
 ---
 
-## What it is
+Anvil is a Claude Code skill suite that takes a multi-slice plan and drives it from spec → PRs → merged. Markdown skills + bash + MCP. No platform, no compilation, no lock-in.
 
-A composable bundle of agent skills that turns a structured plan into merged PRs with minimal operator intervention. Written to the open Anthropic Agent Skills spec — works in Claude Code today, Codex CLI has adopted the same format, and the pre-merge gate also ships as an MCP server for hosts on the MCP rail (Cursor, Windsurf, ChatGPT desktop). Three phases:
+## Who it's for
 
-| | Skill | Verb |
-|---|---|---|
-| **Plan** | `/spec` | Lay the blueprint |
-| **Forge** | `/grind` | Run the forge |
-| **Recap** | `/recap` | Stamp the work |
-
-Each skill stands alone. Together they're a framework. Adopt incrementally — markdown files in `~/.claude/skills/`, no compilation, no platform.
-
-## Why
-
-Multi-PR sprints converge on the same workflow every time:
-
-1. Lay out what you want.
-2. Dispatch agents per slice in dependency order.
-3. Adversarially review each.
-4. Gate each merge against a project-specific battery (rebase + tsc + tests + fitness ratchets + grep-for-forbidden-patterns).
-5. Squash-merge + clean up worktrees.
-6. Recap what shipped + what didn't.
-
-Anvil codifies that loop so it stops being something you re-derive every session.
-
-## Status
-
-Thirteen skills across primitives, inner-loop, orchestration, and glue. Plan validator, multi-critic review, failure-mode triage, append-only event log, MCP-portable gate. See [`CHANGELOG.md`](CHANGELOG.md) for what landed in each release and [`ROADMAP.md`](ROADMAP.md) for what's open.
-
-Open follow-ups:
-- v0.2.1 — Langfuse OTel adapter implementation, `@anvil/gate-mcp` npm publish.
-- v0.4+ — speculative; sourced from real-world adoption signal.
+- **Solo developers who want the agent to handle the GitHub review + merge dance**, not just write the code. Adversarial review, pre-merge gate, squash + branch + worktree cleanup — all scripted.
+- **Operators running multi-slice sprints** who want agent dispatch + review + merge orchestrated end-to-end across a dependency graph, pausing only at decision points they defined.
 
 ## Quickstart
 
 ```bash
-# 1. Clone the framework
-git clone https://github.com/browerthomas/Anvil.git ~/anvil
-cd ~/anvil
-
-# 2. Heat the forge — verify your environment
-bin/preflight.sh
-
-# 3. Stoke it — install the skills (symlinks into ~/.claude/skills/)
-bin/install.sh
-
-# 4. Bootstrap a project's .anvil/ config (run from inside the target repo)
-cd /path/to/your/project
-~/anvil/bin/init-anvil-config.sh
-```
-
-Then in Claude Code:
-
-```
+# In Claude Code, after install:
 /sweep-worktrees             # bulk-cleanup of stale worktrees + branches
 /self-review                 # adversarial diff review (codex fallback)
 /recap                       # visual HTML session report
@@ -77,7 +31,71 @@ Then in Claude Code:
 /grind docs/plans/<slug>.md  # end-to-end orchestrator
 ```
 
-See [`docs/getting-started.md`](docs/getting-started.md) for a longer walkthrough and [`docs/architecture.md`](docs/architecture.md) for the three-layer composition model.
+Longer walkthrough: [`docs/getting-started.md`](docs/getting-started.md).
+
+## Install
+
+```bash
+# 1. Clone
+git clone https://github.com/browerthomas/Anvil.git ~/anvil
+
+# 2. Verify environment (gh + git + node + jq)
+~/anvil/bin/preflight.sh
+
+# 3. Install the skills (symlinks into ~/.claude/skills/)
+~/anvil/bin/install.sh
+
+# 4. Bootstrap per-repo config inside your target project
+cd /path/to/your/project
+~/anvil/bin/init-anvil-config.sh
+```
+
+### Subsets
+
+Anvil ships as three composable groups. Install only what you need:
+
+```bash
+~/anvil/bin/install.sh --group core           # /sweep-worktrees /self-review /recap
+~/anvil/bin/install.sh --group pr             # /dispatch-slice /pre-merge-gate /auto-merge
+~/anvil/bin/install.sh --group orchestrator   # /spec /grind
+```
+
+`--copy` instead of symlink for a stable install that survives folder moves. `bin/uninstall.sh` to remove.
+
+## Battle-tested on real sprints
+
+Anvil is dogfooded on its operator's main project. Recent grinds:
+
+- **http-client-standardisation** — 4 slices, 4 PRs merged in one session (theirownstory#1080, #1082, #1084, #1086). Full orchestration via `/grind`; surfaced the v0.4 glue-layer skills (`/findings-rollup`, `/refine-plan`, `/config-bootstrap`, `/issue-to-spec`, `/post-merge-debrief`).
+- **architecture-standardisation** — 15-slice plan, 5 slice PRs merged so far (theirownstory#1097, #1098, #1103, #1104, #1115) plus mid-grind plan refine (#1122) via `/refine-plan`. Live; sequential lanes still rolling.
+
+If you adopt anvil and want to be added here, open a PR.
+
+## Skills
+
+Thirteen skills. You won't call all of them — `/grind` composes most. Plain-English descriptions below; skill names stay stable for backwards compatibility.
+
+| Skill | What it does |
+|---|---|
+| [`/spec`](skills/spec/SKILL.md) | Capture work as a structured plan (interactive probe). Validates before `/grind` can execute. |
+| [`/grind`](skills/grind/SKILL.md) | Drive a plan end-to-end. Topo-sorts slices, dispatches agents, reviews, gates, merges. Pauses only at ASK decision points. |
+| [`/dispatch-slice`](skills/dispatch-slice/SKILL.md) | Fire an agent against one slice with the full prompt template (worktree, deps, constraints, PR template). Three-line invocation. |
+| [`/pre-merge-gate`](skills/pre-merge-gate/SKILL.md) | Verify a PR is mergeable: rebase + tsc + tests + fitness ratchets + grep for forbidden patterns + GH check status. One verdict. |
+| [`/auto-merge`](skills/auto-merge/SKILL.md) | Squash + delete branch + wipe worktree + sync main. One call. |
+| [`/post-merge-debrief`](skills/post-merge-debrief/SKILL.md) | After a one-off merge outside `/grind`: cleanup + mark merged in event log + pull main + dispatch next slice. |
+| [`/self-review`](skills/self-review/SKILL.md) | Adversarial diff review via an Opus sub-agent. `--multi-critic` mode runs four parallel critics + a synthesizer. Codex fallback. |
+| [`/findings-rollup`](skills/findings-rollup/SKILL.md) | Translate a multi-critic review into action: file P2/P3 as a rollup issue + dispatch a fix-up agent for the P0/P1 list. |
+| [`/refine-plan`](skills/refine-plan/SKILL.md) | Mid-grind plan correction. Edit plan files in-place, log a `plan-revised` event, comment on in-flight PRs whose contract moved. |
+| [`/config-bootstrap`](skills/config-bootstrap/SKILL.md) | Derive `.anvil/` configs (forbidden patterns, dispatch defaults, known flakes) from your project's existing context docs (CLAUDE.md, AGENTS.md, post-mortems). |
+| [`/issue-to-spec`](skills/issue-to-spec/SKILL.md) | Verify a GitHub issue body's factual claims against the codebase before locking a plan. Catches issue-body-is-wrong errors at lock-time. |
+| [`/sweep-worktrees`](skills/sweep-worktrees/SKILL.md) | Bulk-clean stale worktrees + branches. Handles cloud-sync-evicted `node_modules` and stale git locks. |
+| [`/recap`](skills/recap/SKILL.md) | Visual HTML session report — PRs shipped, tests added, decisions made, loose ends. Dropped into `~/.claude/showme/`. |
+
+### Optional companions
+
+Anvil composes with these when present; they install separately:
+
+`/codex-review` cross-model code review · `/codex-confer` adversarial design opinion · `/codex-plan` cross-model planning · `/codex-check` binding factual yes/no · `/offensive-audit` multi-lens repo audit · `/loop` self-paced wakeup · `/sync-kb` Obsidian sync.
 
 ## How it works
 
@@ -93,142 +111,36 @@ Three layers compose:
 └──────────────────────────────────────────────────┘
 ```
 
-Each layer composes the layer below. Each layer is invocable standalone. Full architecture in [`docs/architecture.md`](docs/architecture.md).
-
-## Skills
-
-### Primitives (standalone — useful even without the rest)
-
-| Skill | Tagline | One-liner |
-|---|---|---|
-| [`/sweep-worktrees`](skills/sweep-worktrees/SKILL.md) | Reset the workshop | Bulk-clean stale worktrees + branches; handles iCloud node_modules + git locks |
-| [`/self-review`](skills/self-review/SKILL.md) | Test the temper | Opus-driven adversarial diff review with optional 4-critic multi-pass mode — codex fallback |
-| [`/recap`](skills/recap/SKILL.md) | Stamp the work | Visual HTML session report — PRs shipped, tests added, lessons, loose ends |
-
-### Inner-loop trio (per-PR cycle)
-
-| Skill | Tagline | One-liner |
-|---|---|---|
-| [`/dispatch-slice`](skills/dispatch-slice/SKILL.md) | Strike a billet | Codifies the agent prompt template — replaces ~600-word per-agent briefs |
-| [`/pre-merge-gate`](skills/pre-merge-gate/SKILL.md) | Inspect the seam | Combinator: rebase + tsc + tests + fitness + grep — one verdict |
-| [`/auto-merge`](skills/auto-merge/SKILL.md) | Quench and ship | Squash-merge + branch delete + worktree wipe + main sync, in one call |
-
-### Orchestration (end-to-end)
-
-| Skill | Tagline | One-liner |
-|---|---|---|
-| [`/spec`](skills/spec/SKILL.md) | Lay the blueprint | Interactive plan capture — probes for detail, outputs structured markdown (flat or folder layout) |
-| [`/grind`](skills/grind/SKILL.md) | Run the forge | End-to-end orchestrator — topo-sorts slices, dispatches agents, reviews, gates, merges, recaps |
-
-### Glue + correction (composes the others)
-
-| Skill | Tagline | One-liner |
-|---|---|---|
-| [`/findings-rollup`](skills/findings-rollup/SKILL.md) | Punch out the slag | After multi-critic review: file P2/P3 rollup issue + dispatch fix-up agent for P0/P1 in one call |
-| [`/issue-to-spec`](skills/issue-to-spec/SKILL.md) | Inspect the iron | Verify a GitHub issue body's factual claims against the codebase before locking a plan |
-| [`/refine-plan`](skills/refine-plan/SKILL.md) | Re-temper | Mid-grind plan correction — update plan files in-place + log to event log + comment on in-flight PRs |
-| [`/config-bootstrap`](skills/config-bootstrap/SKILL.md) | Charge the forge | Populate `.anvil/` configs from the project's existing context docs (CLAUDE.md, AGENTS.md, post-mortems) |
-| [`/post-merge-debrief`](skills/post-merge-debrief/SKILL.md) | Mark the work | Single-PR cleanup + next-slice dispatch outside of `/grind` — for one-off merges |
-
-### Compositional dependencies
-
-Skills anvil composes with (install separately):
-
-- [`/codex-review`](https://github.com/) — cross-model code review
-- [`/codex-confer`](https://github.com/) — adversarial design opinion
-- [`/codex-plan`](https://github.com/) — cross-model planning
-- [`/codex-check`](https://github.com/) — binding factual yes/no
-- [`/offensive-audit`](https://github.com/) — multi-lens repo audit
-- [`/loop`](https://github.com/) — self-paced wakeup loop
-- [`/sync-kb`](https://github.com/) — Obsidian sync
-
-These aren't required — anvil's primitives stand alone — but `/grind` will compose with them when present.
+Each layer composes the layer below; each is invocable standalone. Full architecture: [`docs/architecture.md`](docs/architecture.md).
 
 ## Plan format
 
 Two layouts, both supported by `/spec` and `/grind`:
 
-- **Flat:** [`templates/plan-template.md`](templates/plan-template.md) — single markdown file with the YAML manifest inline. Right for small plans (<5 slices, no architecture decisions).
-- **Folder (OpenSpec-style):** [`templates/plan-folder-template/`](templates/plan-folder-template/) — `proposal.md` + `design.md` + `tasks.md` + `specs/`. Right for substantive plans with architecture decisions; the adversarial reviewer gets the `specs/` files as context.
+- **Flat:** [`templates/plan-template.md`](templates/plan-template.md) — single markdown file with the YAML manifest inline. For <5 slices, no architecture decisions.
+- **Folder (OpenSpec-style):** [`templates/plan-folder-template/`](templates/plan-folder-template/) — `proposal.md` + `design.md` + `tasks.md` + `specs/`. For substantive plans; the adversarial reviewer gets the `specs/` files as context.
 
-Required sections:
+Required sections: Goal, Scope, Architecture decisions, Hard constraints, Slice manifest (YAML with deps + acceptance + operator decision points), Validation checklist.
 
-- **Goal** — verifiable end-state in plain English
-- **Scope** — in/out
-- **Architecture decisions** — locked + rejected, with rationale
-- **Hard constraints** — inviolable across all slices
-- **Slice manifest** — YAML with deps + acceptance criteria + operator decision points
-- **Validation checklist** — when this list is fully checked, the plan is "done"
+Worked example: [`examples/example-plan.md`](examples/example-plan.md) (logger-boundary refactor, 7 slices). Minimal: [`examples/hello-world-plan.md`](examples/hello-world-plan.md).
 
-Worked example: [`examples/example-plan.md`](examples/example-plan.md) — a logger-boundary refactor with 7 slices.
+## Per-repo configuration
 
-A minimal plan: [`examples/hello-world-plan.md`](examples/hello-world-plan.md) — single-slice "add a CONTRIBUTING.md" plan you can run end-to-end to verify your install.
-
-## Installation modes
-
-### Full install (all 8 skills)
-
-```bash
-~/Desktop/anvil/bin/install.sh           # symlink (development; edits live)
-~/Desktop/anvil/bin/install.sh --copy    # copy (stable; survives folder moves)
-~/Desktop/anvil/bin/uninstall.sh         # remove all anvil skills (leaves others)
-```
-
-### Group install (a subset)
-
-Anvil ships as three composable plugin groups. Install only what you need:
-
-```bash
-~/Desktop/anvil/bin/install.sh --group core           # 3 skills: sweep + self-review + recap
-~/Desktop/anvil/bin/install.sh --group pr             # 3 skills: dispatch + gate + auto-merge
-~/Desktop/anvil/bin/install.sh --group orchestrator   # 2 skills: spec + grind
-```
-
-| Group | Skills | When to install |
-|---|---|---|
-| `anvil-core` | `/sweep-worktrees` `/self-review` `/recap` | Everyday helpers — useful even without the rest |
-| `anvil-pr` | `/dispatch-slice` `/pre-merge-gate` `/auto-merge` | Per-PR cycle — recommended with `anvil-core` |
-| `anvil-orchestrator` | `/spec` `/grind` | End-to-end plan-to-merged-PR drive — composes `anvil-pr` |
-
-Higher groups recommend lower groups but don't require them. See [`groups/README.md`](groups/README.md) for the layered model.
-
-Anvil installs each skill at `~/.claude/skills/<name>/` so Claude Code discovers them via the standard skills directory.
-
-## Configuration (per-repo)
-
-Skills look for project-specific config in your repo:
+`/pre-merge-gate` and `/grind` read project-specific config from your repo:
 
 | Path | Used by | Shape |
 |---|---|---|
 | `.anvil/forbidden-patterns.txt` | `/pre-merge-gate` | grep patterns + path globs that block merge |
-| `.anvil/pre-merge-gate.config.json` | `/pre-merge-gate` | rebase target, test baselines, knowable flakes |
-| `.anvil/grind-state.json` | `/grind` | per-plan execution state (auto-managed) |
-| `docs/plans/*.md` | `/spec`, `/grind` | plan files |
-| `~/.claude/showme/*.html` | `/recap`, `/showme` | visual artifacts |
+| `.anvil/pre-merge-gate.config.json` | `/pre-merge-gate` | rebase target, test baselines, known flakes |
+| `.anvil/known-flakes.txt` | `/grind` | retry-once patterns |
+| `.anvil/grind-events.jsonl` | `/grind` | append-only event log (auto-managed) |
 
-See `skills/pre-merge-gate/templates/` for starter configs.
+Starter templates in `skills/pre-merge-gate/templates/`. Use `/config-bootstrap` to fill them from your project's docs.
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md). TL;DR:
-
-1. Each skill is a `SKILL.md` with YAML frontmatter — edit and re-install.
-2. Open a PR with a clear title and a fully-filled template.
-3. New skills: add to `.claude-plugin/plugin.json`, add a brief test plan in the PR.
-4. Major changes: capture them as an anvil plan first (use anvil to ship anvil).
-
-## Hosting the landing page
-
-`docs/index.html` is the project's landing page. To serve it:
-
-1. Push the repo to GitHub.
-2. **Settings → Pages → Source: Deploy from a branch → main → /docs**.
-3. The page goes live at `https://browerthomas.github.io/Anvil/` within a minute.
-
-GitHub Pages also renders `docs/architecture.md` and `docs/getting-started.md` as web pages at the same root — you get free `/architecture.html` and `/getting-started.html` routes.
-
-For a custom domain, add a `CNAME` file under `docs/` containing your domain (e.g. `anvil.tools`) and configure DNS per [GitHub's docs](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site).
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for skill style, PR conventions, and the major-changes workflow (anvil ships anvil — use `/spec` + `/grind` for big changes).
 
 ## License
 
-[MIT](LICENSE) — your plan, your hammer, your ship.
+[MIT](LICENSE).

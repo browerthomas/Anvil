@@ -84,6 +84,18 @@ For changes that span ≥3 skills or break the layer model:
 
 Be kind. Argue ideas, not people. Disagree publicly, then commit. No bots, no sock-puppets, no harassment. Maintainers reserve the right to remove abusive content + ban repeat offenders.
 
+## Hosting `docs/index.html` on GitHub Pages
+
+For maintainers / forkers who want to publish the landing page:
+
+1. Push the fork to GitHub.
+2. **Settings → Pages → Source: Deploy from a branch → main → /docs**.
+3. The page goes live at `https://<owner>.github.io/<repo>/` within a minute.
+
+GitHub Pages also renders `docs/architecture.md` and `docs/getting-started.md` as web pages at the same root — you get free `/architecture.html` and `/getting-started.html` routes.
+
+For a custom domain, add a `CNAME` file under `docs/` containing your domain and configure DNS per [GitHub's docs](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site).
+
 ## License
 
 By contributing, you agree your contributions are licensed under [MIT](LICENSE).
