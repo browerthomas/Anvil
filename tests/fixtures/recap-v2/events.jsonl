@@ -1,0 +1,7 @@
+{"t":"2026-05-11T10:00:00Z","ev":"plan-init","slice":"","data":{"plan_path":"docs/plans/fixture/","slices":{"S1":{"status":"pending"},"S2":{"status":"pending"},"S3":{"status":"pending"}}}}
+{"t":"2026-05-11T10:01:00Z","ev":"slice-dispatched","slice":"S1","data":{"pr":1010}}
+{"t":"2026-05-11T10:02:00Z","ev":"slice-merged","slice":"S1","data":{"pr":1010}}
+{"t":"2026-05-11T10:03:00Z","ev":"slice-dispatched","slice":"S2","data":{"pr":1011}}
+{"t":"2026-05-11T10:04:00Z","ev":"slice-merged","slice":"S2","data":{"pr":1011}}
+{"t":"2026-05-11T10:05:00Z","ev":"slice-dispatched","slice":"S3","data":{"pr":1012}}
+{"t":"2026-05-11T10:06:00Z","ev":"slice-merged","slice":"S3","data":{"pr":1012}}

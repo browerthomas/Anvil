@@ -1,19 +1,33 @@
 ---
 name: recap
-description: Use after a multi-PR sprint to generate a visual session-recap HTML page — PRs shipped, issues filed/closed, test count delta, lessons learned. Drops a self-contained HTML under `~/.claude/showme/` and opens in browser. Pairs with /session-closeout (which writes the memory file). Invoke with /recap or when the operator says "recap the session", "show me what shipped", "session summary page", "post-sprint visual", or similar.
+description: Use after a multi-PR sprint to generate a session-recap. Two modes — v1 (visual HTML page in ~/.claude/showme/) and v2 (structured TLDR + WHY markdown with citation resolution). Pairs with /session-closeout. Invoke with /recap, /recap --v2, or when the operator says "recap the session", "show me what shipped", "session summary page", "post-sprint visual", "what assumptions changed", "what's the residual risk".
 ---
 
-# /recap — visual session-recap HTML
+# /recap — session recap (v1 visual + v2 structured WHY)
 
-After a multi-PR sprint, a markdown summary is fine — but a visual page is faster to scan and nicer to drop into a daily journal / Slack post / project log. This skill codifies the format.
+After a multi-PR sprint, a markdown summary is fine — but a visual page is faster
+to scan, and an operator who wants to know "why did we end up here?" needs the
+structured WHY engine. This skill ships both.
+
+- **v1 mode** — visual HTML page under `~/.claude/showme/`. Layout-heavy, scan-
+  friendly, pasteable into a project log or Slack post. **Default mode.**
+- **v2 mode** — structured markdown. TLDR (4 sentences, one per WHY section) +
+  four named WHY sections (What shipped / What assumptions changed / What
+  architectural drift / What residual risk). Sections 3-5 require **citation**
+  using a three-form vocabulary; the script runs **citation resolution** on the
+  output and fails the build if any citation can't be resolved.
 
 ## When to invoke
 
 - After a multi-PR sprint (≥3 PRs merged in one session).
-- Operator says "recap", "show me what shipped", "session summary", "post-sprint visual".
-- Pairs with `/session-closeout` (which writes the memory file). Recap is the visual companion.
+- Operator says "recap", "show me what shipped", "session summary", "post-
+  sprint visual" → **v1**.
+- Operator says "what assumptions changed", "what's the residual risk",
+  "structured recap", "WHY recap" → **v2**.
+- Pairs with `/session-closeout` (which writes the memory file). The recap is
+  the readable companion; the memory file is the durable record.
 
-## Procedure
+## v1 Procedure (visual HTML)
 
 ### Step 1: Gather the data
 
@@ -89,12 +103,91 @@ The recap page should fit in one viewport at 1280×800 with no scroll for the he
 open ~/.claude/showme/<filename>.html
 ```
 
-Then in chat: file path + 2-sentence headline ("14 PRs merged across two sessions, v3 issue tracker emptied of code-side P0/P1/P2.")
+Then in chat: file path + 2-sentence headline ("14 PRs merged across two sessions, v3 issue tracker emptied of code-side P0/P1/P2.").
+
+## v2 Procedure (structured WHY + citation resolution)
+
+### Step 1: Render the prompt
+
+```bash
+bash skills/recap/scripts/build-recap.sh --v2 --plan docs/plans/<slug>/
+```
+
+Without `--model-cmd` set, this emits the structured prompt to stdout. The
+prompt embeds the event log excerpt, PR list in window, plan tasks.md, the
+decisions log (`.anvil/learnings.jsonl` rows with `type:decision`), and the
+slice-merged diff stats.
+
+### Step 2: Hand the prompt to a model
+
+```bash
+bash skills/recap/scripts/build-recap.sh --v2 \
+  --plan docs/plans/<slug>/ \
+  --output /tmp/recap-v2.md \
+  --model-cmd 'claude --print --model opus'
+```
+
+The `--model-cmd` shell command receives the prompt on stdin and is expected to
+emit the markdown recap on stdout. Any command works:
+- `claude --print --model opus` (Opus via Claude CLI)
+- `codex chat --no-banner` (Codex CLI)
+- `cat > /tmp/in.md; nano /tmp/out.md; cat /tmp/out.md` (manual fill-in)
+
+### Step 3: Citation resolution runs automatically
+
+The script validates two things on the model output:
+
+1. **Structure.** Required sections in order: `## TLDR`, `## What shipped`,
+   `## What assumptions changed`, `## What architectural drift`, `## What
+   residual risk`. TLDR must be exactly 4 sentences.
+
+2. **Citation resolution.** Every bullet in sections 3-5 ("What assumptions
+   changed" / "What architectural drift" / "What residual risk") must contain
+   at least one citation matching one of three forms — and each citation MUST
+   resolve.
+
+### Citation vocabulary
+
+Three forms. Pinned across design, tasks, specs. No new forms.
+
+| Form | Example | Resolution check |
+|------|---------|------------------|
+| `path/to/file.ext:N` | `web/server.js:142` | File must exist + `wc -l` >= N. |
+| `#PR_NUMBER` | `#1010` | `gh pr view N` exits 0 (offline: fixture allowlist). |
+| `<commit-sha>` | `<a1b2c3d>` or `<a1b2c3def4567...>` | `git cat-file -e <sha>` exits 0. |
+
+A bullet may contain multiple citations. As long as at least one resolves, the
+bullet passes. **A hallucinated `#9999` fails the build** — operators have
+caught models inventing plausible-looking PR numbers; the citation-resolution
+pass closes that loop.
+
+### Offline mode
+
+Set `GH_OFFLINE=1` to skip `gh pr view` calls. The script falls back to a
+fixture allowlist at `.anvil/recap-pr-allowlist.txt` (one PR number per line)
+or whatever `--pr-allowlist <path>` points at. SHA + file:line citations still
+resolve locally.
+
+### Output
+
+If `--output <path>` is supplied, the v2 markdown lands there. Otherwise it
+prints to stdout. The first content in the output is `## TLDR` — operators
+scan-read the TLDR; the WHY sections live below.
 
 ## Cadence
 
-Run at the end of every multi-PR sprint. Pair with `/session-closeout` — the memory file is the durable record, the HTML is the readable one.
+- v1 — run at the end of every multi-PR sprint.
+- v2 — run at the end of plan-driven sprints where WHY matters (operator
+  briefing future-self, decision-records audit, retrospective).
+- Pair both with `/session-closeout`.
 
 ## Style reference
 
-If a previous recap exists at `~/.claude/showme/<YYYYMMDD-HHMMSS>-recap-<slug>.html`, reference it to keep the style consistent across runs. Otherwise, use the layout shape above as the canonical structure.
+If a previous v1 recap exists at `~/.claude/showme/<YYYYMMDD-HHMMSS>-recap-<slug>.html`, reference it to keep the style consistent across runs. Otherwise, use the layout shape above as the canonical structure.
+
+## Files
+
+- `scripts/build-recap.sh` — entry point. `--v2` enables structured mode;
+  `--resolve <file>` re-runs validation + citation resolution against an
+  already-generated markdown file (used for tests).
+- `templates/why-recap.md` — the structured prompt template for v2.
