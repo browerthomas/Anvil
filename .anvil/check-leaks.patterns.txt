@@ -1,0 +1,21 @@
+# check-leaks.patterns.txt — anvil's own forbidden-pattern list.
+#
+# Anvil is OSS. The maintainer's other projects should never appear in any
+# anvil-committed file. These three substrings are the maintainer's primary
+# project codenames; if they surface in committed anvil work, that's a leak.
+#
+# Format: <substring-or-regex> :: <path-glob> :: <exclusion-glob>
+# See `.anvil/check-leaks.patterns.example.txt` for the full format spec.
+#
+# `docs/plans/**` is excluded because the plan files for D1 itself reference
+# these terms while documenting the gate. The plan files are scoped to the
+# sprint and are not customer-facing.
+#
+# `tests/smoke/**` is excluded because the anti-leak smoke tests legitimately
+# reference these strings (e.g. asserting they DON'T appear in skill files).
+# Same reasoning for the script itself (the patterns file is already excluded
+# automatically — see bin/check-leaks.sh `case "$file" in` block).
+
+theirownstory :: **/* :: docs/plans/**;tests/smoke/**
+BookGen :: **/* :: docs/plans/**;tests/smoke/**
+tos-arch :: **/* :: docs/plans/**;tests/smoke/**

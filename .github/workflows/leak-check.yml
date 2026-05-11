@@ -1,0 +1,122 @@
+name: leak-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write  # to post the override-comment when [leak-allow:] is present
+
+jobs:
+  check-leaks:
+    name: pre-merge leak grep
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history so CHANGELOG past-entry exclusion sees historical lines
+
+      - name: Verify required tools
+        run: |
+          set -e
+          for tool in bash grep awk sort; do
+            if ! command -v "$tool" >/dev/null 2>&1; then
+              echo "::error::required tool missing: $tool"
+              exit 2
+            fi
+          done
+
+      - name: Detect PR-body override
+        id: override
+        if: github.event_name == 'pull_request'
+        env:
+          # IMPORTANT: PR body is untrusted user input — interpolate via env, never
+          # directly into a `run:` shell. See:
+          # https://github.blog/security/vulnerability-research/how-to-catch-github-actions-workflow-injections-before-attackers-do/
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -e
+          # Match `[leak-allow: <reason>]` ONLY when it appears at the start of a
+          # line (with optional leading whitespace). Anchor prevents false-matches
+          # on backtick-fenced examples (e.g. a PR documenting the override
+          # mechanic would otherwise accidentally trigger it).
+          if printf '%s' "$PR_BODY" | grep -qE '^[[:space:]]*\[leak-allow:[[:space:]]*[^]]+\]'; then
+            REASON=$(printf '%s' "$PR_BODY" | grep -oE '^[[:space:]]*\[leak-allow:[[:space:]]*[^]]+\]' | head -1 | sed -E 's/^[[:space:]]*\[leak-allow:[[:space:]]*//; s/\]$//')
+            echo "override=true" >> "$GITHUB_OUTPUT"
+            echo "reason<<EOF_REASON_MARKER" >> "$GITHUB_OUTPUT"
+            echo "$REASON" >> "$GITHUB_OUTPUT"
+            echo "EOF_REASON_MARKER" >> "$GITHUB_OUTPUT"
+          else
+            echo "override=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run check-leaks.sh
+        id: scan
+        run: |
+          set -uo pipefail
+          # Don't `set -e` here — the script's exit code IS the signal.
+          bash bin/check-leaks.sh
+          rc=$?
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          # Exit-code contract:
+          #   0 → clean
+          #   1 → pattern leak found (will be soft-passed only if PR body has override)
+          #   2 → script crash / dependency missing — fail-closed
+          #   3 → conflict marker found — NEVER soft-pass, even with override
+          if [ "$rc" -eq 2 ]; then
+            echo "::error::check-leaks.sh crashed (rc=2). Workflow fails closed."
+            exit 2
+          fi
+          if [ "$rc" -eq 3 ]; then
+            echo "::error::check-leaks.sh found a stale conflict marker (rc=3). PR-body override cannot waive this — fix the marker."
+            exit 3
+          fi
+          # rc=0 / rc=1 are not fatal here; the next step decides.
+          exit 0
+
+      - name: Decide pass/fail
+        env:
+          SCAN_RC: ${{ steps.scan.outputs.rc }}
+          OVERRIDE: ${{ steps.override.outputs.override }}
+          OVERRIDE_REASON: ${{ steps.override.outputs.reason }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -e
+          if [ "$SCAN_RC" = "0" ]; then
+            echo "✓ no leaks found"
+            exit 0
+          fi
+          if [ "$SCAN_RC" = "1" ] && [ "$OVERRIDE" = "true" ]; then
+            echo "~ leak(s) found, but PR body has [leak-allow: ...] override"
+            echo "  reason: $OVERRIDE_REASON"
+            if [ -n "$PR_NUMBER" ]; then
+              # OVERRIDE_REASON is already shell-quoted as $OVERRIDE_REASON; safe to
+              # interpolate in the heredoc since it came in via env (not directly
+              # from the PR-body expression).
+              COMMENT_BODY=$(cat <<EOF
+          **leak-check soft-passed via PR-body override**
+
+          The pre-merge leak grep found one or more forbidden patterns, but the PR body contains a \`[leak-allow:]\` directive — so this run soft-passes.
+
+          - **Reason given:** ${OVERRIDE_REASON}
+          - **Review the scan output** in the leak-check workflow logs before merging.
+          - **If this override is unjustified**, update the PR body to remove it + push the leak-bearing file out of the diff.
+
+          (Posted by .github/workflows/leak-check.yml)
+          EOF
+          )
+              if ! gh pr comment "$PR_NUMBER" --body "$COMMENT_BODY"; then
+                echo "::error::failed to post override audit comment — override requires a posted comment for the audit trail. Workflow fails closed."
+                exit 1
+              fi
+            fi
+            exit 0
+          fi
+          echo "::error::leak-check FAILED — see scan step output. To override (with justification), add [leak-allow: <reason>] to the PR body on a line of its own (not inside a code block) and re-run."
+          exit 1

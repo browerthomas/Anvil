@@ -1,0 +1,56 @@
+# check-leaks.patterns.txt — read by bin/check-leaks.sh + the CI workflow.
+#
+# This is the EXAMPLE / TEMPLATE file. Anvil ships `.anvil/check-leaks.patterns.example.txt`
+# but does not auto-create `.anvil/check-leaks.patterns.txt`. To adopt the
+# gate for your repo:
+#
+#   1. Copy this file to `.anvil/check-leaks.patterns.txt` in your repo.
+#   2. Replace the example patterns below with patterns specific to your
+#      project — codenames, leaked-secret shapes, named individuals, etc.
+#   3. Decide whether to commit `.anvil/check-leaks.patterns.txt` (recommended
+#      for transparency) or gitignore it (recommended if the patterns
+#      themselves are sensitive). Anvil ignores the live file by default.
+#
+# Format:
+#   <substring-or-regex> :: <path-glob> :: <exclusion-glob>
+#
+# - <substring-or-regex>: extended-regex (grep -E), case-sensitive by default.
+#                         Use `(?i)` syntax is NOT supported; instead include
+#                         both casings in the regex: `(?:Foo|foo|FOO)`.
+# - <path-glob>:          shell glob matched against the file path. Multiple
+#                         globs separated by `;`. Examples: `**/*`, `**/*.md`,
+#                         `src/**`. If empty, defaults to `**/*` (everything).
+# - <exclusion-glob>:     optional. Multiple globs separated by `;`. A path
+#                         matching any exclusion is skipped from this rule.
+#                         Useful for letting a single doc explicitly discuss
+#                         the forbidden term (e.g. a post-mortem).
+#
+# Lines starting with `#` are comments. Empty lines ignored.
+#
+# Auto-exclusions (no config needed):
+# - Past CHANGELOG entries (`## [vN.M.K] - YYYY-MM-DD` blocks). Old release
+#   notes can reference project codenames without failing the check.
+# - Stale conflict markers (`<<<<<<<` / `=======` / `>>>>>>>`) are caught
+#   without any pattern — hardcoded into the script.
+#
+# Override (CI-only): add `[leak-allow: <reason>]` to a PR body to soft-pass
+# the check with a PR comment. Use sparingly + always justify.
+#
+# ── ILLUSTRATIVE EXAMPLES (all commented out — none block anything) ──────────
+#
+# Project-codename leak protection (most common use case):
+#   secret-project-name :: **/* :: docs/post-mortems/**
+#
+# Named-individual leak protection (don't ship maintainer-private names):
+#   \bJane Doe\b :: **/* ::
+#
+# Internal-only acronym (allowed in CHANGELOG history + post-mortems, blocked
+# elsewhere):
+#   \bACME-INTERNAL\b :: **/*.md :: CHANGELOG.md;docs/post-mortems/**
+#
+# Hardcoded-secret shapes (cheap-and-cheerful):
+#   sk-[a-zA-Z0-9]{20,} :: **/* ::
+#   AKIA[0-9A-Z]{16} :: **/* ::
+#
+# Stale internal URL pattern (e.g. when migrating off a private staging host):
+#   staging\.internal\.example\.com :: **/* ::
