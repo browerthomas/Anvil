@@ -65,6 +65,15 @@ done
 [ -z "$BASE" ] && BASE=$(av_default_base_branch)
 [ -z "$SCOPE_NAME" ] && SCOPE_NAME="$ID"
 
+# PR-exists idempotency check (anvil#7): if an open PR already exists
+# on this branch (e.g. from a previous failed dispatch attempt), embed
+# the PR number so the agent updates the existing one instead of trying
+# `gh pr create` and getting a "PR already exists" error.
+EXISTING_PR=""
+if command -v gh >/dev/null 2>&1; then
+  EXISTING_PR=$(av_existing_pr_for_branch "$BRANCH")
+fi
+
 # Read project-defaults if present
 REPO_ROOT=$(av_repo_root) || REPO_ROOT="."
 PROJECT_DEFAULTS_FILE="$REPO_ROOT/.anvil/dispatch-defaults.txt"
@@ -152,7 +161,7 @@ cat <<EOF
    - \`npx vitest run\` (must hit the test target)
    - Architecture fitness must stay green
 5. Commit with the message format above. Push the branch.
-6. Open a PR against \`${BASE#origin/}\` via \`gh pr create\`. Fill the PR template (\`.github/pull_request_template.md\`) fully.${CODEX_SECTION}
+6. ${EXISTING_PR:+**PR #${EXISTING_PR} already exists on this branch (from a previous dispatch attempt).** Run \`gh pr edit ${EXISTING_PR} --body "<new body>"\` to update it. Do NOT run \`gh pr create\`. Fill the PR template fully.}${EXISTING_PR:-Open a PR against \`${BASE#origin/}\` via \`gh pr create\`. Fill the PR template (\`.github/pull_request_template.md\`) fully.}${CODEX_SECTION}
 
 ## Return shape
 

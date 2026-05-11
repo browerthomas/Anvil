@@ -102,6 +102,15 @@ av_pr_branch() {
   gh pr view "$1" --json headRefName 2>/dev/null | jq -r '.headRefName'
 }
 
+av_existing_pr_for_branch() {
+  # Returns the PR number for a given branch (open or draft), or empty.
+  # Pass branch name as $1. If multiple, returns the first (most recent).
+  # Returns empty + exit 0 if no PR found.
+  local branch="$1"
+  [ -z "$branch" ] && return 0
+  gh pr list --head "$branch" --state open --json number --jq '.[0].number' 2>/dev/null
+}
+
 av_pr_checks_summary() {
   # Echoes per-check status, one per line: "<bucket> <name>"
   gh pr checks "$1" --json name,bucket 2>/dev/null \
