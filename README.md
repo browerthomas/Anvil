@@ -14,10 +14,13 @@
 
 Anvil is a Claude Code skill suite that takes a multi-slice plan and drives it from spec → PRs → merged. Markdown skills + bash + MCP. No platform, no compilation, no lock-in.
 
+**Tired of Claude stopping mid-sprint?** State lives in plan files + an append-only event log + worktrees on disk — not the conversation. Stop and resume anywhere. The next slice fires in a fresh agent with full context.
+
 ## Who it's for
 
 - **Solo developers who want the agent to handle the GitHub review + merge dance**, not just write the code. Adversarial review, pre-merge gate, squash + branch + worktree cleanup — all scripted.
 - **Operators running multi-slice sprints** who want agent dispatch + review + merge orchestrated end-to-end across a dependency graph, pausing only at decision points they defined.
+- **Anyone who's hit Claude's conversation limit mid-implementation** and lost track of what shipped, what didn't, and what to fix.
 
 ## Quickstart
 
