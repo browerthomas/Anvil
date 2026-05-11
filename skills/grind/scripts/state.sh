@@ -161,11 +161,17 @@ emit_event() {
 # Fold all events into a snapshot view + write to grind-snapshot.json.
 refresh_snapshot() {
   jq -s '
-    # Find plan-init
-    (map(select(.ev == "plan-init")) | last) as $init
+    # Drop sentinel/doc lines (no .ev field) up front so downstream filters
+    # never see a null .ev. Fixtures sometimes carry a first-line {"_doc":...}
+    # comment for the backward-compat-guard pattern (mirrors anvil-status).
+    map(select(.ev != null and (.ev | type) == "string")) as $events
+    | ($events
+       | map(select(.ev == "plan-init")) | last) as $init
     | ($init.data.slices // {}) as $slices
-    | (map(select(.ev == "issue-filed")) | map(.data.number) | unique) as $issues
-    | (map(select(.ev | startswith("slice-") or . == "decision"))) as $slice_events
+    | ($events
+       | map(select(.ev == "issue-filed")) | map(.data.number) | unique) as $issues
+    | ($events
+       | map(select(.ev | startswith("slice-") or . == "decision"))) as $slice_events
     | reduce $slice_events[] as $e (
         {plan_path: ($init.data.plan_path // null), started_at: ($init.t // null), slices: $slices, issues_filed: $issues, decisions: []};
         if $e.ev == "slice-in-flight"  then .slices[$e.slice].status = "in-flight"  | .slices[$e.slice].agent_id = $e.data.agent_id | .slices[$e.slice].worktree = $e.data.worktree | .slices[$e.slice].dispatched_at = $e.t
