@@ -8,9 +8,21 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 
 - The skill formerly known as `/persona` is now `/lens`. C1 (PR #44) renamed `skills/persona/` → `skills/lens/` and `.anvil/persona-context.md` → `.anvil/lens-context.md`. C2 (PR #46) sweeps the remaining internal text references — README + landing + this CHANGELOG's [Unreleased] block + dispatch-slice / grind composition notes + test fixtures.
 - "Review lens" vocabulary is consistent across all anvil-internal docs. The 17 role files under `skills/lens/lenses/{systems,saas,generic}/` are referred to as **lenses**, not personas. Bare-name lookup + the `oncall-3am` → `systems/sre-incident-responder` shim still work.
-- Landing-page badge copy: `18 skills · 17 review lenses` (was `16 skills · 17 adversarial personas`). Skill count is the real current value (18, post-D4).
+- Landing-page badge copy: `19 skills · 17 review lenses` (was `16 skills · 17 adversarial personas`). Skill count is the real current value (19, post-D5).
 - **Operator action post-merge:** re-run `bin/install.sh` (auto-invokes the migrator that removes any stale `~/.claude/skills/persona/` install). Then `grep -l '/persona' ~/.claude/projects/*/memory/MEMORY.md` and rewrite operator memory references to `/lens`.
 - Past CHANGELOG entries (date-prefixed semver blocks below) preserve `/persona` as historical wording — that's the language used at the time they shipped. The [Unreleased] block is updated to current `/lens` terminology because it describes the next-release surface area.
+
+### Added — `/plan-health` + `/learn-promote` close the cleanup-debt observability gap (D5, anvil#29 + anvil#30)
+
+- Two skills shipped together. Both operate against existing `.anvil/grind-events.jsonl` + `.anvil/learnings.jsonl` state — no new state surfaces.
+- **`/plan-health <plan-path>`** computes a per-plan follow-up filing-vs-closing ratio over the most recent 3 merged slices. Flags when filing > closing × 1.5 for 3 consecutive slices. **Non-blocking by contract** — when the gate fires it appends one `plan-health-degraded` event to `.anvil/grind-events.jsonl` + posts a metric snapshot comment on the most-recent open PR. Never pauses `/grind` dispatch. Operator override is not needed because the gate never blocks.
+- The metric is per-plan, sliding-3-slice window. Filed-this-slice = issues whose `issue-filed` event sits between this slice's `slice-in-flight` and `slice-merged` timestamps. Closed-this-slice = the subset of those issues whose `gh` close timestamp falls before this slice's `slice-merged` event.
+- Insufficient-data branches don't flag: fewer than 3 merged slices, total filed across the window is zero, or `GH_OFFLINE=1` (close ratios unknowable).
+- Auto-invoked by `/grind` step h.5 (the half-step between h "sync + log" and step 4 "periodic check-in"). Wired in `skills/grind/SKILL.md` procedure section. Failure modes (gh rate-limited, no PR derivable, plan-health crash) caught + logged; `/grind` continues unaffected.
+- **`/learn-promote --since <date> [--min-confidence <conf>]`** drafts a MEMORY.md-pasteable markdown chunk of high-confidence learnings recorded since a given date. Defaults to `--min-confidence high` (sister `/learn export` defaults to medium); decisions appear FIRST in the output (most-durable type-order); each entry emits a Pasteable bullet line shaped to match operator MEMORY.md style.
+- Smoke tests in `tests/smoke/plan-health.bats` (14 cases) + `tests/smoke/learn-promote.bats` (16 cases). Cover: gate fires on 3 degraded slices, gate does NOT fire when one slice is healthy, < 3 merged slices = insufficient, vacuous (zero filed) = no flag, `--dry-run` snapshot path, GH_OFFLINE skip, /grind step h.5 documentation pin, decisions-first ordering, --min-confidence widening, --type filter, affected-slice surfaced for decisions.
+- Skill count bumps 18 → 19. Four-way consistency test from D3 enforces the bump propagates to README + landing badge + skills disclosure summary + plugin.json.
+- Closes anvil#29 + anvil#30. Slice D5 of `docs/plans/2026-05-11-positioning-and-state-product/`.
 
 ### Added — `/followup-rollup` consolidates open follow-up issues for a plan (D4, anvil#28)
 

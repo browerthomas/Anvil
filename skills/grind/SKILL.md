@@ -129,6 +129,25 @@ If BLOCKED: log the failure, don't merge, file an issue with the specific failur
 
 Pull main locally. Update orchestration state (which slices merged, which deferred, which open).
 
+#### h.5. Non-blocking plan-health gate
+
+Auto-invoke `/plan-health <plan-path>` after each `slice-merged` event has been appended. The gate computes a per-plan follow-up filing-vs-closing ratio over the most recent 3 slices and flags drift when filing > closing × 1.5 for 3 consecutive slices.
+
+**Non-blocking by contract.** When the gate fires it:
+
+- Appends one `plan-health-degraded` event to `.anvil/grind-events.jsonl` (audit trail).
+- Posts a metric snapshot comment on the most-recent open PR.
+
+It NEVER pauses `/grind` dispatch. The loop continues to the next slice regardless of gate outcome. Failure modes (gh rate-limited, no PR derivable, plan-health crash) are caught + logged; `/grind` continues unaffected.
+
+Wired to:
+
+```
+bash skills/plan-health/scripts/check-health.sh <plan-path>
+```
+
+Skip the hook via `--no-plan-health` for codex-outage windows where gh is already saturated. Skipping does not break orchestration — it's just one fewer best-effort signal.
+
 ### Step 4: Periodic check-in
 
 Every N slices (operator-configurable; default 5): print a one-line status:

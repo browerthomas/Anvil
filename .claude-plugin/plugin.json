@@ -25,7 +25,8 @@
     "skills/learn",
     "skills/lens",
     "skills/anvil-status",
-    "skills/followup-rollup"
+    "skills/followup-rollup",
+    "skills/plan-health"
   ],
   "templates": [
     "templates/plan-template.md"

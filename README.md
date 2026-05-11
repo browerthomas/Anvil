@@ -96,7 +96,7 @@ If you adopt anvil and want to be added here, open a PR.
 
 ## Skills
 
-18 skills. You won't call all of them — `/grind` composes most. Plain-English descriptions below; skill names stay stable for backwards compatibility.
+19 skills. You won't call all of them — `/grind` composes most. Plain-English descriptions below; skill names stay stable for backwards compatibility.
 
 | Skill | What it does |
 |---|---|
@@ -118,6 +118,7 @@ If you adopt anvil and want to be added here, open a PR.
 | [`/recap`](skills/recap/SKILL.md) | After a multi-PR sprint, generate a session recap. Two modes — v1 (visual HTML page in `~/.claude/showme/`) and v2 (structured TLDR + WHY markdown with citation resolution). |
 | [`/anvil-status`](skills/anvil-status/SKILL.md) | Read-only rank-ordered text dashboard of a plan's state — what to think about next, what's in-flight, what's blocked, what's shipped, what's deferred — plus cumulative test delta + open follow-up count. Folds `.anvil/grind-events.jsonl` + tasks.md + `gh pr list` (or `GH_OFFLINE=1` fallback). |
 | [`/followup-rollup`](skills/followup-rollup/SKILL.md) | Consolidate open follow-up issues for a multi-slice plan. Walks issues whose title carries the `[<plan>-<slice> followup]` prefix, groups by severity (P0/P1/P2/P3) + area (test-coverage / correctness / architecture / operability), suggests which slice should consume each cluster. Output: markdown pasteable into a planning doc. |
+| [`/plan-health`](skills/plan-health/SKILL.md) | Non-blocking gate that flags when follow-up filing outpaces closing by 1.5× for three slices in a row. Auto-invoked by `/grind` step h.5 post-merge. Appends a `plan-health-degraded` event + comments on the most-recent open PR; never pauses dispatch. |
 
 ### Optional companions
 
