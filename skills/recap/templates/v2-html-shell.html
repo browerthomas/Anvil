@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{{title}}</title>
+<style>
+  :root {
+    --bg: #0e1014;
+    --surface: #161a21;
+    --surface-2: #1d2128;
+    --border: #232830;
+    --border-strong: #2d333d;
+    --text: #e6e8eb;
+    --text-2: #b8bec7;
+    --text-3: #6f7681;
+    --green: #4caf6c;
+    --green-dim: #2e7d50;
+    --amber: #d4a040;
+    --amber-dim: #8a6520;
+    --red: #d04848;
+    --red-dim: #8a3030;
+    --blue: #5a8ed4;
+    --blue-dim: #2a3d5e;
+    --purple: #a06ed4;
+    --purple-dim: #4a2e6a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 48px 48px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  header {
+    margin: 0 0 28px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  h1 { margin: 0; font-size: 26px; letter-spacing: -0.02em; }
+  .subtitle { color: var(--text-3); font-size: 13px; }
+  .badge {
+    display: inline-block;
+    background: var(--surface-2);
+    color: var(--text-2);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  /* TLDR card — prominent at top */
+  .tldr {
+    background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    padding: 22px 28px;
+    margin-bottom: 32px;
+    position: relative;
+  }
+  .tldr-label {
+    position: absolute;
+    top: -10px;
+    left: 22px;
+    background: var(--bg);
+    padding: 0 10px;
+    color: var(--text-3);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .tldr ol {
+    margin: 0;
+    padding-left: 22px;
+    counter-reset: tldr-sentence;
+    list-style: none;
+  }
+  .tldr li {
+    margin: 10px 0;
+    font-size: 15px;
+    color: var(--text);
+    line-height: 1.55;
+    position: relative;
+    padding-left: 6px;
+  }
+  .tldr li::before {
+    counter-increment: tldr-sentence;
+    content: counter(tldr-sentence);
+    position: absolute;
+    left: -22px;
+    top: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text-3);
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  /* WHY sections */
+  section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left-width: 4px;
+    border-radius: 10px;
+    padding: 18px 24px 22px;
+    margin-bottom: 18px;
+  }
+  section.shipped     { border-left-color: var(--green); }
+  section.assumptions { border-left-color: var(--blue); }
+  section.drift       { border-left-color: var(--amber); }
+  section.risk        { border-left-color: var(--red); }
+  section h2 {
+    margin: 0 0 14px;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+    font-weight: 700;
+  }
+  section.shipped     h2 { color: var(--green); }
+  section.assumptions h2 { color: var(--blue); }
+  section.drift       h2 { color: var(--amber); }
+  section.risk        h2 { color: var(--red); }
+  section ul {
+    margin: 0;
+    padding-left: 20px;
+  }
+  section li {
+    margin: 8px 0;
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  section li strong { color: var(--text); }
+  section p {
+    margin: 6px 0;
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  /* Citation pills */
+  .cite {
+    display: inline-block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 4px;
+    margin-left: 4px;
+    text-decoration: none;
+    border: 1px solid var(--border-strong);
+  }
+  .cite-pr   { background: var(--purple-dim); color: #ead0ff; }
+  .cite-file { background: var(--blue-dim); color: #c7d8ee; }
+  .cite-sha  { background: var(--surface-2); color: var(--text-2); }
+  .cite:hover { border-color: var(--text-3); }
+  /* Inline code */
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--text);
+  }
+  /* Footer */
+  footer {
+    margin-top: 32px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text-3);
+    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  /* Light mode */
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f7f8fa;
+      --surface: #ffffff;
+      --surface-2: #eef0f4;
+      --border: #e5e8ed;
+      --border-strong: #d0d4dc;
+      --text: #1a1d23;
+      --text-2: #4a525c;
+      --text-3: #757d87;
+      --green: #2e8b50;
+      --green-dim: #d4f0dc;
+      --amber: #b87800;
+      --amber-dim: #faecc4;
+      --red: #c2302a;
+      --red-dim: #fad4d2;
+      --blue: #3a6ec0;
+      --blue-dim: #d4e0f0;
+      --purple: #7d4ec0;
+      --purple-dim: #ead4f5;
+    }
+    .cite-pr   { color: #4a1a70; }
+    .cite-file { color: #1f4070; }
+    .cite-sha  { color: var(--text-2); }
+  }
+  @media print {
+    body { background: white; color: black; padding: 16px 24px; }
+    section { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>{{title}}</h1>
+    <div class="subtitle">{{subtitle}}</div>
+  </div>
+  <div class="badge">{{generated_at}}</div>
+</header>
+
+<div class="tldr">
+  <div class="tldr-label">TLDR</div>
+  <ol>
+{{tldr_items}}
+  </ol>
+</div>
+
+<section class="shipped">
+  <h2>What shipped</h2>
+{{shipped_body}}
+</section>
+
+<section class="assumptions">
+  <h2>What assumptions changed</h2>
+{{assumptions_body}}
+</section>
+
+<section class="drift">
+  <h2>What architectural drift</h2>
+{{drift_body}}
+</section>
+
+<section class="risk">
+  <h2>What residual risk</h2>
+{{risk_body}}
+</section>
+
+<footer>
+  <div>Generated by /recap v2 — anvil</div>
+  <div class="badge">{{plan_path}}</div>
+</footer>
+</div>
+</body>
+</html>

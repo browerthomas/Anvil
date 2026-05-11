@@ -316,3 +316,70 @@ EOF
   [[ "$output" == *"unrecognised URL-shaped citation"* ]] || \
     [[ "$output" == *"URL-shaped"* ]]
 }
+
+# --- HTML rendering ---------------------------------------------------------
+
+@test "html render: --html emits a self-contained styled HTML file with TLDR + 4 sections + cite pills" {
+  GH_OFFLINE=1 run bash "$BUILD_RECAP" --resolve "$RECAP_FX/good-recap.md" \
+    --pr-allowlist "$RECAP_FX/pr-allowlist.txt" \
+    --html ./recap.html
+  [ "$status" -eq 0 ]
+  [ -f ./recap.html ]
+  # Self-contained — no external <script> or <link> tags.
+  ! grep -qE '<script[[:space:]]+src=|<link[[:space:]]+rel="stylesheet"' ./recap.html
+  # Inline <style> present (the dark-theme shell).
+  grep -q '<style>' ./recap.html
+  # TLDR section + ordered list of sentence-items.
+  grep -q 'tldr-label' ./recap.html
+  grep -q '<ol>' ./recap.html
+  # Four named WHY sections each color-coded.
+  grep -q 'section class="shipped"'     ./recap.html
+  grep -q 'section class="assumptions"' ./recap.html
+  grep -q 'section class="drift"'       ./recap.html
+  grep -q 'section class="risk"'        ./recap.html
+  # Citation pills rendered for each form.
+  grep -q "class='cite cite-pr'"   ./recap.html
+  grep -q "class='cite cite-file'" ./recap.html
+}
+
+@test "html render: --gh-repo links citation pills to the named repo" {
+  GH_OFFLINE=1 run bash "$BUILD_RECAP" --resolve "$RECAP_FX/good-recap.md" \
+    --pr-allowlist "$RECAP_FX/pr-allowlist.txt" \
+    --html ./recap.html \
+    --gh-repo myorg/myproject
+  [ "$status" -eq 0 ]
+  grep -q "github.com/myorg/myproject/pull/" ./recap.html
+}
+
+@test "html render: TLDR with abbreviations renders as exactly 4 numbered <li>s" {
+  cat > recap.md <<'EOF'
+# Recap — abbrev fixture
+
+## TLDR
+
+Mr. Smith shipped 4 slices and Dr. Jones reviewed each. We assumed PR review e.g. via codex would suffice; that held for slices 1-3 but slipped at slice 4. Architectural drift around decision_type: architecture remains contained. Residual risk lives in v1. compatibility mode for legacy callers.
+
+## What shipped
+
+- Slice 1 (#1010).
+
+## What assumptions changed
+
+- Event log shape (#1010).
+
+## What architectural drift
+
+- Resolver branch (#1011).
+
+## What residual risk
+
+- Offline mode (#1012).
+EOF
+  GH_OFFLINE=1 run bash "$BUILD_RECAP" --resolve recap.md \
+    --pr-allowlist "$RECAP_FX/pr-allowlist.txt" \
+    --html ./recap.html
+  [ "$status" -eq 0 ]
+  # Count the TLDR <li> items inside the .tldr div.
+  tldr_count=$(awk '/<div class="tldr">/,/<\/ol>/' ./recap.html | grep -c '<li>')
+  [ "$tldr_count" -eq 4 ]
+}
