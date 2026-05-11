@@ -161,6 +161,8 @@ Starter templates in `skills/pre-merge-gate/templates/`. Use `/config-bootstrap`
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md) for skill style, PR conventions, and the major-changes workflow (anvil ships anvil — use `/spec` + `/grind` for big changes).
 
+Anvil has its own smoke-test suite. Run `make -C tests smoke` before submitting a PR. Requires `bats-core` (`brew install bats-core` / `apt install bats`) and `jq`. See [`tests/README.md`](tests/README.md) for layout and how to add a new test.
+
 ## License
 
 [MIT](LICENSE).

@@ -4,6 +4,7 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 
 ## [Unreleased]
 
+<<<<<<< HEAD
 ### Changed — `/persona` namespaced into `saas/` / `systems/` / `generic/`; 7 new systems personas added
 
 - Anvil's real audience is systems + software engineers, not just SaaS operators. The original 10 personas leaned SaaS-coded (Stripe references, customer-support framing, AI-product exposé lens). The skill now namespaces personas into three categories so systems-engineering work has first-class lenses too.
@@ -23,6 +24,16 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 - **`bin/install.sh` auto-invokes `bin/preflight.sh`** at the end of a successful install. Operators find skill breakage now, not at first `/grind`. Pass `--no-preflight` to skip (used by `tests/install.test.sh`).
 - **`bin/uninstall.sh` removes `~/.claude/anvil-config.sh`** in addition to skill symlinks/copies. Also gains `--prefix <dir>` for symmetry.
 - **`tests/install.test.sh`** added — first end-to-end test in the framework. Installs into a temp HOME via `--prefix`, verifies `anvil-config.sh` lands with the right `ANVIL_ROOT`, every skill script syntax-checks, three representative scripts resolve `shared/lib.sh` cleanly in both copy and symlink modes, preflight exits 0, and uninstall removes the config. `bash tests/install.test.sh` is now the recommended pre-PR check (added to README).
+
+### Added — bats smoke-test suite for all 16 skills (2026-05-11)
+
+- `tests/smoke/` — bats-based smoke-test suite covering all 16 skills + the install / preflight scripts. ~100 tests across 17 files. Catches the obvious-regression class (script blows up on argument parser, SKILL.md drops its frontmatter, persona file leaks a project-private reference, markdown bash block has unbalanced quotes).
+- Per-skill coverage: `/learn` (14 tests across 5 scripts), `/dispatch-slice`, `/config-bootstrap`, `/findings-rollup`, `/spec`, `/grind` (9 tests across state-machine subcommands), `/dual-review`, `/auto-merge`, `/pre-merge-gate`, `/issue-to-spec`. Markdown-only skills (`/recap`, `/refine-plan`, `/self-review`, `/post-merge-debrief`, `/sweep-worktrees`) covered by `markdown-syntax.bats` — every fenced bash block must `bash -n` after placeholder substitution.
+- Cross-cutting tests: every persona file has the `{{project_context}}` placeholder + no project-private leaks; every SKILL.md has YAML frontmatter with a `name:` matching its directory; every script under `skills/*/scripts/` and `bin/` passes `bash -n`.
+- `tests/test_helper.bash` — shared `setup_fresh_repo` + `setup_fresh_repo_with_seed_learnings` + `extract_md_bash_blocks` helpers. Idempotent setup so a test can call its own re-setup mid-flight without `git init` collisions.
+- `tests/Makefile` — `make smoke` target. Single-file mode via `make smoke FILE=learn.bats`.
+- `.github/workflows/smoke-test.yml` — CI runs the suite on every push to `main` and every PR. Ubuntu, `apt install bats jq`, `make -C tests smoke`.
+- `tests/README.md` — covers run instructions, the helper API, how to add a new test, common failure modes.
 
 ### Changed — docs polish per #3 (Bill's feedback, 2026-05-11)
 
