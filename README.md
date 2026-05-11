@@ -90,7 +90,7 @@ If you adopt anvil and want to be added here, open a PR.
 
 ## Skills
 
-17 skills. You won't call all of them — `/grind` composes most. Plain-English descriptions below; skill names stay stable for backwards compatibility.
+18 skills. You won't call all of them — `/grind` composes most. Plain-English descriptions below; skill names stay stable for backwards compatibility.
 
 | Skill | What it does |
 |---|---|
@@ -111,6 +111,7 @@ If you adopt anvil and want to be added here, open a PR.
 | [`/sweep-worktrees`](skills/sweep-worktrees/SKILL.md) | Bulk-clean stale worktrees + branches. Handles cloud-sync-evicted `node_modules` and stale git locks. |
 | [`/recap`](skills/recap/SKILL.md) | Visual HTML session report — PRs shipped, tests added, decisions made, loose ends. Dropped into `~/.claude/showme/`. |
 | [`/anvil-status`](skills/anvil-status/SKILL.md) | Read-only text dashboard of a plan's state — what to think about next, what's in-flight, what's blocked, what's shipped. Folds `.anvil/grind-events.jsonl` + tasks.md + `gh pr list`. |
+| [`/followup-rollup`](skills/followup-rollup/SKILL.md) | Consolidate open follow-up issues for a multi-slice plan. Walks issues whose title carries the `[<plan>-<slice> followup]` prefix, groups by severity (P0/P1/P2/P3) + area (test-coverage / correctness / architecture / operability), suggests which slice should consume each cluster. Output: markdown pasteable into a planning doc. |
 
 ### Optional companions
 

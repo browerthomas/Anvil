@@ -6,11 +6,22 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 
 ### Changed — `/persona` → `/lens` hard rename (2026-05-11)
 
-- The skill formerly known as `/persona` is now `/lens`. C1 (PR #44) renamed `skills/persona/` → `skills/lens/` and `.anvil/persona-context.md` → `.anvil/lens-context.md`. C2 (this PR) sweeps the remaining internal text references — README + landing + this CHANGELOG's [Unreleased] block + dispatch-slice / grind composition notes + test fixtures.
+- The skill formerly known as `/persona` is now `/lens`. C1 (PR #44) renamed `skills/persona/` → `skills/lens/` and `.anvil/persona-context.md` → `.anvil/lens-context.md`. C2 (PR #46) sweeps the remaining internal text references — README + landing + this CHANGELOG's [Unreleased] block + dispatch-slice / grind composition notes + test fixtures.
 - "Review lens" vocabulary is consistent across all anvil-internal docs. The 17 role files under `skills/lens/lenses/{systems,saas,generic}/` are referred to as **lenses**, not personas. Bare-name lookup + the `oncall-3am` → `systems/sre-incident-responder` shim still work.
-- Landing-page badge copy: `17 skills · 17 review lenses` (was `16 skills · 17 adversarial personas`). Skill count is the real current value (17, post-C1).
+- Landing-page badge copy: `18 skills · 17 review lenses` (was `16 skills · 17 adversarial personas`). Skill count is the real current value (18, post-D4).
 - **Operator action post-merge:** re-run `bin/install.sh` (auto-invokes the migrator that removes any stale `~/.claude/skills/persona/` install). Then `grep -l '/persona' ~/.claude/projects/*/memory/MEMORY.md` and rewrite operator memory references to `/lens`.
 - Past CHANGELOG entries (date-prefixed semver blocks below) preserve `/persona` as historical wording — that's the language used at the time they shipped. The [Unreleased] block is updated to current `/lens` terminology because it describes the next-release surface area.
+
+### Added — `/followup-rollup` consolidates open follow-up issues for a plan (D4, anvil#28)
+
+- New skill `/followup-rollup <plan-path>` walks open issues whose title carries the `[<plan>-<slice> followup]` prefix, groups by severity (P0/P1/P2/P3) + area (test-coverage / correctness / architecture / operability), suggests which slice should consume each cluster. Output: markdown rollup pasteable into a planning doc. Read-only — no state mutation, no issues touched.
+- **Severity derivation**: label (`p0`/`p1`/`p2`/`p3`, case-insensitive) > title token (`[P0]`/`[P1]`/`[P2]`/`[P3]`) > body marker (`**Severity:** Pn`) > `P3` fallback.
+- **Area derivation**: label (`test-coverage`/`correctness`/`architecture`/`operability`) > title-keyword heuristic (e.g. `test|coverage|flaky` → test-coverage; `bug|broken|race` → correctness; `refactor|coupling|layer` → architecture; `log|metric|observability` → operability) > `correctness` fallback.
+- **Title-prefix-enforcement gap audit**: as of 2026-05-11, the `[<plan>-<slice> followup]` title prefix is NOT enforced by `/findings-rollup` (which uses `[<severity>/<category-rollup>] <slug> review followups (#<pr>)` format) or `/grind` (template only — `file_followup()` is pseudocode). The skill **fails gracefully** when zero matching issues are found: emits a friendly "no follow-ups" placeholder + a one-liner explaining the gap so the operator can decide whether to retrofit the prefix into the upstream filing path.
+- **Offline support**: `--fixture <path>` flag accepts a local JSON file (matching `gh issue list --json title,number,labels,body` shape) for testing + air-gapped runs; `GH_OFFLINE=1` short-circuits to the empty placeholder without invoking `gh`.
+- Composes with `/anvil-status` (which says how many follow-ups are open) — this skill says which + groups them.
+- Smoke tests in `tests/smoke/followup-rollup.bats` cover (a) zero matching issues + gap note, (b) one-per-slice grouping, (c) prefix-less issues excluded, (d) severity grouping across all four derivation routes, (e) area grouping across label + heuristic routes, plus flat-plan + `GH_OFFLINE=1` edge cases.
+- Closes anvil#28. Slice D4 of `docs/plans/2026-05-11-positioning-and-state-product/`.
 
 ### Changed — `docs/index.html` maturation pass (2026-05-11)
 
