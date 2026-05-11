@@ -56,8 +56,8 @@ check_md_bash() {
   check_md_bash learn
 }
 
-@test "persona SKILL.md bash blocks parse" {
-  check_md_bash persona
+@test "lens SKILL.md bash blocks parse" {
+  check_md_bash lens
 }
 
 @test "post-merge-debrief SKILL.md bash blocks parse" {
