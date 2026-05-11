@@ -62,12 +62,12 @@ Anvil ships as three composable groups. Install only what you need:
 
 `--copy` instead of symlink for a stable install that survives folder moves. `bin/uninstall.sh` to remove.
 
-## Battle-tested on real sprints
+## Battle-tested
 
-Anvil is dogfooded on its operator's main project. Recent grinds:
+Anvil is dogfooded on its maintainer's main project. Recent grinds:
 
-- **http-client-standardisation** — 4 slices, 4 PRs merged in one session (theirownstory#1080, #1082, #1084, #1086). Full orchestration via `/grind`; surfaced the v0.4 glue-layer skills (`/findings-rollup`, `/refine-plan`, `/config-bootstrap`, `/issue-to-spec`, `/post-merge-debrief`).
-- **architecture-standardisation** — 15-slice plan, 5 slice PRs merged so far (theirownstory#1097, #1098, #1103, #1104, #1115) plus mid-grind plan refine (#1122) via `/refine-plan`. Live; sequential lanes still rolling.
+- **HTTP-client standardisation** — 4-slice sprint, every slice landed in one session via `/grind`. Surfaced the v0.4 glue-layer skills (`/findings-rollup`, `/refine-plan`, `/config-bootstrap`, `/issue-to-spec`, `/post-merge-debrief`).
+- **Architecture standardisation** — multi-week 15-slice plan, mid-flight. Mid-grind plan correction via `/refine-plan` after the first slice surfaced an incorrect path assumption in the spec. Sequential lanes still rolling.
 
 If you adopt anvil and want to be added here, open a PR.
 
