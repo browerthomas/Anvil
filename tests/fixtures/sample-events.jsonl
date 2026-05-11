@@ -1,3 +1,4 @@
+{"_doc":"DO NOT ADD NEW EVENT TYPES TO THIS FIXTURE — backward-compat guard for B1 /anvil-status + future skills. New event types belong in their own fixture; this one pins the pre-sprint event vocabulary so a future fold change can't silently break old logs."}
 {"t":"2026-05-11T10:00:00Z","ev":"plan-init","slice":"","data":{"plan_path":"docs/plans/fixture.md","slices":{"S1":{"status":"pending","depends_on":[],"operator_paced":false},"S2":{"status":"pending","depends_on":["S1"],"operator_paced":false}}}}
 {"t":"2026-05-11T10:00:01Z","ev":"slice-pending","slice":"S1","data":null}
 {"t":"2026-05-11T10:00:02Z","ev":"slice-pending","slice":"S2","data":null}
