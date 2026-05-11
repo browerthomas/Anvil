@@ -43,10 +43,27 @@ Built from `templates/plan-folder-template/`.
 | Arg | Required | Description |
 |---|---|---|
 | `<plan-path>` | yes | Path to plan markdown (e.g. `docs/plans/2026-05-12-anvil-phase2.md`) |
-| `--from <slice-id>` | no | Resume from a specific slice (skip earlier ones; assumes they're already merged) |
+| `--resume <plan-path>` | no | Resume an in-flight plan. Auto-derives the resume point from the event log's last `slice-merged`; failed/deferred slices are re-queued. Appends a `resume` event for audit. Replaces `--from`. |
+| `--from <slice-id>` | no | **DEPRECATED** — prefer `--resume <plan-path>`. Still works (operator gets a deprecation warning); skips earlier slices and assumes they're already merged. |
 | `--max-parallel <n>` | no | Max simultaneous agent dispatches (default 3) |
 | `--no-codex` | no | Skip codex review (use `/self-review` only) — for codex outage windows |
 | `--dry-run` | no | Print what would happen, don't dispatch |
+
+### `--resume` semantics
+
+Operator runs `/grind --resume <plan-path>` (no slice id needed). Under the hood `/grind` calls `state.sh resume <plan-path>`, which:
+
+1. Validates the plan path (file or folder layout).
+2. Acquires a file lock at `.anvil/grind-events.jsonl.lock` — concurrent `--resume` invocations get a warning + exit 0 (no double dispatch).
+3. If the event log does not exist yet, initializes it from the plan (same shape as `state.sh init`).
+4. Re-queues any `deferred` or `in-flight` slices back to `pending` so they're retried. `slice-merged` is the only terminal state that `--resume` skips.
+5. Computes the next ready slice via the existing topo-sort (deps satisfied + status pending).
+6. Appends one `resume` event to `grind-events.jsonl` with payload `{plan_path, resumed_from, merged_count, total_count, fresh_init}` for audit.
+7. Releases the lock + dispatches the next slice.
+
+Idempotent: running `--resume` twice in a row appends 2 `resume` events but does not re-dispatch already-merged slices.
+
+`--from <slice-id>` is the deprecated path. It still works (the operator gets a one-line deprecation warning pointing to `--resume`) and skips slices up to but not including the named slice. Prefer `--resume <plan-path>` — it does not require remembering a slice id.
 
 ## Procedure
 
