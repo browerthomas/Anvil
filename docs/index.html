@@ -570,6 +570,143 @@
   .qs-panel { display: none; }
   .qs-panel.active { display: block; }
 
+  /* One-liner install — compressed terminal above the 3-tier tabs */
+  .oneliner-wrap { margin: 28px 0 12px; }
+  .oneliner-label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--text-3); margin: 0 0 10px; font-weight: 700; }
+  .oneliner-wrap .terminal-wrap { margin-top: 0; }
+  .oneliner-wrap .terminal { padding: 22px 28px; }
+
+  /* Copy button on terminal blocks */
+  .terminal-wrap { position: relative; }
+  .copy-btn {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-2);
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--border-2); background: var(--surface-3); }
+  .copy-btn.copied { color: var(--green); border-color: rgba(95, 191, 122, 0.4); }
+  .copy-btn svg { opacity: 0.85; }
+
+  /* Credibility badge strip */
+  .badge-strip {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 24px 0 0;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    color: var(--text-2);
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  a.badge:hover { color: var(--text); border-color: var(--border-2); background: var(--surface-2); }
+  .badge-check { color: var(--ember-2); font-weight: 700; }
+
+  /* Who it's for — audience grid */
+  .who-its-for { padding: 70px 0 30px; border-top: 1px solid var(--border); }
+  .audience-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 26px;
+  }
+  .audience-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    transition: transform 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .audience-card:hover { transform: translateY(-2px); border-color: var(--border-2); background: var(--surface-2); }
+  .audience-name {
+    color: var(--ember-2);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin: 0 0 8px;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .audience-card p:not(.audience-name) {
+    color: var(--text-2);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+  }
+  .audience-card code {
+    background: var(--bg-deep);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--ember-2);
+    font-size: 12.5px;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid var(--border);
+  }
+
+  /* Persona namespace callout */
+  .persona-callout {
+    margin-top: 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 26px;
+  }
+  .persona-callout-head {
+    color: var(--text);
+    font-weight: 700;
+    font-size: 15px;
+    margin: 0 0 14px;
+  }
+  .persona-callout-row {
+    color: var(--text-2);
+    font-size: 13.5px;
+    line-height: 1.65;
+    margin: 0 0 8px;
+  }
+  .persona-callout-row:last-child { margin-bottom: 0; }
+  .persona-callout-row strong {
+    color: var(--ember-2);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-weight: 700;
+    font-size: 12.5px;
+    margin-right: 4px;
+  }
+  .persona-callout-row code {
+    background: var(--bg-deep);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--ember-2);
+    font-size: 12.5px;
+    font-family: 'JetBrains Mono', monospace;
+    border: 1px solid var(--border);
+  }
+
   @media (max-width: 880px) {
     .hero { grid-template-columns: 1fr; gap: 24px; padding: 32px 0 56px; }
     .hero h1 { font-size: 44px; }
@@ -581,6 +718,10 @@
     .friction-arrow { transform: rotate(90deg); padding: 4px 0; }
     .artifacts-grid { grid-template-columns: 1fr; }
     .bt-grid { grid-template-columns: 1fr; }
+    .audience-grid { grid-template-columns: 1fr; }
+    .badge-strip { justify-content: flex-start; }
+    .oneliner-wrap .terminal { padding: 18px 18px; font-size: 12.5px; }
+    .copy-btn { font-size: 11px; padding: 4px 8px; }
   }
 </style>
 </head>
@@ -612,14 +753,21 @@
 <section class="hero wrap">
   <div>
     <h1>Forge ideas into <span class="ember">shipped code.</span></h1>
-    <p class="hero-sub">A Claude Code skill suite that takes a multi-slice plan and drives it from spec → PRs → merged. Built for solo developers who want the agent to handle the GitHub review + merge dance, not just write the code. <strong>Adopt one skill in 5 minutes; the full orchestrator in 30.</strong></p>
-    <p class="hero-sub" style="margin-top:14px;"><strong>Tired of Claude stopping mid-sprint?</strong> State lives in plan files + an append-only event log + worktrees on disk — not the conversation. Stop and resume anywhere; the next slice fires in a fresh agent with full context.</p>
+    <p class="hero-sub">A Claude Code skill suite that takes a multi-slice plan and drives it from spec → PRs → merged. Adopt one skill in 5 minutes; the full orchestrator in 30.</p>
+    <p class="hero-sub" style="margin-top:10px; font-style: italic; opacity: 0.85;"><strong>Tired of Claude stopping mid-sprint?</strong> State lives in plan files, an append-only event log, and worktrees on disk — not the conversation. Stop and resume anywhere.</p>
     <div class="cta-row">
       <a class="cta" href="#start">
         Install
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 7h8M7 3l4 4-4 4"/></svg>
       </a>
       <a class="cta-secondary" href="https://github.com/browerthomas/Anvil" target="_blank">GitHub →</a>
+    </div>
+    <div class="badge-strip" aria-label="anvil credibility signals">
+      <a class="badge" href="https://github.com/browerthomas/Anvil/blob/main/.github/workflows/smoke-test.yml" target="_blank" rel="noopener">
+        <span class="badge-check">✓</span> 100+ tests · CI on every push
+      </a>
+      <span class="badge"><span class="badge-check">✓</span> 16 skills · 17 adversarial personas</span>
+      <span class="badge"><span class="badge-check">✓</span> Vanilla GitHub · no SaaS, no GitHub App</span>
     </div>
   </div>
 
@@ -832,6 +980,31 @@
       </path>
     </g>
   </svg>
+</section>
+
+<!-- WHO IT'S FOR — audience framing right after the hero -->
+<section class="who-its-for wrap">
+  <p class="section-eyebrow">Who it's for</p>
+  <h2 class="section-title">Engineers shipping multi-slice work.</h2>
+  <p class="section-sub">Solo developers who want the agent to handle the GitHub review + merge dance, not just write the code. Across systems, software, SaaS, and OSS.</p>
+  <div class="audience-grid">
+    <div class="audience-card">
+      <p class="audience-name">Systems engineers</p>
+      <p>Kernel, SRE, embedded, distributed systems, performance, compiler/build engineering. <code>/persona systems/*</code> gives you the lens.</p>
+    </div>
+    <div class="audience-card">
+      <p class="audience-name">Software engineers</p>
+      <p>Multi-PR refactors, library migrations, framework adoption. <code>/grind</code> drives the dispatch + review + merge dance.</p>
+    </div>
+    <div class="audience-card">
+      <p class="audience-name">SaaS operators</p>
+      <p>Customer-facing surfaces, refund/dispute exposure, content moderation. <code>/persona saas/*</code> covers the lens.</p>
+    </div>
+    <div class="audience-card">
+      <p class="audience-name">OSS maintainers</p>
+      <p>PR triage at scale, ABI/API stability, contributor onboarding. <code>/persona systems/open-source-maintainer</code> is for you.</p>
+    </div>
+  </div>
 </section>
 
 <!-- ENTRY-POINT TIERS -->
@@ -1211,6 +1384,14 @@
     </div>
   </div>
   </details>
+
+  <div class="persona-callout">
+    <p class="persona-callout-head">17 adversarial personas, 3 categories.</p>
+    <p class="persona-callout-row"><strong>systems/</strong>kernel-developer, sre-incident-responder, embedded-engineer, distributed-systems, performance-engineer, compiler-build-engineer, open-source-maintainer, architecture-reviewer.</p>
+    <p class="persona-callout-row"><strong>saas/</strong>payment-risk, privacy-lawyer, angry-customer, competitor-recon, end-user, journalist.</p>
+    <p class="persona-callout-row"><strong>generic/</strong>security-researcher, new-engineer, vendor-tos-auditor.</p>
+    <p class="persona-callout-row">Each wraps <code>/self-review</code> with a hard-coded role prefix. Operators add custom via <code>personas/&lt;name&gt;.md</code>.</p>
+  </div>
 </section>
 
 <!-- QUICKSTART — tabbed by tier -->
@@ -1220,6 +1401,23 @@
     <h2 class="section-title">From clone to first strike.</h2>
     <p class="section-sub">Pick the tier you chose above. Each is a complete onboarding path; you can level up later by re-running the next tier's bootstrap.</p>
 
+    <div class="oneliner-wrap">
+      <p class="oneliner-label">Just run this</p>
+      <div class="terminal-wrap" data-terminal-id="oneliner">
+        <div class="terminal-bar">
+          <div class="terminal-dot"></div><div class="terminal-dot"></div><div class="terminal-dot"></div>
+          <div class="terminal-title">one-liner install</div>
+        </div>
+        <button class="copy-btn" data-copy-target="oneliner" aria-label="Copy command">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.4"/><path d="M2 9.5V2.6A.6.6 0 0 1 2.6 2H9.5"/></svg>
+          <span class="copy-btn-label">Copy</span>
+        </button>
+        <div class="terminal" id="terminal-oneliner">
+<span class="prompt">$</span> <span class="cmd">git clone https://github.com/browerthomas/Anvil.git ~/anvil &amp;&amp; ~/anvil/bin/install.sh</span><br/>
+        </div>
+      </div>
+    </div>
+
     <div class="qs-tabs" role="tablist">
       <button class="qs-tab active" data-tab="tier-1" role="tab" aria-selected="true">Try one skill <span class="qs-tab-time">5 min</span></button>
       <button class="qs-tab" data-tab="tier-2" role="tab" aria-selected="false">Inner loop <span class="qs-tab-time">15 min</span></button>
@@ -1227,12 +1425,16 @@
     </div>
 
     <div class="qs-panel active" id="qs-tier-1" role="tabpanel">
-      <div class="terminal-wrap">
+      <div class="terminal-wrap" data-terminal-id="tier-1">
         <div class="terminal-bar">
           <div class="terminal-dot"></div><div class="terminal-dot"></div><div class="terminal-dot"></div>
           <div class="terminal-title">tier 1 — single skill</div>
         </div>
-        <div class="terminal">
+        <button class="copy-btn" data-copy-target="tier-1" aria-label="Copy commands">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.4"/><path d="M2 9.5V2.6A.6.6 0 0 1 2.6 2H9.5"/></svg>
+          <span class="copy-btn-label">Copy</span>
+        </button>
+        <div class="terminal" id="terminal-tier-1">
 <span class="cmt"># Clone + install. Symlink-mode means edits to skills are live immediately.</span><br/>
 <span class="prompt">$</span> <span class="cmd">git clone https://github.com/browerthomas/Anvil.git ~/anvil</span><br/>
 <span class="prompt">$</span> <span class="cmd">~/anvil/bin/preflight.sh</span> <span class="cmt"># verifies gh + git + node + jq</span><br/>
@@ -1248,12 +1450,16 @@
     </div>
 
     <div class="qs-panel" id="qs-tier-2" role="tabpanel">
-      <div class="terminal-wrap">
+      <div class="terminal-wrap" data-terminal-id="tier-2">
         <div class="terminal-bar">
           <div class="terminal-dot"></div><div class="terminal-dot"></div><div class="terminal-dot"></div>
           <div class="terminal-title">tier 2 — per-PR inner loop</div>
         </div>
-        <div class="terminal">
+        <button class="copy-btn" data-copy-target="tier-2" aria-label="Copy commands">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.4"/><path d="M2 9.5V2.6A.6.6 0 0 1 2.6 2H9.5"/></svg>
+          <span class="copy-btn-label">Copy</span>
+        </button>
+        <div class="terminal" id="terminal-tier-2">
 <span class="cmt"># Tier 1 install steps (clone + preflight + install.sh) plus:</span><br/>
 <span class="prompt">$</span> <span class="cmd">cd /path/to/your/project</span><br/>
 <span class="prompt">$</span> <span class="cmd">~/anvil/bin/init-anvil-config.sh</span><br/>
@@ -1273,12 +1479,16 @@
     </div>
 
     <div class="qs-panel" id="qs-tier-3" role="tabpanel">
-      <div class="terminal-wrap">
+      <div class="terminal-wrap" data-terminal-id="tier-3">
         <div class="terminal-bar">
           <div class="terminal-dot"></div><div class="terminal-dot"></div><div class="terminal-dot"></div>
           <div class="terminal-title">tier 3 — end-to-end orchestration</div>
         </div>
-        <div class="terminal">
+        <button class="copy-btn" data-copy-target="tier-3" aria-label="Copy commands">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1.4"/><path d="M2 9.5V2.6A.6.6 0 0 1 2.6 2H9.5"/></svg>
+          <span class="copy-btn-label">Copy</span>
+        </button>
+        <div class="terminal" id="terminal-tier-3">
 <span class="cmt"># Tier 1 + 2 install + bootstrap, plus:</span><br/><br/>
 
 <span class="cmt"># 1. Capture intent as a structured plan (interactive probe).</span><br/>
@@ -1372,6 +1582,32 @@
         // scroll to quickstart section
         document.querySelector('.quickstart').scrollIntoView({ behavior: 'smooth', block: 'start' });
         e.preventDefault();
+      }
+    });
+  });
+
+  // Copy buttons on terminal blocks — extract only `.cmd` spans, join with newlines
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetId = btn.dataset.copyTarget;
+      const terminal = document.getElementById('terminal-' + targetId);
+      if (!terminal) return;
+      const commands = Array.from(terminal.querySelectorAll('.cmd'))
+        .map(el => el.textContent.trim())
+        .filter(Boolean)
+        .join('\n');
+      try {
+        await navigator.clipboard.writeText(commands);
+        const labelEl = btn.querySelector('.copy-btn-label');
+        const original = labelEl ? labelEl.textContent : 'Copy';
+        btn.classList.add('copied');
+        if (labelEl) labelEl.textContent = 'Copied!';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          if (labelEl) labelEl.textContent = original;
+        }, 1500);
+      } catch (err) {
+        // clipboard API blocked (insecure context, permission denied) — fail silent
       }
     });
   });
