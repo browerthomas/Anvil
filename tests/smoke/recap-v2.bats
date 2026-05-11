@@ -245,3 +245,74 @@ EOF
   run bash "$BUILD_RECAP" --not-a-real-flag
   [ "$status" -eq 3 ]
 }
+
+# --- abbreviation regression — TLDR sentence counter ----------------------
+
+@test "TLDR with abbreviations (Mr./Dr./e.g./decision_type:) counts as 4 sentences, not more" {
+  # Real-world recaps mention names + abbreviations + decision-record stanzas.
+  # The "capital after space" anchor on the sentence-terminator regex
+  # prevents abbreviation periods from being miscounted.
+  cat > recap.md <<'EOF'
+# Recap — fixture
+
+## TLDR
+
+Mr. Smith shipped 4 slices and Dr. Jones reviewed each. We assumed PR review e.g. via codex would suffice; that held for slices 1-3 but slipped at slice 4. Architectural drift around decision_type: architecture remains contained. Residual risk lives in v1. compatibility mode for legacy callers.
+
+## What shipped
+
+- Slice 1 — pivoted (PR #1010).
+
+## What assumptions changed
+
+- We assumed event-log was append-only (#1010).
+
+## What architectural drift
+
+- Resolver gained a fallback path (#1011).
+
+## What residual risk
+
+- Offline mode (#1012).
+EOF
+  GH_OFFLINE=1 run bash "$BUILD_RECAP" --resolve recap.md \
+    --pr-allowlist "$RECAP_FX/pr-allowlist.txt"
+  # The 4-sentence TLDR with abbreviations should validate cleanly. The PR
+  # citations match the fixture allowlist.
+  [ "$status" -eq 0 ]
+}
+
+# --- URL fragment regression — citation regex --------------------------------
+
+@test "URL-shaped fragment in a citation slot is rejected with URL diagnostic, not 'file not found'" {
+  cat > recap.md <<'EOF'
+# Recap — fixture
+
+## TLDR
+
+Shipped slice. Reviewed slice. Tested slice. Documented slice.
+
+## What shipped
+
+- Slice 1.
+
+## What assumptions changed
+
+- Event log shape — see https://example.com/path:5 for reference (#1).
+
+## What architectural drift
+
+- Resolver grew. (#2)
+
+## What residual risk
+
+- None. (#3)
+EOF
+  GH_OFFLINE=1 run bash "$BUILD_RECAP" --resolve recap.md \
+    --pr-allowlist "$RECAP_FX/pr-allowlist.txt"
+  # The URL fragment should be extracted as kind=URL + emit the URL-shaped
+  # diagnostic, not a misleading "file does not exist" message.
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"unrecognised URL-shaped citation"* ]] || \
+    [[ "$output" == *"URL-shaped"* ]]
+}

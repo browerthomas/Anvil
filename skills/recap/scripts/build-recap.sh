@@ -380,8 +380,13 @@ validate_structure() {
     av_fail "section order short — found $i of ${#REQUIRED_SECTIONS[@]} required sections in order"
     return 1
   fi
-  # TLDR must contain exactly 4 sentences. Definition: non-empty lines under
-  # ## TLDR, split on '. ' / '! ' / '? ' or terminal '.'/'!'/'?'.
+  # TLDR must contain exactly 4 sentences. Real recaps mention names + common
+  # abbreviations + decision-record stanzas + version numbers. Strategy:
+  #   1. Strip well-known abbreviation periods (Mr., Dr., e.g., i.e., vs., etc.,
+  #      v1., decision_type:) — common patterns that would otherwise inflate
+  #      the sentence count.
+  #   2. Treat a sentence terminator as `.`/`!`/`?` followed by whitespace+
+  #      capital letter OR end-of-input.
   local tldr_body
   tldr_body=$(awk '
     /^## TLDR[[:space:]]*$/ {flag=1; next}
@@ -389,11 +394,18 @@ validate_structure() {
     flag {print}
   ' "$file")
   local sentence_count
-  # Strip leading/trailing whitespace + collapse blank lines, then count
-  # sentence-terminators followed by space/end.
-  sentence_count=$(printf '%s\n' "$tldr_body" \
-    | tr -d '\n' \
-    | grep -oE '[.!?]+([[:space:]]|$)' \
+  # POSIX `\b` is not portable across sed implementations (BSD sed doesn't
+  # honour it inside -E). Anchor abbreviations via "preceded by start-of-line
+  # or non-letter, followed by `.` + whitespace" to be cross-platform safe.
+  sentence_count=$(printf '%s' "$tldr_body" \
+    | tr '\n' ' ' \
+    | sed -E '
+        s/(^|[^A-Za-z])(Mr|Mrs|Ms|Dr|Inc|Co|Ltd|St|Jr|Sr|Prof|Capt|Sgt)\.[[:space:]]/\1\2 /g
+        s/(^|[^A-Za-z])(e|i)\.(g|e)\.[[:space:]]/\1\2\3 /g
+        s/(^|[^A-Za-z])(vs|etc|cf|al|approx|min|max|pp|vol|ed|eds|fig|figs|no|nos)\.[[:space:]]/\1\2 /g
+        s/(^|[^A-Za-z])v([0-9]+)\.([0-9]+)?\.?[[:space:]]/\1v\2_\3 /g
+      ' \
+    | grep -oE '[.!?]+([[:space:]]+[A-Z]|[[:space:]]*$)' \
     | wc -l \
     | tr -d ' ')
   if [ "$sentence_count" -ne 4 ]; then
@@ -421,7 +433,16 @@ extract_citations() {
   | grep -oE '(\#[0-9]+|[A-Za-z0-9_.\/-]+:[0-9]+|<[0-9a-f]{7,40}>|[0-9a-f]{7,40}\b)' \
   | awk '
     /^#[0-9]+$/                                   { print "PR|" $0; next }
-    /^[A-Za-z0-9_.\/-]+:[0-9]+$/                  { print "FILE|" $0; next }
+    /^[A-Za-z0-9_.\/-]+:[0-9]+$/                  {
+      # Reject URL-shaped fragments — schemes like `http:` / `https:` / `git:`
+      # have `://` shape but the leading scheme strips and this regex matches
+      # the trailing segment. Defense-in-depth: drop any candidate containing
+      # `://` upstream OR starting with `//`.
+      if ($0 ~ /^\/\// || $0 ~ /:\/\//) {
+        print "URL|" $0; next
+      }
+      print "FILE|" $0; next
+    }
     /^<[0-9a-f]{7,40}>$/                          { gsub(/[<>]/, "", $0); print "SHA|" $0; next }
     /^[0-9a-f]{7,40}$/                            {
       # Naked SHA only counts if it is at least 7 hex chars AND not all numeric.
@@ -473,7 +494,7 @@ resolve_citation() {
       if [ -z "$allow" ]; then
         allow="$REPO_ROOT/.anvil/recap-pr-allowlist.txt"
       fi
-      if [ -f "$allow" ] && grep -qxE "$n" "$allow"; then
+      if [ -f "$allow" ] && grep -qFx "$n" "$allow"; then
         echo "ok"
         return 0
       fi
@@ -519,6 +540,10 @@ resolve_citation() {
         return 0
       fi
       echo "bad: SHA $cite — not in git object store"
+      return 1
+      ;;
+    URL)
+      echo "bad: unrecognised URL-shaped citation: $cite (use file:line, #PR, or commit SHA)"
       return 1
       ;;
     *)
