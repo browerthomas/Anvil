@@ -191,14 +191,13 @@ Default to background. Operator can foreground if a single agent is the only thi
 
 ### Step 5: Record + return the agent ID + summary
 
-Append a row to `.anvil/dispatched-agents.json` (auto-create if missing) so `/grind` can track in-flight work AND `/pre-merge-gate` can locate the slice + plan for per-slice checklist enforcement (see `skills/pre-merge-gate/SKILL.md` Step 6.5):
+`scripts/build-prompt.sh` now persists this row automatically at the end of every invocation. The schema in `.anvil/dispatched-agents.json` is keyed by slice id:
 
 ```json
 {
   "<slice-id>": {
-    "agent_id": "<agent-id>",
-    "worktree": "<worktree-path>",
     "branch": "<branch-name>",
+    "worktree": "<worktree-path>",
     "plan_path": "<absolute-or-repo-relative path to the plan file or folder>",
     "dispatched_at": "<iso-timestamp>",
     "scope": "<one-line summary>"
@@ -206,7 +205,11 @@ Append a row to `.anvil/dispatched-agents.json` (auto-create if missing) so `/gr
 }
 ```
 
-The `branch` field is the exact-match key `/pre-merge-gate` looks up. The `plan_path` field points at either the flat plan markdown OR the folder-layout `tasks.md` so `av_parse_slice_checklist` can find the slice manifest.
+The row is upserted by slice id (re-dispatching the same slice replaces the row, not appends). The `branch` field is the exact-match key `/pre-merge-gate` looks up; the `plan_path` field points at either the flat plan markdown OR the folder-layout `tasks.md` so `av_parse_slice_checklist` can find the slice manifest.
+
+**`--plan-path` is optional.** `/grind` always passes `--plan-path <path>` when dispatching, so the row carries the plan reference and per-slice checklist enforcement works end-to-end. Manual dispatchers calling `build-prompt.sh` directly without `--plan-path` get a row with empty `plan_path`, and `/pre-merge-gate` then gracefully degrades to global gates only (checklist enforcement is silently skipped — same byte-identical behaviour as pre-S3).
+
+Missing `jq` → the writer soft-warns + skips the JSON update (jq is a hard dependency elsewhere in the pipeline; the warning is the operator's signal to install it).
 
 Print to operator:
 - Worktree path

@@ -27,8 +27,11 @@ slices:
       # Two kinds:
       #   - `shell` runs a command + expects exit 0 within the per-item
       #     timeout (default 300s; override with `timeout:`).
-      #   - `grep` asserts a regex is `present` | `absent` in `in:` (a glob).
-      #     Optional `count: N` requires exactly N matches when present.
+      #   - `grep` asserts a regex is `present` | `absent` in `in:`.
+      #     Optional `count: N` requires exactly N matches (only valid under
+      #     `expect: present`).
+      # NOTE: `in:` is a directory path, a file path, or a `dir/**` suffix
+      # (only the trailing `**` is wildcard-expanded — it is NOT a full glob).
       # Slices without a `checklist:` block behave exactly as today (no
       # warning, no extra processing). Use 1-3 narrow items per slice.
       - kind: shell
@@ -38,8 +41,13 @@ slices:
       - kind: grep
         pattern: "TODO\\(slice-id\\)"
         in: "src/**"
-        expect: absent            # absent | present
-        count: 1                  # optional, exact match count
+        expect: absent            # absent: pattern must NOT match anywhere in `in`
+        # `count:` is NOT valid under `expect: absent` — omit it.
+      - kind: grep
+        pattern: "export const FOO ="
+        in: "src/foo.ts"
+        expect: present
+        count: 1                  # optional, exact match count (only valid under `expect: present`)
     specs:                       # references to scenario files in ../specs/
       - "../specs/<scenario>.md"
     operator-decision:

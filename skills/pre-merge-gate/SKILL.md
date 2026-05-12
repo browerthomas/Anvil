@@ -106,8 +106,8 @@ Plans may carry per-slice acceptance gates in the slice manifest under `checklis
 Lookup order:
 
 1. **`--slice <id>` arg** — explicit operator override. Wins over the json lookup.
-2. **`.anvil/dispatched-agents.json` exact match** — find the slice id whose `branch` field equals the current branch name. Exact equality only.
-3. **Error** — print `error: no slice context found; pass --slice <id> or run inside /grind` and exit non-zero BEFORE running any further step (the global gates have already run; the CI gate is skipped).
+2. **`.anvil/dispatched-agents.json` exact match** — find the slice id whose `branch` field equals the current branch name. Exact equality only. **Ambiguous matches hard-fail** (if 2+ entries share the same branch, the gate refuses with `ambiguous slice context: branch '<b>' maps to multiple slices: <id1> <id2> ...` rather than silently picking the first).
+3. **Error** — print `error: no slice context found; pass --slice <id> or run inside /grind` and exit non-zero BEFORE running any gate (global or per-slice). The `.anvil/dispatched-agents.json` row is populated automatically by `/dispatch-slice` (which `/grind` always invokes with `--plan-path`); manual dispatches that don't pass `--plan-path` land a row with empty `plan_path`, and this gate then runs the global gates only and silently skips the per-slice checklist.
 
 When a slice id is resolved AND `dispatched-agents.json` records a `plan_path` for it, the gate parses the checklist via `av_parse_slice_checklist <plan-path> <slice-id>` and runs each item:
 
@@ -115,10 +115,11 @@ When a slice id is resolved AND `dispatched-agents.json` records a `plan_path` f
   - Report `<slice-id> checklist PASS: shell '<cmd>' exit 0` on success.
   - Report `<slice-id> checklist FAIL: shell '<cmd>' exit <code>` on non-zero exit.
   - Report `<slice-id> checklist FAIL: shell '<cmd>' timed out after Ns` on timeout (the command is killed).
-- **`grep`** — run `grep -rE "<pattern>" <glob>` (portable equivalent — `find ... | xargs grep -E`).
-  - `expect: absent` → fail if any match is found.
+- **`grep`** — assert a regex matches (or doesn't) inside the `in:` target.
+  - `in:` is a **directory path**, a **file path**, or a `dir/**` suffix. Only the trailing `**` is wildcard-expanded (the directory is searched recursively). It is NOT a full glob — `src/**/foo.ts` or `src/{a,b}/**` will not work; file the implement-broader-glob follow-up if you need that.
+  - `expect: absent` → fail if any match is found. `count:` is NOT meaningful here and is ignored.
   - `expect: present` → fail if zero matches found.
-  - Optional `count: N` → fail unless exact match count is N.
+  - Optional `count: N` (under `expect: present` only) → fail unless exact match count is N. `count:` must parse as a non-negative integer.
 
 **Missing `checklist:` field = silent absence.** Legacy slices behave exactly as today — no warning, no extra processing. This is the byte-identical-to-pre-S3 path.
 

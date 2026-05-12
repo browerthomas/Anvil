@@ -233,14 +233,32 @@ invoke_verify() {
   plan_dir=$(stage_plan_with_checklist)
   checkout_branch "br-unmapped"
   # Intentionally do NOT stage dispatched-agents.json for this branch.
+
+  # Stage real preconditions for the forbidden-patterns global gate, then
+  # assert the gate's output line is ABSENT — proving the slice-context
+  # early-exit fired before any global gate ran. Without these preconditions,
+  # the absence assertion would be a tautology (the gate would emit nothing
+  # anyway because its config is missing).
+  mkdir -p "$REPO_DIR/.anvil"
+  cat > "$REPO_DIR/.anvil/forbidden-patterns.txt" <<'EOF'
+console\.log :: src/**/*.txt
+EOF
+  # Stage a file that would match the pattern if the scan ran.
+  printf 'console.log("leak")\n' > "$REPO_DIR/src/leak.txt"
+  ( cd "$REPO_DIR" && git add -A && git commit -q -m "stage forbidden-patterns precondition" )
+
   run invoke_verify "br-unmapped"
   [ "$status" -ne 0 ]
   [[ "$output" == *"no slice context found"* ]]
-  # Global gates emit "Type-checking" / "Running tests" / "Scanning for
-  # forbidden patterns" lines; assert none of those fired.
-  ! [[ "$output" == *"Type-checking"* ]]
-  ! [[ "$output" == *"Running tests"* ]]
+  # The forbidden-patterns gate prints a unique "Scanning for forbidden
+  # patterns..." line via av_info. If the gate ran, that line + the
+  # "scan complete" line would appear. Both must be ABSENT — proving the
+  # slice-context early-exit fired before the gate.
   ! [[ "$output" == *"Scanning for forbidden patterns"* ]]
+  ! [[ "$output" == *"forbidden patterns: scan complete"* ]]
+  # Also no checklist FAIL leakage — the scan didn't run, so the
+  # `forbidden pattern '...' found in` line cannot appear.
+  ! [[ "$output" == *"forbidden pattern 'console"* ]]
 }
 
 @test "invalid kind: fails loudly via verify.sh" {
@@ -288,4 +306,133 @@ invoke_verify() {
   # + a generous slack for the shell + global gates).
   [[ "$output" == *"timed out after"* ]] || [[ "$output" == *"timeout"* ]]
   [ "$elapsed" -lt 8 ]
+}
+
+# ----------------- dispatched-agents.json writer (S3 fix-up) -----------------
+
+@test "build-prompt.sh writes dispatched-agents.json with the expected row" {
+  setup_fresh_repo
+  cd "$REPO_DIR"
+  # Run build-prompt.sh with --plan-path; assert .anvil/dispatched-agents.json
+  # is created with a row for the slice id carrying the plan_path value.
+  bash "$ANVIL_ROOT/skills/dispatch-slice/scripts/build-prompt.sh" \
+    --id "Z1" \
+    --scope "test slice" \
+    --branch "feat-Z1" \
+    --worktree "$REPO_DIR" \
+    --base "main" \
+    --plan-path "docs/plans/p1/tasks.md" \
+    >/dev/null
+  [ -f "$REPO_DIR/.anvil/dispatched-agents.json" ]
+  run jq -r '.Z1.branch' "$REPO_DIR/.anvil/dispatched-agents.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "feat-Z1" ]
+  run jq -r '.Z1.plan_path' "$REPO_DIR/.anvil/dispatched-agents.json"
+  [ "$output" = "docs/plans/p1/tasks.md" ]
+  run jq -r '.Z1.worktree' "$REPO_DIR/.anvil/dispatched-agents.json"
+  [ "$output" = "$REPO_DIR" ]
+  run jq -r '.Z1.scope' "$REPO_DIR/.anvil/dispatched-agents.json"
+  [ "$output" = "test slice" ]
+  # dispatched_at field exists and is non-empty
+  run jq -r '.Z1.dispatched_at' "$REPO_DIR/.anvil/dispatched-agents.json"
+  [ -n "$output" ]
+  [ "$output" != "null" ]
+}
+
+@test "build-prompt.sh writer leaves plan_path empty when --plan-path absent" {
+  setup_fresh_repo
+  cd "$REPO_DIR"
+  bash "$ANVIL_ROOT/skills/dispatch-slice/scripts/build-prompt.sh" \
+    --id "Z2" \
+    --scope "no-plan-path slice" \
+    --branch "feat-Z2" \
+    --worktree "$REPO_DIR" \
+    --base "main" \
+    >/dev/null
+  [ -f "$REPO_DIR/.anvil/dispatched-agents.json" ]
+  run jq -r '.Z2.plan_path' "$REPO_DIR/.anvil/dispatched-agents.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "" ]
+}
+
+@test "build-prompt.sh writer upserts (re-dispatch replaces, not appends)" {
+  setup_fresh_repo
+  cd "$REPO_DIR"
+  bash "$ANVIL_ROOT/skills/dispatch-slice/scripts/build-prompt.sh" \
+    --id "Z3" --scope "first" --branch "br-first" --worktree "$REPO_DIR" \
+    --base "main" --plan-path "old/path.md" >/dev/null
+  bash "$ANVIL_ROOT/skills/dispatch-slice/scripts/build-prompt.sh" \
+    --id "Z3" --scope "second" --branch "br-second" --worktree "$REPO_DIR" \
+    --base "main" --plan-path "new/path.md" >/dev/null
+  run jq -r '.Z3.branch' "$REPO_DIR/.anvil/dispatched-agents.json"
+  [ "$output" = "br-second" ]
+  run jq -r '.Z3.plan_path' "$REPO_DIR/.anvil/dispatched-agents.json"
+  [ "$output" = "new/path.md" ]
+  # Only one Z3 entry — upsert, not append.
+  run jq 'keys | length' "$REPO_DIR/.anvil/dispatched-agents.json"
+  [ "$output" = "1" ]
+}
+
+# ----------------- Ambiguous slice context (P1 fix-up) -----------------
+
+@test "ambiguous slice context (branch → multiple slices) hard-fails" {
+  plan_dir=$(stage_plan_with_checklist)
+  checkout_branch "br-shared"
+  # Manually stage a JSON with TWO entries pointing at the same branch.
+  mkdir -p "$REPO_DIR/.anvil"
+  cat > "$REPO_DIR/.anvil/dispatched-agents.json" <<EOF
+{
+  "SA": {
+    "branch": "br-shared",
+    "worktree": "$REPO_DIR",
+    "plan_path": "$plan_dir",
+    "dispatched_at": "2026-05-12T00:00:00Z",
+    "scope": "first"
+  },
+  "SB": {
+    "branch": "br-shared",
+    "worktree": "$REPO_DIR",
+    "plan_path": "$plan_dir",
+    "dispatched_at": "2026-05-12T00:00:00Z",
+    "scope": "second"
+  }
+}
+EOF
+  run invoke_verify "br-shared"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"ambiguous slice context"* ]]
+  [[ "$output" == *"SA"* ]]
+  [[ "$output" == *"SB"* ]]
+}
+
+# ----------------- Numeric count validation (P1 fix-up) -----------------
+
+@test "grep count: non-integer value is refused" {
+  local plan_dir="$REPO_DIR/docs/plans/p2"
+  mkdir -p "$plan_dir"
+  cat > "$plan_dir/tasks.md" <<'EOF'
+# bad-count plan
+
+```yaml
+slices:
+  - id: BAD
+    name: bad count
+    files: []
+    checklist:
+      - kind: grep
+        pattern: "x"
+        in: "src/onefile.txt"
+        expect: present
+        count: "two"
+```
+EOF
+  mkdir -p "$REPO_DIR/src"
+  printf 'xxx\n' > "$REPO_DIR/src/onefile.txt"
+  ( cd "$REPO_DIR" && git add -A && git commit -q -m "seed bad-count" )
+  checkout_branch "br-BAD"
+  stage_dispatched_agents_json "BAD" "br-BAD" "$plan_dir"
+  run invoke_verify "br-BAD"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"count"* ]]
+  [[ "$output" == *"integer"* ]] || [[ "$output" == *"ERROR"* ]]
 }
