@@ -153,6 +153,8 @@ BODY="$(
 cat <<EOF
 You are implementing **${ID}**.
 
+Before starting, read \`docs/vocabulary.md\` for the anvil vocabulary used in this prompt (slice, gate, ratchet, checklist, constitution, event log, etc).
+
 ${ISSUE_LINE}
 **Worktree:** \`${WORKTREE}\` on branch \`${BRANCH}\` based on \`${BASE}\`.
 

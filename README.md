@@ -30,6 +30,22 @@ Also useful for systems engineers, software engineers shipping refactors and mig
 
 Anvil treats plan state as a **product of the repo**, not a side effect of a conversation. Plan files, slice status, the append-only event log (`.anvil/grind-events.jsonl`), recorded decisions (`.anvil/learnings.jsonl`), the project constitution (`.anvil/constitution.md`), the on-disk paper trail of every dispatched agent brief (`.anvil/dispatched-prompts/`), and worktree layout all live on disk and version with your code. A fresh agent in a new session reads the same state your last agent wrote — no chat scrollback to rehydrate, no SaaS dashboard to log into. Project-local template overrides under `.anvil/templates/overrides/` let adopting projects customise the plan shape without forking; per-slice `checklist:` items in `tasks.md` carry slice-specific invariants to `/pre-merge-gate` without polluting the global ratchet. Everything runs **locally** against your existing `git` + `gh` + Claude Code install: no platform account, no hosted control plane, no telemetry leaving your machine. Anvil composes with what you already have rather than replacing it.
 
+### Anvil vs `/goal`
+
+Claude Code 2.1.139's `/goal` is a session-scoped autopilot: set one completion condition, and a small fast model checks after each turn whether the condition holds in the transcript. It's perfect for "keep going until tests pass" inside a single agent. Anvil is doing something different. Anvil treats a multi-PR sprint as the unit of work, not a turn loop. Plans live as markdown in your repo. Each slice runs in its own worktree, dispatched as a fresh agent with full context. Every merge passes deterministic gates — rebase, type-check, tests, fitness ratchets, forbidden-pattern grep, per-slice checklists, and optional cross-model adversarial review from Codex and Opus running in parallel. State is an append-only event log on disk, so a fresh agent in a new session reads exactly what the last agent wrote. The two compose: use `/goal` inside a single dispatched slice when the agent needs to iterate until a tight intra-task condition holds; use anvil when the work spans multiple PRs and you want the merge dance, review gates, operator decision points, and audit trail captured as repo artefacts. `/goal` removes per-turn prompts; anvil removes the per-PR review-and-merge dance.
+
+| | `/goal` | Anvil |
+|---|---|---|
+| Loop driver | small fast model checks transcript after each turn | YAML slice manifest + dependency graph in a plan file |
+| State location | session transcript (in-memory) | `.anvil/grind-events.jsonl` + plan files (on disk, versioned) |
+| Unit of work | one agent's turn loop | one multi-PR sprint |
+| Multi-agent | single agent until condition holds | one fresh agent per slice, dispatched in dep order |
+| Review | none built in | `/codex-review` + `/self-review`, optional `/dual-review` and `/lens` |
+| Hard gates before merge | none (model-judged completion) | rebase + tsc + vitest + fitness ratchets + forbidden-pattern grep + per-slice checklist |
+| Observability | transcript | append-only event log + optional Langfuse OTel emission |
+| Lock-in | Claude Code only | Markdown + bash + `gh` + `git`; portable; MIT |
+| Distribution | first-party CLI feature | OSS skill suite; install via symlink |
+
 ## Quickstart
 
 ```bash
