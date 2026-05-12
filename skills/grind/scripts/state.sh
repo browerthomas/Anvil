@@ -10,10 +10,13 @@
 # Event types:
 #   plan-init       — plan loaded; data has slice list + deps
 #   slice-pending   — slice queued (initial state)
-#   slice-in-flight — agent dispatched; data has agent_id, worktree
-#   slice-pr-opened — agent returned a PR; data has pr_number
+#   slice-in-flight — agent dispatched; data has agent_id, worktree,
+#                     optional tokens_in, tokens_out, cost_usd
+#   slice-pr-opened — agent returned a PR; data has pr_number, optional
+#                     tokens_in, tokens_out, cost_usd
 #   slice-reviewed  — review pass complete; data has findings count
-#   slice-merged    — auto-merge succeeded
+#   slice-merged    — auto-merge succeeded; optional tests_delta,
+#                     tokens_in, tokens_out, cost_usd
 #   slice-deferred  — slice paused/skipped; data has reason
 #   slice-skipped   — operator-paced or rejected
 #   issue-filed     — follow-up issue tracked
@@ -22,13 +25,23 @@
 #                     merged_count, total_count, fresh_init (audit-only;
 #                     additive — does not mutate slice status directly)
 #
+# Token / cost fields (all OPTIONAL, nullable):
+#   tokens_in   — input/prompt tokens consumed during the agent run
+#   tokens_out  — output/completion tokens
+#   cost_usd    — dollar cost as a JSON number (e.g. 0.0125)
+#   When the runtime cannot report them (codex review, manual edits) the
+#   fields are left absent → folded snapshot carries null. The dashboard +
+#   recap surface them only when present.
+#
 # Usage:
 #   state.sh init <plan-path>             # write plan-init event from plan
 #   state.sh resume <plan-path>           # auto-resume from event log's last slice-merged
 #   state.sh next                         # print next ready slice id
 #   state.sh ready                        # print all ready slices
-#   state.sh mark <slice-id> <type>       # append a slice-<type> event
-#   state.sh set-pr <slice-id> <pr-num>   # append slice-pr-opened
+#   state.sh mark <slice-id> <type> [reason] [--tokens-in N] [--tokens-out N] [--cost-usd F]
+#                                         # append a slice-<type> event;
+#                                         # token/cost flags supported on in-flight + merged
+#   state.sh set-pr <slice-id> <pr-num> [--tokens-in N] [--tokens-out N] [--cost-usd F]
 #   state.sh decision <slice-id> <verb> <outcome> "<free-text>"
 #   state.sh add-issue <number>
 #   state.sh status                       # human-readable progress (folded snapshot)
@@ -159,6 +172,13 @@ emit_event() {
 }
 
 # Fold all events into a snapshot view + write to grind-snapshot.json.
+#
+# Token / cost accumulation: tokens_in, tokens_out, cost_usd may appear on
+# slice-in-flight, slice-pr-opened, and slice-merged events. Each is added
+# (when present) to the slice's running counters so a slice that re-dispatched
+# accumulates correctly. The slice and plan-wide totals are exposed in the
+# folded snapshot under .slices[id].tokens_in etc., and at the top level via
+# the `cost_total_usd` etc. roll-ups below.
 refresh_snapshot() {
   jq -s '
     # Drop sentinel/doc lines (no .ev field) up front so downstream filters
@@ -175,15 +195,31 @@ refresh_snapshot() {
     | reduce $slice_events[] as $e (
         {plan_path: ($init.data.plan_path // null), started_at: ($init.t // null), slices: $slices, issues_filed: $issues, decisions: []};
         if $e.ev == "slice-in-flight"  then .slices[$e.slice].status = "in-flight"  | .slices[$e.slice].agent_id = $e.data.agent_id | .slices[$e.slice].worktree = $e.data.worktree | .slices[$e.slice].dispatched_at = $e.t
+          | (if ($e.data.tokens_in // null)  != null then .slices[$e.slice].tokens_in  = ((.slices[$e.slice].tokens_in // 0)  + $e.data.tokens_in)  else . end)
+          | (if ($e.data.tokens_out // null) != null then .slices[$e.slice].tokens_out = ((.slices[$e.slice].tokens_out // 0) + $e.data.tokens_out) else . end)
+          | (if ($e.data.cost_usd // null)   != null then .slices[$e.slice].cost_usd   = ((.slices[$e.slice].cost_usd // 0)   + $e.data.cost_usd)   else . end)
         elif $e.ev == "slice-pr-opened" then .slices[$e.slice].pr = $e.data.pr_number | .slices[$e.slice].pr_at = $e.t
+          | (if ($e.data.tokens_in // null)  != null then .slices[$e.slice].tokens_in  = ((.slices[$e.slice].tokens_in // 0)  + $e.data.tokens_in)  else . end)
+          | (if ($e.data.tokens_out // null) != null then .slices[$e.slice].tokens_out = ((.slices[$e.slice].tokens_out // 0) + $e.data.tokens_out) else . end)
+          | (if ($e.data.cost_usd // null)   != null then .slices[$e.slice].cost_usd   = ((.slices[$e.slice].cost_usd // 0)   + $e.data.cost_usd)   else . end)
         elif $e.ev == "slice-reviewed"  then .slices[$e.slice].review = $e.data | .slices[$e.slice].reviewed_at = $e.t
         elif $e.ev == "slice-merged"    then .slices[$e.slice].status = "merged"    | .slices[$e.slice].merged_at = $e.t
+          | (if ($e.data.pr_number   // null) != null then .slices[$e.slice].pr = $e.data.pr_number else . end)
+          | (if ($e.data.tests_delta // null) != null then .slices[$e.slice].tests_delta = $e.data.tests_delta else . end)
+          | (if ($e.data.tokens_in   // null) != null then .slices[$e.slice].tokens_in  = ((.slices[$e.slice].tokens_in // 0)  + $e.data.tokens_in)  else . end)
+          | (if ($e.data.tokens_out  // null) != null then .slices[$e.slice].tokens_out = ((.slices[$e.slice].tokens_out // 0) + $e.data.tokens_out) else . end)
+          | (if ($e.data.cost_usd    // null) != null then .slices[$e.slice].cost_usd   = ((.slices[$e.slice].cost_usd // 0)   + $e.data.cost_usd)   else . end)
         elif $e.ev == "slice-deferred"  then .slices[$e.slice].status = "deferred"  | .slices[$e.slice].deferred_at = $e.t | .slices[$e.slice].defer_reason = $e.data.reason
         elif $e.ev == "slice-skipped"   then .slices[$e.slice].status = "skipped"   | .slices[$e.slice].skipped_at = $e.t
         elif $e.ev == "slice-pending"   then .slices[$e.slice].status = "pending"
         elif $e.ev == "decision"        then .decisions += [{slice: $e.slice, t: $e.t, verb: $e.data.verb, outcome: $e.data.outcome, response: $e.data.response}]
         else . end
       )
+    | . + {
+        cost_total_usd:   (.slices | to_entries | map(.value.cost_usd   // 0) | add // 0),
+        tokens_in_total:  (.slices | to_entries | map(.value.tokens_in  // 0) | add // 0),
+        tokens_out_total: (.slices | to_entries | map(.value.tokens_out // 0) | add // 0)
+      }
   ' "$EVENTS_FILE" > "$SNAPSHOT_FILE"
 }
 
@@ -357,12 +393,50 @@ case "$cmd" in
       *) av_fail "invalid status: $status (one of: pending|in-flight|merged|deferred|skipped)"; exit 1;;
     esac
     [ -z "$slice_id" ] && { av_fail "usage: state.sh mark <slice-id> <status>"; exit 1; }
-    reason="${3:-}"
-    if [ -n "$reason" ]; then
-      data=$(jq -nc --arg r "$reason" '{reason: $r}')
-    else
-      data="null"
+    shift 2 || true
+    # Positional `reason` is still accepted for backward compatibility — if the
+    # next arg is not a flag, treat it as the reason. Token/cost fields are
+    # accepted as flags AFTER the optional reason (in any order).
+    reason=""
+    tokens_in=""
+    tokens_out=""
+    cost_usd=""
+    tests_delta=""
+    pr_number=""
+    if [ $# -gt 0 ] && [ "${1#--}" = "$1" ]; then
+      reason="$1"
+      shift
     fi
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --reason)        reason="$2"; shift 2;;
+        --tokens-in)     tokens_in="$2"; shift 2;;
+        --tokens-out)    tokens_out="$2"; shift 2;;
+        --cost-usd)      cost_usd="$2"; shift 2;;
+        --tests-delta)   tests_delta="$2"; shift 2;;
+        --pr|--pr-number) pr_number="$2"; shift 2;;
+        *) av_fail "mark: unknown flag '$1' (accepted: --reason / --tokens-in / --tokens-out / --cost-usd / --tests-delta / --pr)"; exit 1;;
+      esac
+    done
+    # Build the data object incrementally with jq so types stay correct.
+    data=$(jq -nc \
+      --arg reason "$reason" \
+      --arg tin   "$tokens_in" \
+      --arg tout  "$tokens_out" \
+      --arg cost  "$cost_usd" \
+      --arg tests "$tests_delta" \
+      --arg pr    "$pr_number" \
+      '
+        ({}
+         | (if $reason != "" then .reason = $reason else . end)
+         | (if $tin    != "" then .tokens_in  = ($tin  | tonumber) else . end)
+         | (if $tout   != "" then .tokens_out = ($tout | tonumber) else . end)
+         | (if $cost   != "" then .cost_usd   = ($cost | tonumber) else . end)
+         | (if $tests  != "" then .tests_delta = ($tests | tonumber) else . end)
+         | (if $pr     != "" then .pr_number   = ($pr    | tonumber) else . end)
+        ) as $d
+        | (if ($d | length) == 0 then null else $d end)
+      ')
     emit_event "slice-${status}" "$slice_id" "$data"
     av_ok "marked $slice_id → $status"
     ;;
@@ -370,8 +444,30 @@ case "$cmd" in
   set-pr)
     ensure_events_file
     slice_id="${1:-}"; pr="${2:-}"
-    [ -z "$slice_id" ] || [ -z "$pr" ] && { av_fail "usage: state.sh set-pr <slice-id> <pr-num>"; exit 1; }
-    data=$(jq -nc --argjson p "$pr" '{pr_number: $p}')
+    [ -z "$slice_id" ] || [ -z "$pr" ] && { av_fail "usage: state.sh set-pr <slice-id> <pr-num> [--tokens-in N] [--tokens-out N] [--cost-usd F]"; exit 1; }
+    shift 2 || true
+    tokens_in=""
+    tokens_out=""
+    cost_usd=""
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        --tokens-in)  tokens_in="$2"; shift 2;;
+        --tokens-out) tokens_out="$2"; shift 2;;
+        --cost-usd)   cost_usd="$2"; shift 2;;
+        *) av_fail "set-pr: unknown flag '$1' (accepted: --tokens-in / --tokens-out / --cost-usd)"; exit 1;;
+      esac
+    done
+    data=$(jq -nc \
+      --argjson p "$pr" \
+      --arg tin  "$tokens_in" \
+      --arg tout "$tokens_out" \
+      --arg cost "$cost_usd" \
+      '
+        {pr_number: $p}
+        | (if $tin  != "" then .tokens_in  = ($tin  | tonumber) else . end)
+        | (if $tout != "" then .tokens_out = ($tout | tonumber) else . end)
+        | (if $cost != "" then .cost_usd   = ($cost | tonumber) else . end)
+      ')
     emit_event "slice-pr-opened" "$slice_id" "$data"
     av_ok "set $slice_id PR=#$pr"
     ;;
@@ -451,6 +547,7 @@ case "$cmd" in
 
   *)
     av_fail "usage: state.sh {init|resume|from(deprecated)|next|ready|mark|set-pr|decision|add-issue|status|trace|snapshot|replay} [args]"
+    av_fail "  mark/set-pr accept optional --tokens-in N / --tokens-out N / --cost-usd F flags."
     exit 1
     ;;
 esac

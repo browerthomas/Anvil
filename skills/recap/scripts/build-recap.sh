@@ -228,6 +228,56 @@ collect_decisions_excerpt() {
     || echo "(decisions parse failed)"
 }
 
+# Cost summary — totals + a per-merged-slice rollup folded from the event log.
+# Carries `tokens_in`, `tokens_out`, `cost_usd` if any event reported them;
+# returns the literal "(no cost data reported)" otherwise. The script is the
+# only place that knows the schema; the prompt template just embeds the
+# rendered summary.
+collect_cost_summary() {
+  local events_file
+  if [ -n "$FIXTURE_EVENTS" ]; then
+    events_file="$FIXTURE_EVENTS"
+  else
+    events_file="$REPO_ROOT/.anvil/grind-events.jsonl"
+  fi
+  if [ ! -f "$events_file" ]; then
+    echo "(no events.jsonl)"
+    return 0
+  fi
+  # Pull every {tokens_in, tokens_out, cost_usd} sighting (any event type) +
+  # accumulate. Per-slice rollup is sorted by descending cost. Output shape:
+  #   total: $X.XXXX (Y in / Z out tokens)
+  #   per-slice:
+  #     <slice>  $X.XXXX  (Y in / Z out)
+  jq -s --raw-output '
+    map(select(.ev != null and (.ev | type) == "string"))
+    | map(select(.data != null))
+    | group_by(.slice)
+    | map({
+        slice: (.[0].slice // ""),
+        tokens_in:  (map(.data.tokens_in  // 0) | add // 0),
+        tokens_out: (map(.data.tokens_out // 0) | add // 0),
+        cost_usd:   (map(.data.cost_usd   // 0) | add // 0)
+      })
+    | map(select(.slice != "" and (.tokens_in + .tokens_out + .cost_usd > 0)))
+    | sort_by(-.cost_usd) as $rows
+    | ($rows | map(.cost_usd)   | add // 0) as $total_cost
+    | ($rows | map(.tokens_in)  | add // 0) as $total_in
+    | ($rows | map(.tokens_out) | add // 0) as $total_out
+    | if ($rows | length) == 0 then
+        "(no cost data reported)"
+      else
+        "total: $\($total_cost * 10000 | round / 10000) (\($total_in) in / \($total_out) out tokens)\nper-slice:"
+        + (
+            $rows
+            | map("  \(.slice)  $\(.cost_usd * 10000 | round / 10000)  (\(.tokens_in) in / \(.tokens_out) out)")
+            | join("\n")
+            | if length > 0 then "\n" + . else "" end
+          )
+      end
+  ' "$events_file" 2>/dev/null || echo "(cost-summary fold failed)"
+}
+
 # Diff stats per slice-merged event.
 collect_diff_stats() {
   if [ -n "$FIXTURE_DIFF_STATS" ] && [ -f "$FIXTURE_DIFF_STATS" ]; then
@@ -275,6 +325,7 @@ render_prompt() {
   collect_plan_excerpt      > "$tmpdir/plan.txt"
   collect_decisions_excerpt > "$tmpdir/decisions.txt"
   collect_diff_stats        > "$tmpdir/diffs.txt"
+  collect_cost_summary      > "$tmpdir/cost.txt"
 
   local events_path
   if [ -n "$FIXTURE_EVENTS" ]; then
@@ -305,6 +356,7 @@ render_prompt() {
       -v plan_file="$tmpdir/plan.txt" \
       -v decisions_file="$tmpdir/decisions.txt" \
       -v diffs_file="$tmpdir/diffs.txt" \
+      -v cost_file="$tmpdir/cost.txt" \
   '
   function load_file(p,    ln, blob) {
     blob = ""
@@ -321,6 +373,7 @@ render_prompt() {
     plan_blob      = load_file(plan_file)
     decisions_blob = load_file(decisions_file)
     diffs_blob     = load_file(diffs_file)
+    cost_blob      = load_file(cost_file)
   }
   {
     # Scalar substitutions first.
@@ -339,6 +392,7 @@ render_prompt() {
     if ($0 == "{{plan_excerpt}}")      { print plan_blob;      next }
     if ($0 == "{{decisions_excerpt}}") { print decisions_blob; next }
     if ($0 == "{{diff_stats}}")        { print diffs_blob;     next }
+    if ($0 == "{{cost_summary}}")      { print cost_blob;      next }
     print
   }' "$template"
 }

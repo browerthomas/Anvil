@@ -43,6 +43,40 @@ setup() {
   [[ "$output" == *"## What assumptions changed"* ]]
   [[ "$output" == *"## What architectural drift"* ]]
   [[ "$output" == *"## What residual risk"* ]]
+  # Cost rollup section is included; the recap-v2 events fixture has no
+  # cost fields so the placeholder renders "(no cost data reported)".
+  [[ "$output" == *"Token / cost rollup"* ]]
+  [[ "$output" == *"(no cost data reported)"* ]]
+}
+
+@test "v2 prompt mode surfaces cost rollup when slice events carry cost_usd" {
+  # Build a tiny event log with a slice-merged event that carries cost.
+  mkdir -p .anvil
+  cat > .anvil/grind-events.jsonl <<'EOF'
+{"t":"2026-05-12T10:00:00Z","ev":"plan-init","slice":"","data":{"plan_path":"docs/plans/p","slices":{"S1":{"status":"pending","depends_on":[],"operator_paced":false}}}}
+{"t":"2026-05-12T10:00:01Z","ev":"slice-pending","slice":"S1","data":null}
+{"t":"2026-05-12T10:00:02Z","ev":"slice-in-flight","slice":"S1","data":{"tokens_in":1000,"tokens_out":500,"cost_usd":0.0123}}
+{"t":"2026-05-12T10:00:03Z","ev":"slice-merged","slice":"S1","data":{"pr_number":42,"tests_delta":5,"tokens_out":100,"cost_usd":0.003}}
+EOF
+  cat > plan.md <<'EOF'
+# Recap-fixture
+```yaml
+slices:
+  - id: S1
+    depends-on: []
+    acceptance: ["x"]
+```
+EOF
+  run bash "$BUILD_RECAP" --v2 --plan plan.md --slug cost-fixture
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Token / cost rollup"* ]]
+  # 0.0123 + 0.003 = 0.0153 total
+  [[ "$output" == *"S1"* ]]
+  [[ "$output" == *"0.0153"* ]] || {
+    echo "expected cost total 0.0153 in prompt, got: $output" >&2
+    return 1
+  }
+  [[ "$output" == *"1000 in"* ]] || [[ "$output" == *"600 out"* ]]
 }
 
 # --- Acceptance criterion #1: TLDR first + 4 named sections after ---------
