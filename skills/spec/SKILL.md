@@ -33,7 +33,11 @@ Two output layouts:
 Resolve the plan template via the 2-layer template resolver — project overrides win, core default falls back:
 
 ```bash
-source "$(git rev-parse --show-toplevel)/shared/lib.sh"
+# ANVIL_ROOT is exported by anvil's installer (bin/install.sh writes it
+# into the per-prefix anvil-config.sh). Sourcing via $(git rev-parse
+# --show-toplevel)/shared/lib.sh would resolve to the ADOPTING project's
+# git root — which doesn't ship shared/lib.sh. Use ANVIL_ROOT.
+source "${ANVIL_ROOT:?ANVIL_ROOT not set — run bin/install.sh first}/shared/lib.sh"
 PLAN_TEMPLATE="$(av_resolve_template plan-template.md)"
 # For folder-layout plans, resolve each file under the folder template:
 FOLDER_PROPOSAL="$(av_resolve_template plan-folder-template/proposal.md)"
