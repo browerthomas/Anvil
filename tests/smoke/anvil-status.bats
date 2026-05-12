@@ -170,3 +170,118 @@ EOF
   run bash -n "$SCRIPT_PATH"
   [ "$status" -eq 0 ]
 }
+
+# --- Token / cost fields on slice events -------------------------------
+
+@test "anvil-status surfaces cost footer when slice events carry cost_usd" {
+  seed_folder_plan
+  init_event_log
+  # Dispatch F1 with tokens + cost, then merge it with additional cost. The
+  # fold should accumulate both events' fields for F1, surface a per-slice
+  # cost on SHIPPED + a plan-wide Cost: footer line.
+  bash "$ANVIL_ROOT/skills/grind/scripts/state.sh" mark F1 in-flight \
+    --tokens-in 1000 --tokens-out 500 --cost-usd 0.012 >/dev/null
+  bash "$ANVIL_ROOT/skills/grind/scripts/state.sh" mark F1 merged \
+    --pr 42 --tests-delta 5 --tokens-out 100 --cost-usd 0.003 >/dev/null
+
+  run env GH_OFFLINE=1 bash "$SCRIPT_PATH" "$REPO_DIR/docs/plans/test-plan"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Cost: \$0.0150 cumulative"* ]] || {
+    echo "expected Cost: \$0.0150 cumulative in output, got: $output" >&2
+    return 1
+  }
+  [[ "$output" == *"tokens: 1000 in / 600 out"* ]] || {
+    echo "expected tokens: 1000 in / 600 out, got: $output" >&2
+    return 1
+  }
+  # Per-slice annotation on the SHIPPED line.
+  [[ "$output" == *"SHIPPED: F1"* ]]
+  [[ "$output" == *"\$0.0150"* ]]
+}
+
+@test "anvil-status omits cost footer when no slice carries cost data" {
+  # Without any cost flags, the footer keeps its pre-existing 2-line shape.
+  seed_folder_plan
+  init_event_log
+  bash "$ANVIL_ROOT/skills/grind/scripts/state.sh" mark F1 merged --pr 99 --tests-delta 2 >/dev/null
+
+  run env GH_OFFLINE=1 bash "$SCRIPT_PATH" "$REPO_DIR/docs/plans/test-plan"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *"Cost:"* ]] || {
+    echo "expected NO Cost: footer when no slice has cost data, got: $output" >&2
+    return 1
+  }
+}
+
+@test "anvil-status surfaces per-slice cost on IN-FLIGHT annotation" {
+  seed_folder_plan
+  init_event_log
+  bash "$ANVIL_ROOT/skills/grind/scripts/state.sh" mark F1 in-flight \
+    --tokens-in 800 --tokens-out 200 --cost-usd 0.0099 >/dev/null
+  bash "$ANVIL_ROOT/skills/grind/scripts/state.sh" set-pr F1 50 >/dev/null
+
+  run env GH_OFFLINE=1 bash "$SCRIPT_PATH" "$REPO_DIR/docs/plans/test-plan"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"IN-FLIGHT: F1"* ]]
+  [[ "$output" == *"PR #50"* ]]
+  # Cost annotation appended to IN-FLIGHT line.
+  [[ "$output" == *"\$0.0099"* ]] || {
+    echo "expected IN-FLIGHT annotation to carry cost, got: $output" >&2
+    return 1
+  }
+}
+
+# --- Watch mode --------------------------------------------------------
+
+@test "anvil-status --watch redraws ANVIL_STATUS_WATCH_MAX_ITERS times and exits 0" {
+  seed_folder_plan
+  init_event_log
+
+  run env GH_OFFLINE=1 ANVIL_STATUS_WATCH_MAX_ITERS=3 \
+    bash "$SCRIPT_PATH" --watch --interval 1 "$REPO_DIR/docs/plans/test-plan"
+  [ "$status" -eq 0 ]
+  # Each redraw clears + prints the watch banner — count banners.
+  banner_count=$(printf '%s' "$output" | grep -c '/anvil-status --watch (plan:')
+  [ "$banner_count" -eq 3 ] || {
+    echo "expected 3 watch banners, got $banner_count: $output" >&2
+    return 1
+  }
+  # NEXT: line still present in each frame.
+  next_count=$(printf '%s' "$output" | grep -c '^NEXT:')
+  [ "$next_count" -ge 3 ] || {
+    echo "expected at least 3 NEXT: lines, got $next_count" >&2
+    return 1
+  }
+}
+
+@test "anvil-status --watch rejects non-positive --interval" {
+  seed_folder_plan
+  init_event_log
+  run env GH_OFFLINE=1 bash "$SCRIPT_PATH" --watch --interval 0 "$REPO_DIR/docs/plans/test-plan"
+  [ "$status" -ne 0 ]
+  run env GH_OFFLINE=1 bash "$SCRIPT_PATH" --watch --interval abc "$REPO_DIR/docs/plans/test-plan"
+  [ "$status" -ne 0 ]
+}
+
+@test "anvil-status --watch survives missing event log and redraws empty dashboard" {
+  # No init_event_log — the .anvil/grind-events.jsonl does not exist. In
+  # single-shot mode this emits the placeholder + exits; in --watch mode
+  # the script should keep redrawing the empty-state placeholder.
+  seed_folder_plan
+  run env GH_OFFLINE=1 ANVIL_STATUS_WATCH_MAX_ITERS=2 \
+    bash "$SCRIPT_PATH" --watch --interval 1 "$REPO_DIR/docs/plans/test-plan"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"event log empty"* ]]
+  banner_count=$(printf '%s' "$output" | grep -c '/anvil-status --watch (plan:')
+  [ "$banner_count" -eq 2 ] || {
+    echo "expected 2 watch banners, got $banner_count: $output" >&2
+    return 1
+  }
+}
+
+@test "anvil-status rejects unknown flag" {
+  seed_folder_plan
+  init_event_log
+  run env GH_OFFLINE=1 bash "$SCRIPT_PATH" --unknown-flag "$REPO_DIR/docs/plans/test-plan"
+  [ "$status" -ne 0 ]
+}

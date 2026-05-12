@@ -29,25 +29,35 @@ The skill is intentionally read-only — no state mutation. Use `/grind --resume
 | Arg | Required | Description |
 |---|---|---|
 | `<plan-path>` | yes | Path to plan markdown (flat) OR plan folder (OpenSpec-style — must contain `tasks.md`). |
+| `--watch` | no | Live-tail mode. Redraws the dashboard every N seconds with a leading clear-screen so the latest event-log state stays on screen. Exit with Ctrl-C. |
+| `--interval SECS` | no | Redraw cadence for `--watch`. Default 2s; positive integer seconds. |
 
 ## Environment variables
 
 | Variable | Default | Description |
 |---|---|---|
 | `GH_OFFLINE` | `0` | When set to `1`, skip `gh` invocation entirely. PR linkage is read from `slice-pr-opened` + `slice-merged` events in the event log (`/grind` records PR# at those moments). Use when `gh` is missing, unauthenticated, or rate-limited. |
+| `ANVIL_STATUS_WATCH_MAX_ITERS` | unset | Test-only — when set to a positive integer, `--watch` exits after N redraws instead of looping forever. Used by `tests/smoke/anvil-status.bats` so the test runner doesn't have to hard-kill the script. |
 
 ## Output shape (rank-locked)
 
 ```
 NEXT: <slice-id> (parallel/deps-blocking, N follow-ups)
-IN-FLIGHT: <slice-id> (PR #N, codex-pending/operator-pending)
+IN-FLIGHT: <slice-id> (PR #N, codex-pending/operator-pending, $X.XXXX)
 BLOCKED: <slice-id> (deps: <list>)
-SHIPPED: <slice-ids> (N slices, +M tests, K follow-ups)
+SHIPPED: <slice-ids> (N slices, +M tests, K follow-ups, $X.XXXX)
 DEFERRED: <slice-ids>
 
 Tests: <total> cumulative (Δ across N slices)
 Follow-ups: <open> open / <closed> closed
+Cost:  $X.XXXX cumulative (tokens: <in>/<out>)
 ```
+
+The `Cost:` footer + per-line cost annotations only appear when at least one
+slice carries `tokens_in` / `tokens_out` / `cost_usd` on a `slice-dispatched`
+(`slice-in-flight`), `slice-pr-opened`, or `slice-merged` event. Older plans
+where the runtime did not report these fields keep their pre-existing 2-line
+footer shape — no breakage.
 
 Rank order is locked. The first non-blank line of output is always `NEXT:` — the operator scans top-down.
 
@@ -85,6 +95,29 @@ The footer summarises totals.
 
 `GH_OFFLINE=1` short-circuits the gh invocation. PR linkage is read from the event log only — `slice-pr-opened` events record `pr_number` at dispatch time, and `slice-merged` records the final PR#. This mode is the default fallback when `gh` is missing or unauthenticated; the script auto-detects and switches silently. Setting `GH_OFFLINE=1` explicitly forces the fallback even when `gh` is available (useful for tests + CI without GitHub credentials).
 
+## Watch mode
+
+`bash skills/anvil-status/scripts/build-status.sh --watch <plan-path>` opens
+a live text dashboard. Each redraw is preceded by the ANSI clear-screen-and-
+home sequence so the latest snapshot stays in the same viewport position —
+no scroll-back noise. The header carries elapsed time (HHhMMmSSs since the
+`plan-init` event) + the latest refresh timestamp, matching the shape of the
+Claude `/goal` overlay (slices done / in-flight / blocked / cost) but rendered
+as plain text since anvil itself owns no chrome.
+
+Exit modes:
+
+- **Ctrl-C / SIGINT or SIGTERM** — prints a trailing newline so the operator's
+  next prompt lands on a clean line, then `exit 0`. Trap-driven.
+- **`ANVIL_STATUS_WATCH_MAX_ITERS=N`** — test-only short-circuit. After N
+  redraws the loop exits with status 0. Used by the smoke tests so they do
+  not need to manage a child process.
+
+The redraw cadence is configurable via `--interval SECS` (default 2). The
+script does not depend on `tput` / `ncurses` / `clear` — only on a TTY-aware
+ANSI escape, which is a no-op when the output is piped (e.g. `| tee log.txt`)
+so the dashboard remains pipeable for archival.
+
 ## Smoke tests
 
 `tests/smoke/anvil-status.bats` covers:
@@ -94,6 +127,8 @@ The footer summarises totals.
 3. Pre-sprint `sample-events.jsonl` fixture parses + emits sensible output (backward-compat guard).
 4. Blocked-node detection — when a dep has `slice-deferred` status, the dependent slice appears under `BLOCKED:` with the failing dep cited.
 5. Cumulative test-delta in the footer equals the sum of `slice-merged.data.tests_delta` rows in the event log.
+6. `--watch` redraws the dashboard the configured number of times under `ANVIL_STATUS_WATCH_MAX_ITERS=N`, exits 0, and each frame carries the `NEXT:` line.
+7. `Cost:` footer surfaces total cost + token rollup when slice events carry `tokens_in` / `tokens_out` / `cost_usd`; the footer is omitted when no slice carries cost data (back-compat for older event logs).
 
 ## What this skill DOES NOT do
 

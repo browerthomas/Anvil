@@ -45,6 +45,12 @@
 {{diff_stats}}
 ```
 
+### Token / cost rollup (folded from event log)
+
+```
+{{cost_summary}}
+```
+
 ---
 
 ## Task
@@ -52,6 +58,11 @@
 Produce a markdown recap with the EXACT structure below. Section order is
 non-negotiable. The TLDR is the first thing the operator reads — write
 sentences they can scan in 5 seconds.
+
+If the cost rollup above carries a non-zero total, surface it explicitly in
+the TLDR (e.g. "X slices shipped at total cost $Y.YY"). If the rollup reads
+`(no cost data reported)`, omit any cost claim — the runtime did not surface
+the fields, so any number would be a guess.
 
 Use the three-form citation vocabulary in sections 3-5:
 
