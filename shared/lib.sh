@@ -145,3 +145,51 @@ av_anvil_root() {
   # Resolves the anvil repo root from a sourced library path.
   cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd
 }
+
+# --- Template resolution (2-layer: project override -> core default) ---
+# Resolves a template name through a 2-layer hierarchy. First hit wins.
+#   Layer 1 (project override): ${PWD}/.anvil/templates/overrides/<name>
+#   Layer 2 (core default):     $(av_anvil_root)/templates/<name>
+#
+# Prints the absolute path of the resolved template on stdout, exits 0.
+# Refuses path traversal (`..` segments or a leading `/` in <name>) before
+# any filesystem access. Refuses missing argument. Refuses name-not-found
+# with a stderr message listing both searched paths.
+#
+# Reuses av_anvil_root() and the canonical ANVIL_ROOT install-root concept.
+# (Do not introduce alternate install-root variables here — other names in
+# bin/ are already overloaded for different meanings; see
+# docs/template-overrides.md.)
+av_resolve_template() {
+  local name="$1"
+  if [ -z "$name" ]; then
+    echo "av_resolve_template: missing template name argument" >&2
+    return 2
+  fi
+  # Refuse path traversal BEFORE any filesystem access.
+  # - Leading `/` would escape the project/core roots.
+  # - Any `..` segment could climb out of the resolved root.
+  # - Backslash defends against odd shell-quoted inputs.
+  case "$name" in
+    /*|*..*|*$'\\'*)
+      echo "av_resolve_template: refusing path traversal in $name" >&2
+      return 2
+      ;;
+  esac
+
+  local project_path="${PWD}/.anvil/templates/overrides/${name}"
+  local core_path
+  core_path="$(av_anvil_root)/templates/${name}"
+
+  if [ -e "$project_path" ]; then
+    # Absolute path already (PWD is absolute on POSIX shells).
+    printf '%s\n' "$project_path"
+    return 0
+  fi
+  if [ -e "$core_path" ]; then
+    printf '%s\n' "$core_path"
+    return 0
+  fi
+  echo "av_resolve_template: $name not found (project: $project_path, core: $core_path)" >&2
+  return 1
+}

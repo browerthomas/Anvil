@@ -30,7 +30,20 @@ Two output layouts:
 
 ### Step 1: Capture intent
 
-Prompt the operator with the project's plan template (from `templates/plan-template.md`). Pre-fill any sections from operator's initial message; leave others blank with placeholder probes.
+Resolve the plan template via the 2-layer template resolver — project overrides win, core default falls back:
+
+```bash
+source "$(git rev-parse --show-toplevel)/shared/lib.sh"
+PLAN_TEMPLATE="$(av_resolve_template plan-template.md)"
+# For folder-layout plans, resolve each file under the folder template:
+FOLDER_PROPOSAL="$(av_resolve_template plan-folder-template/proposal.md)"
+FOLDER_DESIGN="$(av_resolve_template plan-folder-template/design.md)"
+FOLDER_TASKS="$(av_resolve_template plan-folder-template/tasks.md)"
+```
+
+`av_resolve_template <name>` searches `${PWD}/.anvil/templates/overrides/<name>` first, then `$(av_anvil_root)/templates/<name>`. Projects that want a customised plan shape drop their override under `.anvil/templates/overrides/` without forking anvil — see `docs/template-overrides.md`.
+
+Prompt the operator with the resolved template. Pre-fill any sections from operator's initial message; leave others blank with placeholder probes.
 
 ### Step 2: Probe for missing detail
 
@@ -98,7 +111,7 @@ Run /grind docs/plans/<YYYY-MM-DD>-<slug>.md to execute, or
 
 ## Plan format
 
-See `templates/plan-template.md` for the canonical shape. Required sections:
+The canonical shape lives at `templates/plan-template.md` (core default). Resolve at runtime via `av_resolve_template plan-template.md` so a project override under `.anvil/templates/overrides/plan-template.md` wins if present. Required sections:
 
 ```markdown
 # <Plan name>
