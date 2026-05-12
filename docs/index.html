@@ -1066,6 +1066,76 @@
         <p class="artifact-desc">Append-only event log. State derives by folding events; replay-from-checkpoint, time-travel debugging, OTel-emittable to any observability backend.</p>
       </div>
     </a>
+
+    <a class="artifact" href="https://github.com/browerthomas/Anvil/blob/main/templates/constitution-template.md" target="_blank">
+      <div class="artifact-preview">
+        <span class="ap-line ap-h">.anvil/constitution.md</span>
+        <span class="ap-line">───────────────────────────</span>
+        <span class="ap-line"><span class="ap-key">## North star</span></span>
+        <span class="ap-line">Ship trustworthy code daily. No</span>
+        <span class="ap-line">money-path regressions; observable</span>
+        <span class="ap-line">by default.</span>
+        <span class="ap-line"></span>
+        <span class="ap-line"><span class="ap-key">## Inviolable principles</span></span>
+        <span class="ap-line">- Never break the DB without a</span>
+        <span class="ap-line">  reversible migration.</span>
+        <span class="ap-line">- User data &gt; everything.</span>
+        <span class="ap-line"></span>
+        <span class="ap-line"><span class="ap-em">Prepended into every dispatched</span></span>
+        <span class="ap-line"><span class="ap-em">agent brief automatically.</span></span>
+      </div>
+      <div class="artifact-meta">
+        <p class="artifact-name">/dispatch-slice → reads .anvil/constitution.md</p>
+        <p class="artifact-desc">Project ethos slot. Operator-authored markdown, prepended as <code>## Project constitution</code> at the top of every agent brief so dispatched work inherits the strategic frame, not just the slice scope.</p>
+      </div>
+    </a>
+
+    <a class="artifact" href="https://github.com/browerthomas/Anvil/blob/main/skills/dispatch-slice/SKILL.md" target="_blank">
+      <div class="artifact-preview">
+        <span class="ap-line ap-h">.anvil/dispatched-prompts/S1.prompt.md</span>
+        <span class="ap-line">───────────────────────────</span>
+        <span class="ap-line"><span class="ap-key">## Project constitution</span></span>
+        <span class="ap-line">Ship trustworthy code daily...</span>
+        <span class="ap-line"></span>
+        <span class="ap-line"><span class="ap-key">## Slice scope</span></span>
+        <span class="ap-line">Implement the constitution loader</span>
+        <span class="ap-line">+ prompt-to-disk emission...</span>
+        <span class="ap-line"></span>
+        <span class="ap-line"><span class="ap-key">## Hard constraints</span></span>
+        <span class="ap-line">- ANVIL_ROOT, not ANVIL_HOME</span>
+        <span class="ap-line">- Use av_resolve_template</span>
+        <span class="ap-line"></span>
+        <span class="ap-line"><span class="ap-em">Saved before Agent() invocation</span></span>
+        <span class="ap-line"><span class="ap-em">— grep-testable paper trail.</span></span>
+      </div>
+      <div class="artifact-meta">
+        <p class="artifact-name">/dispatch-slice → .anvil/dispatched-prompts/&lt;id&gt;.prompt.md</p>
+        <p class="artifact-desc">The exact assembled brief each agent saw, saved before the Agent tool is invoked. Audit what was dispatched, reproduce a slice's context, grep across a sprint's prompts. Runtime state — gitignored.</p>
+      </div>
+    </a>
+
+    <a class="artifact" href="https://github.com/browerthomas/Anvil/blob/main/skills/pre-merge-gate/SKILL.md" target="_blank">
+      <div class="artifact-preview">
+        <span class="ap-line ap-h">tasks.md (per-slice checklist)</span>
+        <span class="ap-line">───────────────────────────</span>
+        <span class="ap-line"><span class="ap-key">checklist:</span></span>
+        <span class="ap-line">  - <span class="ap-key">kind:</span> grep</span>
+        <span class="ap-line">    <span class="ap-key">pattern:</span> "ANVIL_HOME"</span>
+        <span class="ap-line">    <span class="ap-key">in:</span> "shared/lib.sh"</span>
+        <span class="ap-line">    <span class="ap-key">expect:</span> absent</span>
+        <span class="ap-line">  - <span class="ap-key">kind:</span> shell</span>
+        <span class="ap-line">    <span class="ap-key">run:</span> "make -C tests smoke"</span>
+        <span class="ap-line">    <span class="ap-key">expect:</span> pass</span>
+        <span class="ap-line"></span>
+        <span class="ap-line"><span class="ap-em">Enforced by /pre-merge-gate;</span></span>
+        <span class="ap-line"><span class="ap-em">slice located via</span></span>
+        <span class="ap-line"><span class="ap-em">dispatched-agents.json.</span></span>
+      </div>
+      <div class="artifact-meta">
+        <p class="artifact-name">/pre-merge-gate → per-slice checklist execution</p>
+        <p class="artifact-desc">Slice-specific gates carried in the plan itself. <code>shell</code> commands and <code>grep</code> patterns run alongside the global gates (rebase, tsc, tests) — a P0 invariant for one slice doesn't have to bleed into the global ratchet.</p>
+      </div>
+    </a>
   </div>
 </section>
 
