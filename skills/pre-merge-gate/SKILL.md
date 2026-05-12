@@ -105,7 +105,7 @@ Plans may carry per-slice acceptance gates in the slice manifest under `checklis
 
 Lookup order:
 
-1. **`--slice <id>` arg** — explicit operator override. Wins over the json lookup.
+1. **`--slice <id>` arg** — explicit operator override. Wins over the json lookup. When used, `plan_path` is resolved via branch-match (the operator's intent is "check a DIFFERENT slice of the SAME plan I'm grinding on" — the JSON row keyed by the override slice id is typically absent, so we fall back to the row whose `branch` matches the current branch).
 2. **`.anvil/dispatched-agents.json` exact match** — find the slice id whose `branch` field equals the current branch name. Exact equality only. **Ambiguous matches hard-fail** (if 2+ entries share the same branch, the gate refuses with `ambiguous slice context: branch '<b>' maps to multiple slices: <id1> <id2> ...` rather than silently picking the first).
 3. **Error** — print `error: no slice context found; pass --slice <id> or run inside /grind` and exit non-zero BEFORE running any gate (global or per-slice). The `.anvil/dispatched-agents.json` row is populated automatically by `/dispatch-slice` (which `/grind` always invokes with `--plan-path`); manual dispatches that don't pass `--plan-path` land a row with empty `plan_path`, and this gate then runs the global gates only and silently skips the per-slice checklist.
 
