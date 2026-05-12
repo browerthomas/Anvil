@@ -37,6 +37,7 @@ build/
 .anvil/grind-snapshot.json
 .anvil/learnings.jsonl
 .anvil/learnings.archive.jsonl
+.anvil/dispatched-prompts/
 .anvil/*.log
 .codex-log/
 

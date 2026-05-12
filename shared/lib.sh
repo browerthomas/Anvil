@@ -256,3 +256,42 @@ av_resolve_template() {
   printf '%s\n' "$candidate"
   return 0
 }
+
+# --- Constitution loader -------------------------------------------------
+# Reads `${PWD}/.anvil/constitution.md` and prints its contents on stdout.
+#
+# Returns the empty string (exit 0) when:
+#   - the file does not exist
+#   - the file exists but is empty or whitespace-only
+#   - the file contains non-UTF-8 bytes (warning to stderr; graceful skip)
+#
+# Used by /dispatch-slice to prepend a `## Project constitution` section
+# to every assembled agent prompt. See specs/s1-constitution.md.
+av_load_constitution() {
+  local path="${PWD}/.anvil/constitution.md"
+  if [ ! -f "$path" ]; then
+    return 0
+  fi
+  # Empty file → empty return (no warning; absence is normal).
+  if [ ! -s "$path" ]; then
+    return 0
+  fi
+  # UTF-8 validation. `iconv -f UTF-8 -t UTF-8` fails on invalid sequences
+  # on both BSD (macOS) and GNU systems; fall back to LC_ALL=C grep -P if
+  # iconv is missing for some reason.
+  if command -v iconv >/dev/null 2>&1; then
+    if ! iconv -f UTF-8 -t UTF-8 "$path" >/dev/null 2>&1; then
+      printf 'warning: .anvil/constitution.md is not valid UTF-8; skipping prepend\n' >&2
+      return 0
+    fi
+  fi
+  # Whitespace-only → empty return. Check by stripping whitespace; if the
+  # result is empty, treat as absent.
+  local stripped
+  stripped="$(tr -d '[:space:]' < "$path")"
+  if [ -z "$stripped" ]; then
+    return 0
+  fi
+  cat "$path"
+  return 0
+}

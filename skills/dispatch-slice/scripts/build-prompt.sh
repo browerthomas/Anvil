@@ -43,6 +43,7 @@ fi
 if [ -z "${ANVIL_ROOT:-}" ]; then
   ANVIL_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 fi
+: "${ANVIL_ROOT:?ANVIL_ROOT not set}"
 # shellcheck source=/dev/null
 . "$ANVIL_ROOT/shared/lib.sh"
 
@@ -122,7 +123,31 @@ if [ "$NO_CODEX" -eq 0 ]; then
 After implementation, the orchestrator will run `/codex-review` (cross-model, preferred) or `/self-review` (Opus fallback) before merge. If you want adversarial feedback on a tricky design decision DURING implementation, fire `/codex-confer` from your worktree.'
 fi
 
-# Assemble
+# Load the optional project constitution and emit a stderr size warning.
+# Reads ${PWD}/.anvil/constitution.md via shared/lib.sh#av_load_constitution.
+# Empty/missing/invalid → empty CONSTITUTION_BODY (no section gets emitted).
+CONSTITUTION_BODY="$(av_load_constitution)"
+if [ -n "$CONSTITUTION_BODY" ]; then
+  _const_path="${PWD}/.anvil/constitution.md"
+  if [ -f "$_const_path" ]; then
+    _const_bytes=$(wc -c < "$_const_path" | tr -d '[:space:]')
+    if [ -n "$_const_bytes" ]; then
+      # Two tiers of warning. Second-tier fires alone (operator already
+      # knows it exceeds 2KB; don't double-warn).
+      if [ "$_const_bytes" -gt 8192 ]; then
+        printf 'warning: .anvil/constitution.md is %d bytes — this will bloat every dispatched-agent prompt\n' "$_const_bytes" >&2
+      elif [ "$_const_bytes" -gt 2048 ]; then
+        printf 'warning: .anvil/constitution.md is %d bytes (recommended ≤ 2048)\n' "$_const_bytes" >&2
+      fi
+    fi
+  fi
+fi
+
+# Assemble the body into a buffer. We capture into a variable rather than
+# streaming to stdout directly because S1 requires the assembled prompt be
+# written to .anvil/dispatched-prompts/<id>.prompt.md BEFORE invoking Agent,
+# and the constitution section (if any) must be inserted near the top.
+BODY="$(
 cat <<EOF
 You are implementing **${ID}**.
 
@@ -222,3 +247,36 @@ Return ONLY:
 
 No filler. No scope summary. No "I will now..." preamble. Findings + facts only.
 EOF
+)"
+
+# Prepend the constitution section if a non-empty constitution was loaded.
+# Inserted at the very top of the prompt so it's the first thing the agent
+# reads — before scope, before hard constraints.
+if [ -n "$CONSTITUTION_BODY" ]; then
+  PROMPT="$(printf '## Project constitution\n\n%s\n\n---\n\n%s' "$CONSTITUTION_BODY" "$BODY")"
+else
+  PROMPT="$BODY"
+fi
+
+# Write the assembled prompt to .anvil/dispatched-prompts/<id>.prompt.md
+# BEFORE returning. This emission is load-bearing for testability — without
+# the on-disk file, the constitution-prepend behaviour can't be grep-asserted
+# from bats. The Agent-tool caller (dispatch-slice SKILL) must invoke this
+# script BEFORE Agent() so the on-disk file is in place.
+#
+# Hard fail if the directory can't be created or the file can't be written.
+# We do NOT want to silently dispatch an Agent without the paper trail.
+PROMPTS_DIR="${REPO_ROOT}/.anvil/dispatched-prompts"
+PROMPT_FILE="${PROMPTS_DIR}/${ID}.prompt.md"
+if ! mkdir -p "$PROMPTS_DIR" 2>/dev/null; then
+  printf 'error: cannot write to .anvil/dispatched-prompts/: mkdir failed for %s\n' "$PROMPTS_DIR" >&2
+  exit 1
+fi
+if ! printf '%s\n' "$PROMPT" > "$PROMPT_FILE" 2>/dev/null; then
+  printf 'error: cannot write to .anvil/dispatched-prompts/: write failed for %s\n' "$PROMPT_FILE" >&2
+  exit 1
+fi
+
+# Emit the same prompt on stdout so existing callers that capture stdout
+# (e.g. piping into Agent()) keep working.
+printf '%s\n' "$PROMPT"

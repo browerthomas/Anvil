@@ -105,6 +105,7 @@ av_install_deps_in_worktree "$worktree" &  # background
 
 Standard sections in the prompt (per template):
 
+0. **Project constitution** — auto-injected from `.anvil/constitution.md` if present (see below)
 1. **Issue context** — link, body summary
 2. **Worktree path** — full path
 3. **Branch name** — `<branch>`
@@ -116,6 +117,22 @@ Standard sections in the prompt (per template):
 9. **Commit message format** — conventional commit (`feat(scope):`, `fix(scope):`, etc) referencing issue #
 10. **PR template** — fill `.github/pull_request_template.md` fully (What/Summary/Why/Risks/Testing/Scope/Links)
 11. **Return shape** — PR URL, test count, LoC delta, files changed, design decisions, pushback if any
+
+#### Project constitution auto-injection
+
+Before assembling the rest of the prompt, `build-prompt.sh` sources `${ANVIL_ROOT}/shared/lib.sh` and calls `av_load_constitution`, which reads `${PWD}/.anvil/constitution.md` if present. Behaviour:
+
+- File present + non-empty + valid UTF-8 → contents prepended as a `## Project constitution` section at the top of the prompt (before scope, before hard constraints).
+- File absent OR empty OR whitespace-only → no section emitted, prompt is byte-identical to the pre-S1 shape.
+- File contains non-UTF-8 bytes → `av_load_constitution` warns to stderr (`warning: .anvil/constitution.md is not valid UTF-8; skipping prepend`) and returns empty; dispatch continues with the legacy brief shape (graceful degradation, not a hard fail).
+- File > 2048 bytes → stderr warning `warning: .anvil/constitution.md is N bytes (recommended ≤ 2048)`; dispatch proceeds.
+- File > 8192 bytes → stderr warning `warning: .anvil/constitution.md is N bytes — this will bloat every dispatched-agent prompt`; dispatch proceeds.
+
+The constitution slot is for **project ethos** — north star, inviolable principles, things explicitly out of scope. NOT mechanical config (use `.anvil/dispatch-defaults.txt` for that). The scaffolded template at `templates/constitution-template.md` is dropped into `.anvil/constitution.md` by `bin/init-anvil-config.sh` on first init (it is NOT touched by `/config-bootstrap` — auto-synthesis was rejected in adversarial review).
+
+#### On-disk prompt emission (load-bearing)
+
+`build-prompt.sh` writes the full assembled prompt to `.anvil/dispatched-prompts/<slice-id>.prompt.md` **before** the Agent tool is invoked. Hard fail if the directory cannot be created or the file cannot be written: `error: cannot write to .anvil/dispatched-prompts/: <reason>`. Without the on-disk emission the constitution prepend (and the rest of the brief shape) is not testable from bats; the directory is auto-created and gitignored (it is runtime state, not source). The Agent tool caller MUST run `build-prompt.sh` first; the resulting prompt is on stdout AND on disk.
 
 #### Recent decisions auto-injection
 
