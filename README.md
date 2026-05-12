@@ -14,7 +14,7 @@
 
 ## Status
 
-**v0.6.0** — 19 skills · 17 review lenses · MIT, public, fully local.
+**v0.6.0** — 20 skills · 17 review lenses · MIT, public, fully local.
 
 Anvil keeps plans, slice status, reviews, merge gates, and recaps **in your repo — not buried in chat**. It's a Claude Code skill suite that takes a multi-PR plan (multiple stacked or independent PRs that ship one logical change) and drives it from spec → PRs → merged. Markdown skills + bash + MCP. No platform, no compilation, no lock-in.
 
@@ -98,7 +98,7 @@ If you adopt anvil and want to be added here, open a PR.
 
 ## Skills
 
-19 skills. You won't call all of them — `/grind` composes most. Plain-English descriptions below; skill names stay stable for backwards compatibility.
+20 skills. You won't call all of them — `/grind` composes most. Plain-English descriptions below; skill names stay stable for backwards compatibility.
 
 | Skill | What it does |
 |---|---|
@@ -121,6 +121,7 @@ If you adopt anvil and want to be added here, open a PR.
 | [`/anvil-status`](skills/anvil-status/SKILL.md) | Read-only rank-ordered text dashboard of a plan's state — what to think about next, what's in-flight, what's blocked, what's shipped, what's deferred — plus cumulative test delta + open follow-up count. Folds `.anvil/grind-events.jsonl` + tasks.md + `gh pr list` (or `GH_OFFLINE=1` fallback). |
 | [`/followup-rollup`](skills/followup-rollup/SKILL.md) | Consolidate open follow-up issues for a multi-slice plan. Walks issues whose title carries the `[<plan>-<slice> followup]` prefix, groups by severity (P0/P1/P2/P3) + area (test-coverage / correctness / architecture / operability), suggests which slice should consume each cluster. Output: markdown pasteable into a planning doc. |
 | [`/plan-health`](skills/plan-health/SKILL.md) | Non-blocking gate that flags when follow-up filing outpaces closing by 1.5× for three slices in a row. Auto-invoked by `/grind` step h.5 post-merge. Appends a `plan-health-degraded` event + comments on the most-recent open PR; never pauses dispatch. |
+| [`/analyze-plan`](skills/analyze-plan/SKILL.md) | Pre-execution gate that verifies a locked plan's cited file paths against the working tree before `/grind` dispatches the first slice. Catches the cheapest class of drift (paths renamed by a refactor between plan-write and grind-run). v1 file-path verification only; identifier + numeric-fact verification deferred to v2. Auto-invoked by `/grind` step 0.5 (opt-out via `--skip-analyze`). |
 
 ### Optional companions
 

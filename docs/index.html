@@ -771,7 +771,7 @@
       <a class="badge" href="https://github.com/browerthomas/Anvil/blob/main/.github/workflows/smoke-test.yml" target="_blank" rel="noopener">
         <span class="badge-check">&#10003;</span> 100+ tests &middot; CI on every push
       </a>
-      <span class="badge" data-skill-count="19"><span class="badge-check">&#10003;</span> 19 skills &middot; 17 review lenses</span>
+      <span class="badge" data-skill-count="20"><span class="badge-check">&#10003;</span> 20 skills &middot; 17 review lenses</span>
       <span class="badge"><span class="badge-check">&#10003;</span> Vanilla GitHub &middot; no SaaS, no GitHub App</span>
     </div>
   </div>
@@ -791,7 +791,7 @@
 <!-- ENTRY-POINT TIERS -->
 <section id="start" class="entry-tiers wrap">
   <p class="section-eyebrow">Install + entry points</p>
-  <h2 class="section-title">Adopt one skill, or all nineteen.</h2>
+  <h2 class="section-title">Adopt one skill, or all twenty.</h2>
   <p class="section-sub">Anvil isn't all-or-nothing. Each skill stands alone. Try the cheapest first; keep going if it earns the next investment.</p>
 
   <div class="entry-tiers-grid">
@@ -1072,11 +1072,11 @@
 <!-- SKILLS -->
 <section id="skills" class="skills wrap bordered">
   <p class="section-eyebrow">The toolkit</p>
-  <h2 class="section-title">Nineteen skills. One toolbox.</h2>
-  <p class="section-sub">You won't invoke all 19. The orchestrator (<code style="font-family:'JetBrains Mono',monospace;background:var(--surface);padding:2px 7px;border-radius:4px;font-size:14px;color:var(--ember-2);border:1px solid var(--border);">/grind</code>) composes most of them; you call the others directly when you need one piece.</p>
+  <h2 class="section-title">Twenty skills. One toolbox.</h2>
+  <p class="section-sub">You won't invoke all 20. The orchestrator (<code style="font-family:'JetBrains Mono',monospace;background:var(--surface);padding:2px 7px;border-radius:4px;font-size:14px;color:var(--ember-2);border:1px solid var(--border);">/grind</code>) composes most of them; you call the others directly when you need one piece.</p>
 
-  <details class="skills-disclosure" data-skill-count="19">
-    <summary>Show all 19 skills</summary>
+  <details class="skills-disclosure" data-skill-count="20">
+    <summary>Show all 20 skills</summary>
   <div class="skill-grid">
     <div class="skill">
       <div class="skill-head">
@@ -1177,6 +1177,13 @@
       <p class="skill-tag-line">Non-blocking debt-trend gate</p>
       <p class="skill-desc">Per-plan metric (open-follow-ups-filed-this-slice / closed-this-slice) over the most recent 3 slices. Flags when filing &gt; closing &times; 1.5 for 3 consecutive slices. Auto-invoked by <code>/grind</code> step h.5 post-merge. Appends a <code>plan-health-degraded</code> event + comments on the most-recent open PR; never pauses dispatch.</p>
     </div>
+    <div class="skill">
+      <div class="skill-head">
+        <span class="skill-cmd">/analyze-plan</span>
+      </div>
+      <p class="skill-tag-line">Pre-execution plan-drift gate</p>
+      <p class="skill-desc">Verifies every cited file path in a locked plan against the current working tree before <code>/grind</code> dispatches the first slice. Catches the cheapest class of drift &mdash; paths renamed by a refactor between plan-write and grind-run. v1 file-path verification only; identifier + numeric-fact verification deferred to v2. Auto-invoked by <code>/grind</code> step 0.5; opt-out via <code>--skip-analyze</code>.</p>
+    </div>
   </div>
   </details>
 
@@ -1234,7 +1241,7 @@
 <span class="prompt">$</span> <span class="cmd">git clone https://github.com/browerthomas/Anvil.git ~/anvil</span><br/>
 <span class="prompt">$</span> <span class="cmd">~/anvil/bin/preflight.sh</span> <span class="cmt"># verifies gh + git + node + jq</span><br/>
 <span class="prompt">$</span> <span class="cmd">~/anvil/bin/install.sh</span><br/>
-<span class="out ok">  installed 19 skills → ~/.claude/skills/</span><br/><br/>
+<span class="out ok">  installed 20 skills → ~/.claude/skills/</span><br/><br/>
 
 <span class="cmt"># That's it. In Claude Code, run any one skill standalone:</span><br/>
 <span class="prompt-claude">claude&gt;</span> <span class="cmd">/sweep-worktrees</span> <span class="cmt"># bulk-clean stale branches + worktrees</span><br/>
