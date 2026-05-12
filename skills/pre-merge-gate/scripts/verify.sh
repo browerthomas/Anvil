@@ -135,8 +135,25 @@ if [ -z "$SLICE_ID" ]; then
   exit 1
 fi
 # Resolve plan_path (optional — silent skip downstream if absent).
+#
+# Two cases:
+#  1. SLICE_ID was derived from a branch-match in dispatched-agents.json →
+#     fetch plan_path from .[$slice_id].plan_path (same row as the match).
+#  2. SLICE_ID was set via --slice override → the operator is asking us to
+#     run a DIFFERENT slice of the SAME plan they're already grinding on.
+#     The plan_path lives in the row whose branch == current branch, not
+#     in the (likely absent) row keyed by the override slice id. Fall back
+#     to a branch-match plan_path lookup when the slice-id lookup misses.
 if [ -f "$AGENTS_JSON" ]; then
   PLAN_PATH=$(jq -r --arg id "$SLICE_ID" '.[$id].plan_path // empty' "$AGENTS_JSON" 2>/dev/null)
+  if [ -z "$PLAN_PATH" ] && [ -n "$SLICE_OVERRIDE" ]; then
+    # --slice override: look up plan_path via branch-match instead.
+    # ambiguous-branch case is already hard-failed above, so at most one
+    # row matches here.
+    PLAN_PATH=$(jq -r --arg b "$BRANCH" \
+      'to_entries[] | select(.value.branch == $b) | .value.plan_path // empty' \
+      "$AGENTS_JSON" 2>/dev/null | head -1)
+  fi
   if [ -n "$PLAN_PATH" ] && [ "${PLAN_PATH#/}" = "$PLAN_PATH" ]; then
     PLAN_PATH="$REPO_ROOT/$PLAN_PATH"
   fi
