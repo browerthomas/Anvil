@@ -6,6 +6,8 @@ Variables in `{{ ... }}` are filled in by the skill before the prompt is sent to
 
 You are implementing **{{slice-id}}** — {{slice-title}}.
 
+Before starting, read `docs/vocabulary.md` for the anvil vocabulary used in this prompt (slice, gate, ratchet, checklist, constitution, event log, etc).
+
 {{#if issue-number}}**Issue:** [#{{issue-number}}]({{issue-url}}){{/if}}
 **Worktree:** `{{worktree-path}}` on branch `{{branch-name}}` based on `{{base-branch}}`. Deps installing in background — run `npm install` in any sub-package if its `node_modules` is empty.
 
