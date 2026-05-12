@@ -125,7 +125,58 @@ fi
 #     - skills/spec/SKILL.md
 # ---------------------------------------------------------------------------
 FORWARD_PATHS_FILE="$(mktemp -t anvil-analyze-paths.XXXXXX)"
-trap 'rm -f "$FORWARD_PATHS_FILE" "${FORWARD_PATHS_FILE}.matches" "${FORWARD_PATHS_FILE}.report"' EXIT
+IGNORE_PATTERNS_FILE="$(mktemp -t anvil-analyze-ignore.XXXXXX)"
+trap 'rm -f "$FORWARD_PATHS_FILE" "${FORWARD_PATHS_FILE}.matches" "${FORWARD_PATHS_FILE}.report" "$IGNORE_PATTERNS_FILE"' EXIT
+
+# ---------------------------------------------------------------------------
+# Ignore patterns (anvil#60).
+#
+# Operators document anvil conventions in plan prose ("the skill writes to
+# .anvil/dispatched-prompts/<id>.prompt.md") without adding those paths to a
+# slice's files: list — they're generated runtime state, not source artefacts.
+# Without auto-suppression every grind emits a noisy stream of CONTRADICTED
+# rows for `.anvil/*` references and trains operators to reflexively bypass
+# the gate via --skip-analyze.
+#
+# Default-suppressed prefixes (matched against extracted path):
+#   - .anvil/        — anvil runtime state (constitution, learnings, prompts)
+#   - .git/          — git internals
+#   - node_modules/  — npm install output
+#
+# Per-project additions can be listed in `<working-tree>/.anvil/analyze-plan.ignore`
+# (one glob per line; lines starting with `#` and blank lines ignored).
+# ---------------------------------------------------------------------------
+cat > "$IGNORE_PATTERNS_FILE" <<'EOF_ANVIL_DEFAULT_IGNORE'
+.anvil/*
+.git/*
+node_modules/*
+EOF_ANVIL_DEFAULT_IGNORE
+
+# Append project-local additions if the working tree opts in.
+_project_ignore="$WORKING_TREE/.anvil/analyze-plan.ignore"
+if [ -f "$_project_ignore" ] && [ -r "$_project_ignore" ]; then
+  # Strip comments + blanks; preserve the rest verbatim.
+  awk '
+    /^[[:space:]]*#/ { next }
+    /^[[:space:]]*$/ { next }
+    { print }
+  ' "$_project_ignore" >> "$IGNORE_PATTERNS_FILE"
+fi
+
+# True if $1 matches any glob in IGNORE_PATTERNS_FILE. Uses bash's `[[ == ]]`
+# glob matching (case-sensitive, anchored).
+path_is_ignored() {
+  local candidate="$1"
+  local pattern
+  while IFS= read -r pattern; do
+    [ -z "$pattern" ] && continue
+    # shellcheck disable=SC2053
+    if [[ "$candidate" == $pattern ]]; then
+      return 0
+    fi
+  done < "$IGNORE_PATTERNS_FILE"
+  return 1
+}
 
 awk '
   /^[[:space:]]*files:[[:space:]]*$/ { in_files=1; next }
@@ -214,6 +265,11 @@ extract_one_file() {
         if (m ~ /[0-9]{4}-[0-9]{2}-[0-9]{2}/)   { tmp = substr(tmp, RSTART + RLENGTH); continue }
         # Strip leading ./
         sub(/^\.\//, "", m)
+        # Strip leading / — when prose contains `${VAR}/path` or `$(fn)/path`,
+        # the regex match starts at the `/` after the closing brace/paren and
+        # the leading slash would otherwise produce phantom `/-rooted` paths
+        # whose existence check accidentally normalises double-slashes (anvil#59).
+        sub(/^\//, "", m)
         # Skip if the path collapsed to empty (defensive).
         if (m == "") { tmp = substr(tmp, RSTART + RLENGTH); continue }
         printf("%s\t%d\t%d\t%s\n", file, NR, in_fence, m)
@@ -250,6 +306,12 @@ sort -u "${FORWARD_PATHS_FILE}.matches" -o "${FORWARD_PATHS_FILE}.matches"
 
 while IFS=$'\t' read -r plan_file plan_line in_fence path; do
   [ -z "$path" ] && continue
+  # Auto-suppress generated-state paths (anvil#60) BEFORE any verdict bucket so
+  # ignored paths don't show up in VERIFIED / EXPECTED-BY-SLICE / UNVERIFIABLE /
+  # CONTRADICTED at all. The intent is to keep operator attention on real drift.
+  if path_is_ignored "$path"; then
+    continue
+  fi
   cite="$(realpath --relative-to="$(pwd)" "$plan_file" 2>/dev/null || echo "$plan_file"):$plan_line"
   if [ "$in_fence" = "1" ]; then
     unverifiable=$((unverifiable + 1))

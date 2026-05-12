@@ -177,12 +177,21 @@ After implementation, run `/codex-review` (cross-model review). If codex is rate
 
 ### Step 4: Dispatch via Agent tool
 
+The on-disk prompt emission described above (`build-prompt.sh` → `.anvil/dispatched-prompts/<id>.prompt.md`) is a **prerequisite** for `Agent({...})`. Always invoke `build-prompt.sh` first so the paper trail is in place before the agent starts; without it, the constitution-prepend and decisions-injection behaviour is not bats-testable. The ordering is load-bearing — a grep ratchet at `tests/smoke/dispatch-slice.bats` enforces it.
+
 ```
+# 1. Build the prompt and write it to .anvil/dispatched-prompts/<id>.prompt.md
+PROMPT=$(bash skills/dispatch-slice/scripts/build-prompt.sh \
+  --id "<id>" --scope "<scope>" [--issue <N>] [--no-codex])
+
+# 2. THEN invoke the Agent tool. The on-disk file at
+#    .anvil/dispatched-prompts/<id>.prompt.md is now in place; the Agent's
+#    stdout-captured prompt and the on-disk paper trail are byte-identical.
 Agent({
   description: "<id> <one-line>",
   subagent_type: "general-purpose",
   model: "opus",
-  prompt: "<assembled prompt>",
+  prompt: "$PROMPT",
   run_in_background: true
 })
 ```
