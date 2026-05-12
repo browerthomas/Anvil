@@ -21,6 +21,7 @@ Many things can block a clean merge: stale rebase, type errors, test failures, f
 | `--worktree <path>` | no | Worktree path; auto-derives if branch matches existing worktree |
 | `--base <branch>` | no | Base branch (defaults to `origin/main`) |
 | `--skip-rebase` | no | Don't rebase; just run gates against current HEAD (use when rebase already done) |
+| `--slice <id>` | no | Override slice lookup. Use when not run from inside `/grind` (the dispatched-agents.json source-of-truth is empty). |
 | `--strict` | no | Treat warnings as failures (e.g. lint warnings, test retry) |
 
 ## Procedure
@@ -95,6 +96,33 @@ BEGIN IMMEDIATE.{0,200}await :: src/** :: : await between BEGIN and COMMIT silen
 ```
 
 Run each as a `grep -E` over the path-glob; fail if any match.
+
+### Step 6.5: Per-slice checklist (S3)
+
+Plans may carry per-slice acceptance gates in the slice manifest under `checklist:` (see `templates/plan-template.md` / `templates/plan-folder-template/tasks.md` for the schema). This step runs them after the global gates and BEFORE CI verification, so a slice-specific failure surfaces immediately.
+
+**Slice lookup is exact-match against `.anvil/dispatched-agents.json`**, never branch-name prefix matching. Adversarial review enumerated four collision modes with prefix matching (substring match, rebase splits, re-dispatch on a new branch, branch rename), so the source of truth is `dispatched-agents.json` (populated by `/dispatch-slice` Step 5).
+
+Lookup order:
+
+1. **`--slice <id>` arg** — explicit operator override. Wins over the json lookup.
+2. **`.anvil/dispatched-agents.json` exact match** — find the slice id whose `branch` field equals the current branch name. Exact equality only.
+3. **Error** — print `error: no slice context found; pass --slice <id> or run inside /grind` and exit non-zero BEFORE running any further step (the global gates have already run; the CI gate is skipped).
+
+When a slice id is resolved AND `dispatched-agents.json` records a `plan_path` for it, the gate parses the checklist via `av_parse_slice_checklist <plan-path> <slice-id>` and runs each item:
+
+- **`shell`** — run the command under a per-item timeout (default 300 seconds, override via `timeout:`). Pass = exit 0.
+  - Report `<slice-id> checklist PASS: shell '<cmd>' exit 0` on success.
+  - Report `<slice-id> checklist FAIL: shell '<cmd>' exit <code>` on non-zero exit.
+  - Report `<slice-id> checklist FAIL: shell '<cmd>' timed out after Ns` on timeout (the command is killed).
+- **`grep`** — run `grep -rE "<pattern>" <glob>` (portable equivalent — `find ... | xargs grep -E`).
+  - `expect: absent` → fail if any match is found.
+  - `expect: present` → fail if zero matches found.
+  - Optional `count: N` → fail unless exact match count is N.
+
+**Missing `checklist:` field = silent absence.** Legacy slices behave exactly as today — no warning, no extra processing. This is the byte-identical-to-pre-S3 path.
+
+If any checklist item fails, the gate adds it to the BLOCKED list (same as any global gate) and refuses merge. If all pass, continues to the CI gate.
 
 ### Step 7: Verify CI on the PR
 

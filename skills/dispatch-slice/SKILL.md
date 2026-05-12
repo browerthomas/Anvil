@@ -191,7 +191,7 @@ Default to background. Operator can foreground if a single agent is the only thi
 
 ### Step 5: Record + return the agent ID + summary
 
-Append a row to `.anvil/dispatched-agents.json` (auto-create if missing) so `/grind` can track in-flight work:
+Append a row to `.anvil/dispatched-agents.json` (auto-create if missing) so `/grind` can track in-flight work AND `/pre-merge-gate` can locate the slice + plan for per-slice checklist enforcement (see `skills/pre-merge-gate/SKILL.md` Step 6.5):
 
 ```json
 {
@@ -199,11 +199,14 @@ Append a row to `.anvil/dispatched-agents.json` (auto-create if missing) so `/gr
     "agent_id": "<agent-id>",
     "worktree": "<worktree-path>",
     "branch": "<branch-name>",
+    "plan_path": "<absolute-or-repo-relative path to the plan file or folder>",
     "dispatched_at": "<iso-timestamp>",
     "scope": "<one-line summary>"
   }
 }
 ```
+
+The `branch` field is the exact-match key `/pre-merge-gate` looks up. The `plan_path` field points at either the flat plan markdown OR the folder-layout `tasks.md` so `av_parse_slice_checklist` can find the slice manifest.
 
 Print to operator:
 - Worktree path

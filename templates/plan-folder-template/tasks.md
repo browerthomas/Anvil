@@ -23,6 +23,23 @@ slices:
       - "Test: integration test asserts X"
       - "Assertion: behaviour Y is preserved"
       - "Test count: N+ passing"
+    checklist:                   # optional per-slice acceptance gates enforced by /pre-merge-gate
+      # Two kinds:
+      #   - `shell` runs a command + expects exit 0 within the per-item
+      #     timeout (default 300s; override with `timeout:`).
+      #   - `grep` asserts a regex is `present` | `absent` in `in:` (a glob).
+      #     Optional `count: N` requires exactly N matches when present.
+      # Slices without a `checklist:` block behave exactly as today (no
+      # warning, no extra processing). Use 1-3 narrow items per slice.
+      - kind: shell
+        run: "make -C tests smoke"
+        expect: pass
+        timeout: 300              # optional, seconds, default 300
+      - kind: grep
+        pattern: "TODO\\(slice-id\\)"
+        in: "src/**"
+        expect: absent            # absent | present
+        count: 1                  # optional, exact match count
     specs:                       # references to scenario files in ../specs/
       - "../specs/<scenario>.md"
     operator-decision:

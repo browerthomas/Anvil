@@ -295,3 +295,123 @@ av_load_constitution() {
   cat "$path"
   return 0
 }
+# --- Per-slice checklist parser (S3) ---
+# Parses the `checklist:` field for a single slice in a plan's YAML manifest.
+# Emits one line per checklist item in a structured pipe-delimited format:
+#   shell|<run>|<expect>|<timeout>
+#   grep|<pattern>|<in>|<expect>|<count>
+# Empty fields are emitted as the empty string. The `count` field is empty
+# when unset for grep items. `timeout` defaults to 300 (seconds) for shell
+# items when not specified.
+#
+# Usage: av_parse_slice_checklist <plan-path> <slice-id>
+#
+# Behaviour:
+#   - Missing plan file              → exit 2, stderr error
+#   - Missing argument(s)            → exit 2, stderr error
+#   - Slice id not found             → exit 1, stderr error
+#   - No `checklist:` key on slice   → exit 0, silent (legacy)
+#   - Empty `checklist: []` list     → exit 0, silent (legacy)
+#   - Unknown `kind:` value          → exit 1, stderr error
+#   - Invalid `expect:` for grep     → exit 1, stderr error
+#
+# The plan-path argument is the file containing the YAML slice manifest in a
+# ```yaml ... ``` fenced block (either a flat plan file or `tasks.md` from a
+# folder-layout plan). Re-uses the existing yq-or-python3-with-pyyaml pattern
+# already in use by skills/spec/scripts/validate.sh and skills/grind/scripts/
+# state.sh — same dependency surface, no new external tools.
+av_parse_slice_checklist() {
+  local plan_path="$1"
+  local slice_id="$2"
+  if [ -z "$plan_path" ] || [ -z "$slice_id" ]; then
+    echo "av_parse_slice_checklist: usage: av_parse_slice_checklist <plan-path> <slice-id>" >&2
+    return 2
+  fi
+  if [ ! -f "$plan_path" ]; then
+    echo "av_parse_slice_checklist: plan file not found: $plan_path" >&2
+    return 2
+  fi
+  # jq is a hard dependency — explicit precheck so a missing jq doesn't get
+  # surfaced as a misleading "could not parse slices YAML" message later.
+  if ! command -v jq >/dev/null 2>&1; then
+    echo "av_parse_slice_checklist: need jq (hard dependency)" >&2
+    return 2
+  fi
+
+  # 1. Extract the YAML slice manifest from the first ```yaml ... ``` fence.
+  local yaml
+  yaml=$(awk '/^```yaml/{flag=1; next} /^```/{if(flag){exit}; next} flag {print}' "$plan_path")
+  if [ -z "$yaml" ] || ! echo "$yaml" | grep -q "slices:"; then
+    echo "av_parse_slice_checklist: no slices YAML manifest found in $plan_path" >&2
+    return 1
+  fi
+
+  # 2. Convert YAML to JSON via yq (preferred) or python3+pyyaml (fallback).
+  local slices_json=""
+  if command -v yq >/dev/null 2>&1; then
+    slices_json=$(printf '%s\n' "$yaml" | yq -o=json 2>/dev/null)
+  elif command -v python3 >/dev/null 2>&1; then
+    slices_json=$(printf '%s\n' "$yaml" | python3 -c 'import sys, yaml, json; print(json.dumps(yaml.safe_load(sys.stdin)))' 2>/dev/null)
+  else
+    echo "av_parse_slice_checklist: need yq or python3+pyyaml to parse YAML" >&2
+    return 2
+  fi
+  if [ -z "$slices_json" ] || ! echo "$slices_json" | jq -e '.slices' >/dev/null 2>&1; then
+    echo "av_parse_slice_checklist: could not parse slices YAML (check syntax)" >&2
+    return 1
+  fi
+
+  # 3. Find the requested slice by id.
+  local slice_json
+  slice_json=$(echo "$slices_json" | jq --arg id "$slice_id" '.slices[] | select(.id == $id)')
+  if [ -z "$slice_json" ]; then
+    echo "av_parse_slice_checklist: slice id '$slice_id' not found in $plan_path" >&2
+    return 1
+  fi
+
+  # 4. Missing or empty checklist → silent legacy behaviour.
+  local has_checklist
+  has_checklist=$(echo "$slice_json" | jq 'has("checklist") and (.checklist // [] | length > 0)')
+  if [ "$has_checklist" != "true" ]; then
+    return 0
+  fi
+
+  # 5. Walk each checklist item.
+  local items_count idx item kind run expect timeout pattern in_glob count
+  items_count=$(echo "$slice_json" | jq '.checklist | length')
+  idx=0
+  while [ "$idx" -lt "$items_count" ]; do
+    item=$(echo "$slice_json" | jq -c ".checklist[$idx]")
+    kind=$(echo "$item" | jq -r '.kind // ""')
+    case "$kind" in
+      shell)
+        run=$(echo "$item" | jq -r '.run // ""')
+        expect=$(echo "$item" | jq -r '.expect // "pass"')
+        timeout=$(echo "$item" | jq -r '.timeout // 300')
+        printf 'shell|%s|%s|%s\n' "$run" "$expect" "$timeout"
+        ;;
+      grep)
+        pattern=$(echo "$item" | jq -r '.pattern // ""')
+        in_glob=$(echo "$item" | jq -r '.in // ""')
+        expect=$(echo "$item" | jq -r '.expect // ""')
+        if [ "$expect" != "present" ] && [ "$expect" != "absent" ]; then
+          echo "av_parse_slice_checklist: invalid expect '$expect' for grep (expected: present | absent) in slice '$slice_id'" >&2
+          return 1
+        fi
+        count=$(echo "$item" | jq -r '.count // ""')
+        printf 'grep|%s|%s|%s|%s\n' "$pattern" "$in_glob" "$expect" "$count"
+        ;;
+      "")
+        echo "av_parse_slice_checklist: checklist item $idx in slice '$slice_id' is missing 'kind'" >&2
+        return 1
+        ;;
+      *)
+        echo "av_parse_slice_checklist: unknown kind '$kind' (expected: shell | grep) in slice '$slice_id'" >&2
+        return 1
+        ;;
+    esac
+    idx=$((idx + 1))
+  done
+  return 0
+}
+

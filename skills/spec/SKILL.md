@@ -58,6 +58,15 @@ For each blank section, ask 1-3 specific questions via AskUserQuestion. Examples
 - **Hard constraints** — "What CAN'T this touch? (DB migrations, vendor APIs, public surface)"
 - **Slices** — "How does this decompose? What's the dependency graph?"
 - **Acceptance criteria** — for each slice: "What does 'done' look like? What test pins it?"
+- **Per-slice checklist items** — for each slice with a non-trivial change, ask: "Are there 1-3 narrow, scriptable acceptance gates `/pre-merge-gate` should run before merge?" Two kinds are supported:
+  - **`shell`** — run a command, expect exit 0 within a per-item timeout (default 300s).
+    Example: `{kind: shell, run: "make -C tests smoke", expect: pass}` — re-runs the smoke suite from the worktree before approving merge.
+    Example: `{kind: shell, run: "npm run lint", expect: pass, timeout: 60}` — short lint gate with override timeout.
+  - **`grep`** — assert a regex is `absent` or `present` in a file-glob. Optional `count: N` requires exactly N matches.
+    Example: `{kind: grep, pattern: "console\\.log", in: "src/**", expect: absent}` — block merge if a debug log leaked in.
+    Example: `{kind: grep, pattern: "registerHandler", in: "src/dispatch.ts", expect: present, count: 1}` — assert the slice's new handler is wired in exactly once.
+
+  These are written as `checklist:` under the slice in the YAML manifest (see `templates/plan-template.md` / `templates/plan-folder-template/tasks.md` for the schema). Leave the field off entirely for slices that need no bespoke gate — `/pre-merge-gate` silently skips per-slice checks when no `checklist:` is present.
 - **Operator decision points** — "Where would you want to be asked before the orchestrator continues?"
 
 ### Step 3: Adversarial challenge
@@ -166,6 +175,11 @@ slices:
     acceptance:
       - test: <description>
       - assertion: <description>
+    checklist:                 # optional, enforced by /pre-merge-gate
+      - kind: shell            # or `grep`
+        run: <command>
+        expect: pass
+        timeout: 300           # optional, default 300s
     operator-decision:
       ask: <question if pause-needed; null otherwise>
       default: <fallback if operator doesn't respond in N hours>
