@@ -71,6 +71,26 @@ slices:
       - "Test: integration test asserts X"
       - "Assertion: behaviour Y is preserved"
       - "Test count: 906+ passing"
+    checklist:                    # optional per-slice acceptance gates enforced by /pre-merge-gate
+      # Two kinds: `shell` (run a command, expect exit 0) and `grep`
+      # (assert a regex is present | absent in a path glob). Slices without
+      # a `checklist:` block behave exactly as today — silent absence.
+      # NOTE: `in:` is a directory path or a `dir/**` suffix (only the
+      # trailing `**` is wildcard-expanded — it is NOT a full glob).
+      - kind: shell
+        run: "make -C tests smoke"
+        expect: pass
+        timeout: 300              # optional, seconds, default 300
+      - kind: grep
+        pattern: "TODO\\(slice-id\\)"
+        in: "src/**"
+        expect: absent            # absent: pattern must NOT match anywhere in `in`
+        # `count:` is NOT valid under `expect: absent` — omit it.
+      - kind: grep
+        pattern: "export const FOO ="
+        in: "src/foo.ts"
+        expect: present            # present: pattern must match at least once
+        count: 1                   # optional, exact match count (only valid under `expect: present`)
     operator-decision:
       ask: null              # if non-null: orchestrator pauses + asks operator before this slice
       verbs: []              # subset of [approve, edit, reject, respond] — operator's valid answers

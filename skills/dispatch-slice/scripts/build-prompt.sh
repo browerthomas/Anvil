@@ -59,6 +59,7 @@ COMMIT_PREFIX="fix"
 SCOPE_NAME=""
 EXTRA_CONSTRAINTS=""
 NO_CODEX=0
+PLAN_PATH=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -74,6 +75,7 @@ while [ $# -gt 0 ]; do
     --scope-name) SCOPE_NAME="$2"; shift 2;;
     --constraints) EXTRA_CONSTRAINTS="$2"; shift 2;;
     --no-codex) NO_CODEX=1; shift;;
+    --plan-path) PLAN_PATH="$2"; shift 2;;
     *) av_fail "unknown arg: $1"; exit 1;;
   esac
 done
@@ -276,6 +278,53 @@ if ! printf '%s\n' "$PROMPT" > "$PROMPT_FILE" 2>/dev/null; then
   printf 'error: cannot write to .anvil/dispatched-prompts/: write failed for %s\n' "$PROMPT_FILE" >&2
   exit 1
 fi
+
+# Persist the dispatched-agents.json row (S3). The row is keyed by slice id
+# and carries enough state for /pre-merge-gate to find this slice's plan +
+# checklist later. We write the row AFTER the prompt file lands so the two
+# artefacts come into existence in a consistent order.
+#
+# Hard dependency on jq (used to build the JSON safely against shell-quoting
+# pitfalls). Missing jq → soft-warn + skip (we don't want to crash dispatch
+# over a missing tool that's already a hard dep elsewhere — the operator will
+# see the warning and install jq before the next dispatch).
+_av_persist_dispatched_agent() {
+  if ! command -v jq >/dev/null 2>&1; then
+    printf 'warning: jq not found — skipping .anvil/dispatched-agents.json update\n' >&2
+    return 0
+  fi
+  local agents_file="${REPO_ROOT}/.anvil/dispatched-agents.json"
+  if ! mkdir -p "${REPO_ROOT}/.anvil" 2>/dev/null; then
+    printf 'warning: cannot create %s/.anvil — skipping dispatched-agents.json update\n' "$REPO_ROOT" >&2
+    return 0
+  fi
+  [ -f "$agents_file" ] || echo "{}" > "$agents_file"
+
+  local now
+  now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+  local tmp
+  tmp="$(mktemp)" || return 0
+  if jq --arg id "$ID" \
+        --arg branch "$BRANCH" \
+        --arg worktree "$WORKTREE" \
+        --arg plan_path "${PLAN_PATH:-}" \
+        --arg dispatched_at "$now" \
+        --arg scope "$SCOPE" \
+        '. + {($id): {
+          branch: $branch,
+          worktree: $worktree,
+          plan_path: $plan_path,
+          dispatched_at: $dispatched_at,
+          scope: $scope
+        }}' "$agents_file" > "$tmp" 2>/dev/null; then
+    mv "$tmp" "$agents_file"
+  else
+    rm -f "$tmp"
+    printf 'warning: failed to update %s\n' "$agents_file" >&2
+  fi
+}
+_av_persist_dispatched_agent
 
 # Emit the same prompt on stdout so existing callers that capture stdout
 # (e.g. piping into Agent()) keep working.
