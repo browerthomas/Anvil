@@ -145,3 +145,114 @@ av_anvil_root() {
   # Resolves the anvil repo root from a sourced library path.
   cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd
 }
+
+# --- Template resolution (2-layer: project override -> core default) ---
+# Resolves a template name through a 2-layer hierarchy. First hit wins.
+#   Layer 1 (project override): ${PWD}/.anvil/templates/overrides/<name>
+#   Layer 2 (core default):     $(av_anvil_root)/templates/<name>
+#
+# Prints the absolute path of the resolved template on stdout, exits 0.
+# Refuses path traversal (`..` segments or a leading `/` in <name>) before
+# any filesystem access. Refuses missing argument. Refuses name-not-found
+# with a stderr message listing both searched paths.
+#
+# Reuses av_anvil_root() and the canonical ANVIL_ROOT install-root concept.
+# (Do not introduce alternate install-root variables here — other names in
+# bin/ are already overloaded for different meanings; see
+# docs/template-overrides.md.)
+# Portable realpath shim. macOS BSD realpath and GNU realpath differ on
+# flag support; fall back to cd + pwd -P (POSIX) when neither works for
+# the given path. Returns empty string + non-zero exit on resolution
+# failure so the caller can treat that as "refuse".
+_av_realpath() {
+  local p="$1"
+  if [ -z "$p" ]; then
+    return 1
+  fi
+  if command -v realpath >/dev/null 2>&1; then
+    local r
+    if r="$(realpath "$p" 2>/dev/null)" && [ -n "$r" ]; then
+      printf '%s\n' "$r"
+      return 0
+    fi
+  fi
+  # POSIX fallback: cd to the parent of the resolved final path and
+  # combine with the basename. Works for symlinks whose parent exists.
+  local dir base
+  dir="$(dirname "$p")"
+  base="$(basename "$p")"
+  ( cd "$dir" 2>/dev/null && printf '%s/%s\n' "$(pwd -P)" "$base" )
+}
+
+av_resolve_template() {
+  local name="$1"
+  if [ -z "$name" ]; then
+    echo "av_resolve_template: missing template name argument" >&2
+    return 2
+  fi
+  # Refuse path traversal BEFORE any filesystem access.
+  # - Leading `/` would escape the project/core roots.
+  # - Any segment equal to `..` (NOT any `..` substring — `foo..bar.md`
+  #   is a legitimate filename) could climb out of the resolved root.
+  case "$name" in
+    /*)
+      echo "av_resolve_template: refusing path traversal in $name (absolute path)" >&2
+      return 2
+      ;;
+  esac
+  # Split on `/` and check each component. Localised IFS so we don't
+  # leak the change out of the function.
+  local _av_old_ifs="$IFS"
+  IFS=/
+  # shellcheck disable=SC2086
+  set -- $name
+  IFS="$_av_old_ifs"
+  local segment
+  for segment in "$@"; do
+    if [ "$segment" = ".." ]; then
+      echo "av_resolve_template: refusing path traversal in $name (.. segment)" >&2
+      return 2
+    fi
+  done
+
+  local project_layer="${PWD}/.anvil/templates/overrides"
+  local core_layer
+  core_layer="$(av_anvil_root)/templates"
+  local project_path="${project_layer}/${name}"
+  local core_path="${core_layer}/${name}"
+
+  local candidate layer_dir
+  if [ -e "$project_path" ]; then
+    candidate="$project_path"
+    layer_dir="$project_layer"
+  elif [ -e "$core_path" ]; then
+    candidate="$core_path"
+    layer_dir="$core_layer"
+  else
+    echo "av_resolve_template: $name not found (project: $project_path, core: $core_path)" >&2
+    return 1
+  fi
+
+  # Symlink guard: an operator (or an attacker who can write the override
+  # tree) could drop a symlink at the override path pointing at host
+  # content (e.g. /etc/passwd). After the layer-hit check, resolve both
+  # the candidate and the expected layer dir to their canonical paths
+  # and refuse if the candidate escapes the layer.
+  local resolved canonical_layer
+  resolved="$(_av_realpath "$candidate")"
+  canonical_layer="$(cd "$layer_dir" 2>/dev/null && pwd -P)"
+  if [ -z "$resolved" ] || [ -z "$canonical_layer" ]; then
+    echo "av_resolve_template: refusing override — could not canonicalise '$candidate' or layer '$layer_dir'" >&2
+    return 1
+  fi
+  case "$resolved" in
+    "$canonical_layer"/*) ;;  # OK — resolved target is under expected layer
+    *)
+      echo "av_resolve_template: refusing override symlink escape (resolved '$resolved' outside '$canonical_layer')" >&2
+      return 1
+      ;;
+  esac
+
+  printf '%s\n' "$candidate"
+  return 0
+}
