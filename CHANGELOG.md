@@ -4,6 +4,14 @@ All notable changes to anvil are documented here. Format follows [Keep a Changel
 
 ## [Unreleased]
 
+### Added
+
+- **`/analyze-plan <plan-path>`** (speckit-gold S5). New pre-execution gate that verifies a locked plan's cited file paths against the current working tree. v1 scope is file-path verification only; identifier + numeric-fact verification are deferred to a v2 follow-up issue (gated on measured v1 false-positive rate against ≥3 real plans). Conservative regex: path must contain `/`, end in a recognised extension (`.ts|.js|.sh|.md|.json|.yml|.yaml|.bash|.py|.txt|.bats`), and contain no placeholder tokens (`<…>`, `{…}`, date patterns). Four verdicts: `VERIFIED` (exists), `EXPECTED-BY-SLICE` (absent but in some slice's `files:` list — forward-looking, not a failure), `UNVERIFIABLE` (matched inside a fenced code block — illustrative), `CONTRADICTED` (absent AND not in any slice's `files:` list — exits 1). The `EXPECTED-BY-SLICE` verdict is load-bearing: without it, `/analyze-plan` on the speckit-gold plan itself would flag every planned-output file as drift on its own first execution. Auto-invoked by `/grind` step 0.5 between plan validation and topo-sort; opt-out via `/grind --skip-analyze`. No network calls. Smoke tests at `tests/smoke/analyze-plan.bats` (8 scenarios). Full design in `docs/analyze-plan.md`.
+
+### Changed
+
+- **`/grind` gains `--skip-analyze`** + new step 0.5 (`/analyze-plan` pre-execution gate). Default-on; bypass with `--skip-analyze` when CONTRADICTED claims are spec-scenario illustrations rather than real drift.
+
 ## [v0.6.0] - 2026-05-11
 
 **Sprint summary.** 18 slices shipped across Phases A (positioning + copy), B (state-introspection skills), C (`/persona` → `/lens` hard rename), D (quality fences + backlog rollup), and E (release wrap) — full plan at `docs/plans/2026-05-11-positioning-and-state-product/`. Anvil now leads with **state-as-product** positioning (plans, slice status, reviews, merge gates, and recaps live in the repo, not the conversation). Four new state-introspection capabilities ship: `/anvil-status` (read-only rank-ordered dashboard), `/grind --resume` (auto-derive resume point from event log; `--from` deprecated alias kept), `/decide` (as a `/learn` extension with `--decision-type` + `--affected` flags — no new state file), and `/recap v2` (TLDR + 4-section WHY engine with three-form citation resolution). Plus: `/persona` → `/lens` hard rename with one-shot operator migrator, a pre-merge / CI leak-grep gate (`bin/check-leaks.sh` + per-project `.anvil/check-leaks.patterns.txt`), `/followup-rollup`, `/plan-health`, `/learn-promote`, and the chronic `install.bats` worker flake closed at root.

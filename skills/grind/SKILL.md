@@ -48,6 +48,7 @@ Built from `templates/plan-folder-template/`.
 | `--max-parallel <n>` | no | Max simultaneous agent dispatches (default 3) |
 | `--no-codex` | no | Skip codex review (use `/self-review` only) — for codex outage windows |
 | `--dry-run` | no | Print what would happen, don't dispatch |
+| `--skip-analyze` | no | Skip the `/analyze-plan` pre-execution gate at step 0.5. Use when CONTRADICTED claims are known spec-scenario illustrations (e.g. analyzing the speckit-gold plan itself). |
 
 ### `--resume` semantics
 
@@ -78,6 +79,34 @@ Read the plan markdown. Extract the slice manifest YAML block. Validate:
 - Hard constraints section non-empty
 
 If validation fails: report + abort. Direct operator to `/spec --refine`.
+
+### Step 0.5: /analyze-plan pre-execution gate
+
+Before dispatching any slice, run `/analyze-plan <plan-path>` to verify that every cited file path in the plan still exists in the working tree. Catches drift between plan-write time and grind-run time.
+
+```bash
+if [ -z "$SKIP_ANALYZE" ]; then
+  bash skills/analyze-plan/scripts/extract-paths.sh "<plan-path>"
+  rc=$?
+  if [ "$rc" -eq 1 ]; then
+    echo "stale claims found; either run /refine-plan or re-run /grind with --skip-analyze" >&2
+    exit 1
+  elif [ "$rc" -eq 2 ]; then
+    echo "/analyze-plan: usage error — aborting grind" >&2
+    exit 1
+  fi
+fi
+```
+
+The gate is **opt-out**: it runs on every `/grind` invocation by default. Bypass with `--skip-analyze` (e.g. when the CONTRADICTED claims are spec-scenario illustrations in a self-analyzing plan).
+
+Verdict set (from `/analyze-plan`):
+- `VERIFIED` — path exists.
+- `EXPECTED-BY-SLICE` — path is in some slice's `files:` list (forward-looking; no failure).
+- `UNVERIFIABLE` — path inside a fenced code block (illustrative; no failure).
+- `CONTRADICTED` — path absent AND not in any slice's `files:` list → halt.
+
+See `docs/analyze-plan.md` for the full design + v1/v2 scope split.
 
 ### Step 2: Topo-sort slices
 
