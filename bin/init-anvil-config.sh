@@ -54,6 +54,24 @@ av_ok "wrote $ANVIL_DIR/pre-merge-gate.config.json"
 cp "$ANVIL_ROOT/skills/pre-merge-gate/templates/known-flakes.example.txt" "$ANVIL_DIR/known-flakes.txt"
 av_ok "wrote $ANVIL_DIR/known-flakes.txt"
 
+# Scaffold .anvil/constitution.md from templates/constitution-template.md the
+# FIRST time init is run for a project. Never overwrite an existing constitution
+# (the operator's strategic intent must not be clobbered by a re-run). Resolved
+# via av_resolve_template so project-local overrides at
+# .anvil/templates/overrides/constitution-template.md win when present.
+if [ ! -f "$ANVIL_DIR/constitution.md" ]; then
+  _const_template_path=""
+  if _const_template_path=$(cd "$REPO_ROOT" && av_resolve_template constitution-template.md 2>/dev/null); then
+    if [ -n "$_const_template_path" ] && [ -f "$_const_template_path" ]; then
+      cp "$_const_template_path" "$ANVIL_DIR/constitution.md"
+      av_ok "wrote $ANVIL_DIR/constitution.md (from $_const_template_path)"
+    fi
+  fi
+  unset _const_template_path
+else
+  av_info "kept existing $ANVIL_DIR/constitution.md (no overwrite)"
+fi
+
 cat > "$ANVIL_DIR/dispatch-defaults.txt" <<'EOF'
 # dispatch-defaults.txt — appended to every /dispatch-slice agent prompt.
 #
@@ -102,6 +120,7 @@ grind-state.json
 grind-events.jsonl
 grind-snapshot.json
 dispatched-agents.json
+dispatched-prompts/
 
 # Per-project learnings — append-only JSONL; default-gitignored for privacy.
 # Operators who want the log shared across the team can `git add -f` it.
@@ -138,6 +157,8 @@ Project-specific configuration consumed by [anvil](https://github.com/browerthom
 | `pre-merge-gate.config.json` | `/pre-merge-gate` | Rebase target, test command, fitness path, blocking CI checks | yes |
 | `known-flakes.txt` | `/pre-merge-gate` + `/grind` | Test patterns to retry once before treating as real failures | yes |
 | `dispatch-defaults.txt` | `/dispatch-slice` | Per-project hard constraints appended to every agent prompt | yes |
+| `constitution.md` | `/dispatch-slice` | Project ethos / north star / inviolable principles prepended to every agent prompt | yes |
+| `dispatched-prompts/` | `/dispatch-slice` | On-disk assembled-prompt emissions per slice (auto-managed) | no (gitignored) |
 | `grind-state.json` | `/grind` | Per-plan execution state (auto-managed) | no (gitignored) |
 | `grind-events.jsonl` | `/grind` | Append-only event log (auto-managed) | no (gitignored) |
 | `dispatched-agents.json` | `/dispatch-slice` | Tracking of in-flight agents (auto-managed) | no (gitignored) |
