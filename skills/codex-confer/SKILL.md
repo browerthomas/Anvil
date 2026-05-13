@@ -44,6 +44,12 @@ Format your reply as:
 1. Strongest counter-argument
 2. Specific risks with concrete failure modes
 3. Verdict — does the approach hold up, with what changes
+
+End your response with exactly one of these lines on its own:
+`VERDICT: APPROVED` — design holds up; no P0/P1 findings worth blocking on.
+`VERDICT: REVISE` — found P0/P1 issues that should be addressed before proceeding.
+
+This makes the response machine-parseable for iteration loops without losing the nuance above.
 EOF
 )"
 ```

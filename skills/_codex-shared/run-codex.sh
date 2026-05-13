@@ -39,14 +39,31 @@ log_file="$log_dir/${ts}-${cmd_tag}.md"
 last_msg="$(mktemp -t codex-last-XXXXXX.md)"
 
 # Split args: anything before `--` is passed to codex, anything after is the prompt.
+# Wrapper-level flags intercepted here (not passed to codex):
+#   --resume <session-id>   — call `codex exec resume <session-id>` instead of plain `codex exec`
+#                              (continues a previous session's context; iterative-loop pattern)
+#   --resume --last         — resume the most recent session
 codex_args=()
 prompt=""
+resume_session=""
+resume_last=false
 while [[ $# -gt 0 ]]; do
   if [[ "$1" == "--" ]]; then
     shift
     prompt="${1:-}"
     shift || true
     break
+  fi
+  if [[ "$1" == "--resume" ]]; then
+    shift
+    if [[ "${1:-}" == "--last" ]]; then
+      resume_last=true
+      shift
+    else
+      resume_session="${1:-}"
+      shift || true
+    fi
+    continue
   fi
   codex_args+=("$1")
   shift
@@ -122,10 +139,21 @@ if [[ "$mode" == "review" ]]; then
     exit 3
   fi
 elif [[ "$mode" == "exec" ]]; then
-  if [[ -n "$prompt" ]]; then
-    codex exec "${exec_flags[@]}" ${codex_args[@]+"${codex_args[@]}"} "$prompt" >"$verbose_log" 2>&1 || true
+  # Resume mode: `codex exec resume [SESSION_ID|--last] [PROMPT]`
+  # Continues a prior exec session's context — useful for iterative-loop
+  # patterns (Claude revises plan, re-asks Codex with same context).
+  if [[ "$resume_last" == "true" ]]; then
+    codex_invocation=(codex exec resume "${exec_flags[@]}" ${codex_args[@]+"${codex_args[@]}"} --last)
+  elif [[ -n "$resume_session" ]]; then
+    codex_invocation=(codex exec resume "${exec_flags[@]}" ${codex_args[@]+"${codex_args[@]}"} "$resume_session")
   else
-    codex exec "${exec_flags[@]}" ${codex_args[@]+"${codex_args[@]}"} >"$verbose_log" 2>&1 || true
+    codex_invocation=(codex exec "${exec_flags[@]}" ${codex_args[@]+"${codex_args[@]}"})
+  fi
+
+  if [[ -n "$prompt" ]]; then
+    "${codex_invocation[@]}" "$prompt" >"$verbose_log" 2>&1 || true
+  else
+    "${codex_invocation[@]}" >"$verbose_log" 2>&1 || true
   fi
 
   # Retry-on-empty fallback: if codex exited cleanly but never wrote a
