@@ -27,7 +27,12 @@
     "skills/anvil-status",
     "skills/followup-rollup",
     "skills/plan-health",
-    "skills/analyze-plan"
+    "skills/analyze-plan",
+    "skills/codex-check",
+    "skills/codex-confer",
+    "skills/codex-debug",
+    "skills/codex-plan",
+    "skills/codex-review"
   ],
   "templates": [
     "templates/plan-template.md"
