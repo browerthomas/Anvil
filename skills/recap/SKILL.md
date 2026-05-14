@@ -174,11 +174,75 @@ If `--output <path>` is supplied, the v2 markdown lands there. Otherwise it
 prints to stdout. The first content in the output is `## TLDR` — operators
 scan-read the TLDR; the WHY sections live below.
 
+## Grind summary (agent token / tool / wall-time rollup)
+
+Both v1 and v2 recaps emit a per-slice rollup of agent token spend + tool
+use + wall time, folded from the `agent-completed` events that
+`/dispatch-slice` appends to `.anvil/grind-events.jsonl`. The rollup also
+ships as a standalone sub-command — `/grind-summary` — for operators who
+just want the table without the full visual / WHY-structured recap.
+
+### Output
+
+```
+=== Grind summary: <plan-path> ===
+
+Slice  PR      Tokens     Tool uses  Wall time
+B0     #949    150,200    88         12m 14s
+B2     #952    202,018    140        17m 36s
+...
+────────────────────────────────────────────────
+Total          1,847,221  1,002      4h 12m  (n=11 agents)
++ orchestrator: run `/cost` in Claude Code for parent-side tokens
+```
+
+- Multiple agents per slice (review fix-ups, dispatched fixers) sum into
+  one row. The trailing `n=N agents` count covers every agent contribution.
+- The `PR` column is filled from a sibling `slice-pr-opened` event when one
+  exists for the same slice; left blank otherwise.
+- The orchestrator footer is explicit and always printed. The runtime
+  tracks parent-side tokens but doesn't expose them as a callable tool, so
+  operators have to run `/cost` in Claude Code itself to see them. This is
+  the framework's permanent gap and the line names it.
+- Codex / Hermes CLI calls are NOT counted — they're separate
+  subscriptions, not Claude tokens.
+
+### Standalone invocation
+
+```bash
+# Default — read .anvil/grind-events.jsonl from the current repo:
+bash skills/recap/scripts/grind-summary.sh
+
+# Label the section with a plan path:
+bash skills/recap/scripts/grind-summary.sh --plan docs/plans/<slug>/
+
+# Point at a specific event log (tests, archived plans):
+bash skills/recap/scripts/grind-summary.sh \
+  --events /path/to/grind-events.jsonl \
+  --plan docs/plans/<slug>/
+```
+
+When no `agent-completed` events exist (older runtimes, no /grind drove the
+sprint), the rollup prints a one-line "(no agent-completed events recorded)"
+notice and the orchestrator footer — never an error.
+
+### Out of scope
+
+- **Dollar conversion.** Token counts only. Cloud-model prices move too
+  fast and anvil would be wrong by month two; the event log carries token
+  counts (and an optional, separately-reported `cost_usd` field — see
+  `docs/observability.md`) but the recap rollup intentionally does not
+  multiply tokens by a rate table.
+- **Orchestrator-side tokens.** Listed above; the `/cost` footer names the
+  gap.
+
 ## Cadence
 
 - v1 — run at the end of every multi-PR sprint.
 - v2 — run at the end of plan-driven sprints where WHY matters (operator
   briefing future-self, decision-records audit, retrospective).
+- `/grind-summary` — any time during or after a sprint, to see the
+  per-slice cost-of-agent-work breakdown without the full recap.
 - Pair both with `/session-closeout`.
 
 ## Style reference
@@ -190,4 +254,7 @@ If a previous v1 recap exists at `~/.claude/showme/<YYYYMMDD-HHMMSS>-recap-<slug
 - `scripts/build-recap.sh` — entry point. `--v2` enables structured mode;
   `--resolve <file>` re-runs validation + citation resolution against an
   already-generated markdown file (used for tests).
+- `scripts/grind-summary.sh` — standalone per-slice rollup of agent token
+  spend + tool use + wall time. Backs `/grind-summary` and is invoked
+  internally by both recap modes when the operator wants the table inline.
 - `templates/why-recap.md` — the structured prompt template for v2.

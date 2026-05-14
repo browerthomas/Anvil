@@ -26,6 +26,64 @@ How anvil tracks per-plan execution state + how to plug in hosted observability 
 | `slice-skipped` | operator-paced or rejected | `{reason}` |
 | `issue-filed` | follow-up issue tracked | `{number}` |
 | `decision` | operator-decision invoked | `{verb, outcome, response}` |
+| `agent-completed` | sub-agent returned to dispatcher | `{agent?, model?, branch?, total_tokens?, tool_uses?, duration_ms?}` |
+
+### `agent-completed`
+
+Appended by `/dispatch-slice` Step 6 after a sub-agent's completion
+notification arrives. Captures token spend + tool use + wall time so
+`/recap` (and standalone `/grind-summary`) can roll up agent cost per slice
+without manual scraping.
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `agent` | string \| null | optional | Sub-agent identifier (whatever the runtime exposed). |
+| `model` | string \| null | optional | Model name (`opus`, `sonnet`, …). Pure metadata; not validated. |
+| `branch` | string \| null | optional | Branch the agent worked on; mirrors the dispatch row in `.anvil/dispatched-agents.json`. |
+| `total_tokens` | integer \| null | optional | Sum of input + output tokens for this agent run. |
+| `tool_uses` | integer \| null | optional | Count of tool invocations during the run. |
+| `duration_ms` | integer \| null | optional | Wall-clock duration of the agent run in milliseconds. |
+
+The three counter fields (`total_tokens`, `tool_uses`, `duration_ms`) are
+parsed from a `<usage>` block in the completion-notification body. Three
+shapes are accepted (whichever the runtime emits):
+
+```
+<usage>
+  total_tokens: 278901
+  tool_uses:    171
+  duration_ms:  1478669
+</usage>
+
+<usage total_tokens="278901" tool_uses="171" duration_ms="1478669" />
+
+<usage>{"total_tokens": 278901, "tool_uses": 171, "duration_ms": 1478669}</usage>
+```
+
+**Soft-fail.** When the `<usage>` block is missing, unparseable, or jq is
+not installed, the dispatcher logs a warning and skips the event append.
+Older runtimes and manual `/dispatch-slice` invocations must not break the
+slice. The rollup script tolerates an absent / empty event log with a
+one-line "(no agent-completed events recorded)" notice.
+
+**Multiple agents per slice.** Review fix-ups, dispatched fixers, and
+operator-requested retries each emit their own `agent-completed` event for
+the same `slice`. The rollup sums every row that shares a `slice` id.
+
+**Out of scope for this event:**
+- Dollar conversion — token counts only; the rollup never multiplies by a
+  rate table because cloud pricing moves too fast.
+- Orchestrator-side tokens — the parent agent's token spend is tracked by
+  the runtime but not exposed as a callable tool. `/recap` always prints a
+  `+ orchestrator: run /cost in Claude Code for parent-side tokens` line so
+  operators know the gap exists.
+- Codex / Hermes CLI usage — separate subscriptions, not Claude tokens.
+
+`cost_usd` is **deliberately not** part of `agent-completed`. The
+`slice-*` events (see token / cost fields below) carry an optional
+`cost_usd` field when the runtime can report it, and the cost rollup at
+`build-recap.sh#collect_cost_summary` reads it from there. Keeping the
+two streams separate lets the agent-completed rollup stay rate-table-free.
 
 ### Token / cost fields (optional, nullable)
 

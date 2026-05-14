@@ -295,6 +295,106 @@ av_load_constitution() {
   cat "$path"
   return 0
 }
+
+# --- Agent-completion usage parser ---------------------------------------
+# Parses a sub-agent completion-notification body for the `<usage>` block
+# and emits the three counters on stdout, one per line, in the order:
+#
+#   total_tokens
+#   tool_uses
+#   duration_ms
+#
+# Returns 0 if a usage block was found and at least one counter parsed,
+# 1 if no usage block / no counters could be extracted. The dispatcher
+# soft-fails on a non-zero return — missing counters must never block a
+# slice (older runtimes + manual dispatches don't carry the block).
+#
+# Accepted shapes (whichever the runtime emits — all parsed best-effort):
+#   <usage>
+#     total_tokens: 278901
+#     tool_uses:    171
+#     duration_ms:  1478669
+#   </usage>
+#
+#   <usage total_tokens="278901" tool_uses="171" duration_ms="1478669" />
+#
+#   <usage>{"total_tokens": 278901, "tool_uses": 171, "duration_ms": 1478669}</usage>
+#
+# Unknown fields are ignored; missing fields render as the empty string
+# (the writer turns empty → JSON null). All counter values must be
+# non-negative integers; non-numeric tokens are dropped so a stray label
+# can't smuggle a string into the event log.
+av_parse_agent_usage() {
+  local input="$1"
+  if [ -z "$input" ] || [ ! -f "$input" ]; then
+    return 1
+  fi
+  # Extract the first <usage>...</usage> body. Tolerant of:
+  #   - block form (open + body + close on separate lines)
+  #   - inline form (single line)
+  #   - self-closing (<usage ... />)
+  local body
+  body=$(awk '
+    BEGIN { capture=0; out="" }
+    {
+      line=$0
+      if (capture == 0) {
+        if (match(line, /<usage[^>]*\/>/)) {
+          # Self-closing — capture the attribute slice between < and />.
+          s = substr(line, RSTART, RLENGTH)
+          sub(/^<usage[[:space:]]*/, "", s)
+          sub(/[[:space:]]*\/>$/, "", s)
+          out = out " " s
+          exit
+        }
+        if (match(line, /<usage[^>]*>/)) {
+          # Opening tag — keep anything after the `>` on this line.
+          rest = substr(line, RSTART + RLENGTH)
+          # Inline close on same line?
+          ci = index(rest, "</usage>")
+          if (ci > 0) {
+            out = out " " substr(rest, 1, ci - 1)
+            exit
+          } else {
+            out = out " " rest
+            capture = 1
+            next
+          }
+        }
+      } else {
+        ci = index(line, "</usage>")
+        if (ci > 0) {
+          out = out " " substr(line, 1, ci - 1)
+          exit
+        }
+        out = out " " line
+      }
+    }
+    END { print out }
+  ' "$input")
+  if [ -z "$(printf '%s' "$body" | tr -d '[:space:]')" ]; then
+    return 1
+  fi
+  # Extract the three counters. Strategy:
+  #   1. Strip JSON braces / quotes / commas — turns `{"total_tokens": 200}`
+  #      into ` total_tokens: 200 `, same shape as the block form.
+  #   2. Walk `key: value` and `key="value"` pairs via grep -oE.
+  local norm
+  norm=$(printf '%s' "$body" \
+    | tr -d '{}",' \
+    | sed -E 's/=/: /g')
+  local total tool dur
+  total=$(printf '%s' "$norm" | grep -oE 'total_tokens[[:space:]]*:[[:space:]]*[0-9]+' | head -1 | grep -oE '[0-9]+$' || true)
+  tool=$(printf '%s' "$norm"  | grep -oE 'tool_uses[[:space:]]*:[[:space:]]*[0-9]+'    | head -1 | grep -oE '[0-9]+$' || true)
+  dur=$(printf '%s' "$norm"   | grep -oE 'duration_ms[[:space:]]*:[[:space:]]*[0-9]+'  | head -1 | grep -oE '[0-9]+$' || true)
+  # Fail if none of the three resolved — that's "block was there but unparseable".
+  if [ -z "$total" ] && [ -z "$tool" ] && [ -z "$dur" ]; then
+    return 1
+  fi
+  printf '%s\n%s\n%s\n' "$total" "$tool" "$dur"
+  return 0
+}
+
 # --- Per-slice checklist parser (S3) ---
 # Parses the `checklist:` field for a single slice in a plan's YAML manifest.
 # Emits one line per checklist item in a structured pipe-delimited format:
