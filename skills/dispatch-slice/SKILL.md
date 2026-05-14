@@ -227,6 +227,75 @@ Print to operator:
 - Estimated time (small ≤500 LoC = ~5min; medium ≤1500 LoC = ~10-15min; large ≤3000 LoC = ~20-30min)
 - "I'll notify when it completes"
 
+### Step 6: Record an `agent-completed` event when the agent returns
+
+When the sub-agent's completion notification arrives, append one event to
+`.anvil/grind-events.jsonl` capturing token spend + tool use + wall time:
+
+```json
+{
+  "t": "<ISO>",
+  "ev": "agent-completed",
+  "slice": "<slice-id>",
+  "data": {
+    "agent":  "<agent-id>",
+    "model":  "<model>",
+    "branch": "<branch>",
+    "total_tokens": 278901,
+    "tool_uses":    171,
+    "duration_ms":  1478669
+  }
+}
+```
+
+The orchestrator parses `total_tokens` / `tool_uses` / `duration_ms` from the
+`<usage>` block in the completion-notification body. Three usage-block shapes
+are accepted (whichever the runtime emits):
+
+```
+<usage>
+  total_tokens: 278901
+  tool_uses: 171
+  duration_ms: 1478669
+</usage>
+
+<usage total_tokens="278901" tool_uses="171" duration_ms="1478669" />
+
+<usage>{"total_tokens": 278901, "tool_uses": 171, "duration_ms": 1478669}</usage>
+```
+
+Use the helper script — it handles parsing, soft-fails, and the jsonl append:
+
+```bash
+bash skills/dispatch-slice/scripts/record-agent-completed.sh \
+  --slice "<slice-id>" \
+  --agent "<agent-id>" \
+  --model "<model>" \
+  --branch "<branch>" \
+  --notification-file /path/to/notification.txt
+```
+
+Or supply the parsed counters directly when they're already in hand (tests,
+callers that scraped them upstream):
+
+```bash
+bash skills/dispatch-slice/scripts/record-agent-completed.sh \
+  --slice "<slice-id>" \
+  --agent "<agent-id>" \
+  --model "<model>" \
+  --branch "<branch>" \
+  --total-tokens 278901 --tool-uses 171 --duration-ms 1478669
+```
+
+**Soft-fail contract.** The script never throws and always exits 0. When the
+`<usage>` block is missing, unparseable, or jq isn't installed, it logs a
+warning to stderr and skips the event append. Older runtimes + manual
+`/dispatch-slice` invocations must not break the slice.
+
+`/recap` (and the standalone `/grind-summary`) reads these events back into a
+per-slice token + tool + wall-time rollup. See `docs/observability.md` for the
+full event-log schema.
+
 ## What the agent should know about the framework
 
 Embed in every dispatch prompt: a one-paragraph note that the framework expects:

@@ -133,6 +133,32 @@ Returns: agent ID + worktree path. Note for tracking.
 
 Background agent fires task-notification when complete. Don't poll — wait for the notification.
 
+#### c.5. Record an `agent-completed` event
+
+Immediately on notification, append an `agent-completed` event to
+`.anvil/grind-events.jsonl` capturing the agent's `<usage>` counters
+(total tokens, tool uses, duration). This is the source data for the
+`/grind-summary` + `/recap` rollup.
+
+```bash
+# Spool the completion-notification body to a file …
+cat > /tmp/notification.txt <<EOF
+<task-notification body, including the <usage> block>
+EOF
+
+# … then hand it to the writer.
+bash skills/dispatch-slice/scripts/record-agent-completed.sh \
+  --slice "<slice-id>" \
+  --agent "<agent-id>" \
+  --model "<model>" \
+  --branch "<branch>" \
+  --notification-file /tmp/notification.txt
+```
+
+Soft-fail. If the notification carries no `<usage>` block (older
+runtimes, manual dispatch), the writer logs a warning + skips the
+append. `/grind` continues regardless.
+
 #### d. Review
 
 If codex available + not `--no-codex`: `/codex-review <pr-number>`.
@@ -190,6 +216,9 @@ Every N slices (operator-configurable; default 5): print a one-line status:
 When all slices have either merged OR been deferred (with reason):
 
 - Run `/recap` for the visual session report.
+- Run `/grind-summary` (or `bash skills/recap/scripts/grind-summary.sh
+  --plan <plan-path>`) for the per-slice agent token / tool / wall-time
+  rollup folded from the `agent-completed` events recorded in step c.5.
 - Run `/sync-kb` if KB integration is configured.
 - Print final summary:
   - Slices merged
@@ -197,6 +226,7 @@ When all slices have either merged OR been deferred (with reason):
   - Issues filed
   - Tests added
   - Final test count
+  - Total agent token spend (from `/grind-summary`)
 
 ## Operator decision point markup (LangGraph HITL pattern)
 
